@@ -1,0 +1,542 @@
+@import "tailwindcss";
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+
+@theme {
+    --font-sans: "Instrument Sans", ui-sans-serif, system-ui, sans-serif,
+        "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
+        "Noto Color Emoji";
+}
+
+/**
+    The lines above are intact.
+    The lines below were added by maryUI installer.
+*/
+
+/** daisyUI */
+@plugin "daisyui" {
+    themes: light --default, dark --prefersdark;
+}
+
+/* maryUI */
+@source "../../vendor/robsontenorio/mary/src/View/Components/**/*.php";
+
+/* Theme toggle */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/**
+* Paginator - Traditional style
+* Because Laravel defaults does not match well the design of daisyUI.
+*/
+
+.mary-table-pagination span[aria-current="page"] > span {
+    @apply bg-primary text-base-100;
+}
+
+.mary-table-pagination button {
+    @apply cursor-pointer;
+}
+
+@plugin "daisyui/theme" {
+    name: "artelialight";
+    default: true;
+    prefersdark: false;
+    color-scheme: "light";
+
+    /* Base Colors - Clean, professional, high contrast */
+    --color-base-100: oklch(99% 0 0); /* Pure white for maximum clarity */
+    --color-base-200: oklch(96% 0.004 240); /* Very light blue-gray */
+    --color-base-300: oklch(
+        89% 0.008 240
+    ); /* Light gray with subtle blue tint */
+    --color-base-content: oklch(
+        15% 0.02 240
+    ); /* Deep charcoal for excellent readability */
+
+    /* Primary - Modern dark green, professional and trustworthy */
+    --color-primary: oklch(45% 0.12 155); /* Professional dark green */
+    --color-primary-content: oklch(98% 0.01 155); /* Light content on primary */
+
+    /* Secondary - Sophisticated teal, modern and fresh */
+    --color-secondary: oklch(45% 0.12 200); /* Sophisticated teal */
+    --color-secondary-content: oklch(
+        98% 0.01 200
+    ); /* Light content on secondary */
+
+    /* Accent - Vibrant green, for highlights and success states */
+    --color-accent: oklch(60% 0.18 150); /* Modern vibrant green */
+    --color-accent-content: oklch(98% 0.02 150); /* Light content on accent */
+
+    /* Neutral - Balanced gray for text and borders */
+    --color-neutral: oklch(40% 0.01 240); /* Neutral gray with blue undertone */
+    --color-neutral-content: oklch(98% 0.01 240); /* Light content on neutral */
+
+    /* Info - Clear sky blue for informational elements */
+    --color-info: oklch(65% 0.14 220); /* Clear sky blue */
+    --color-info-content: oklch(20% 0.04 220); /* Dark content on info */
+
+    /* Success - Fresh green for positive actions */
+    --color-success: oklch(70% 0.16 140); /* Fresh success green */
+    --color-success-content: oklch(20% 0.04 140); /* Dark content on success */
+
+    /* Warning - Warm amber for attention */
+    --color-warning: oklch(75% 0.15 70); /* Warm amber warning */
+    --color-warning-content: oklch(20% 0.06 70); /* Dark content on warning */
+
+    /* Error - Clear red for critical alerts */
+    --color-error: oklch(65% 0.18 15); /* Clear error red */
+    --color-error-content: oklch(98% 0.02 15); /* Light content on error */
+
+    /* UI Elements - Keep as requested */
+    --radius-selector: 1rem;
+    --radius-field: 1rem;
+    --radius-box: 1rem;
+    --size-selector: 0.25rem;
+    --size-field: 0.25rem;
+    --border: 2px;
+    --depth: 1;
+    --noise: 1;
+}
+
+@plugin "daisyui/theme" {
+    name: "arteliadark";
+    default: false;
+    prefersdark: true;
+    color-scheme: "dark";
+
+    /* Base Colors - Elegant dark theme with blue undertones */
+    --color-base-100: oklch(12% 0.02 240); /* Deep navy background */
+    --color-base-200: oklch(18% 0.025 240); /* Slightly lighter navy */
+    --color-base-300: oklch(25% 0.03 240); /* Medium navy for cards */
+    --color-base-content: oklch(95% 0.01 240); /* Almost white text */
+
+    /* Primary - Bright dark green for dark theme */
+    --color-primary: oklch(
+        65% 0.14 155
+    ); /* Brighter dark green for dark theme */
+    --color-primary-content: oklch(15% 0.03 155); /* Dark content on primary */
+
+    /* Secondary - Bright sophisticated teal */
+    --color-secondary: oklch(65% 0.14 200); /* Brighter teal for dark theme */
+    --color-secondary-content: oklch(
+        15% 0.02 200
+    ); /* Dark content on secondary */
+
+    /* Accent - Vibrant green that pops on dark */
+    --color-accent: oklch(75% 0.2 150); /* Brighter green for dark theme */
+    --color-accent-content: oklch(15% 0.04 150); /* Dark content on accent */
+
+    /* Neutral - Balanced gray for dark theme */
+    --color-neutral: oklch(30% 0.02 240); /* Medium gray with blue undertone */
+    --color-neutral-content: oklch(95% 0.01 240); /* Light content on neutral */
+
+    /* Info - Bright sky blue for dark theme */
+    --color-info: oklch(75% 0.16 220); /* Brighter sky blue */
+    --color-info-content: oklch(15% 0.03 220); /* Dark content on info */
+
+    /* Success - Bright green for dark theme */
+    --color-success: oklch(80% 0.18 140); /* Brighter success green */
+    --color-success-content: oklch(15% 0.04 140); /* Dark content on success */
+
+    /* Warning - Bright amber for dark theme */
+    --color-warning: oklch(85% 0.17 70); /* Brighter amber warning */
+    --color-warning-content: oklch(15% 0.05 70); /* Dark content on warning */
+
+    /* Error - Bright red for dark theme */
+    --color-error: oklch(75% 0.2 15); /* Brighter error red */
+    --color-error-content: oklch(15% 0.04 15); /* Dark content on error */
+
+    /* UI Elements - Keep as requested */
+    --radius-selector: 1rem;
+    --radius-field: 1rem;
+    --radius-box: 1rem;
+    --size-selector: 0.25rem;
+    --size-field: 0.25rem;
+    --border: 2px;
+    --depth: 1;
+    --noise: 1;
+}
+
+/* Landing Page Styles */
+
+.navbar {
+    transition: transform 0.3s ease-in-out;
+}
+
+.bg-grid-pattern {
+    background-image: radial-gradient(
+        circle,
+        rgba(0, 0, 0, 0.1) 1px,
+        transparent 1px
+    );
+    background-size: 20px 20px;
+}
+
+.shadow-3xl {
+    box-shadow: 0 35px 60px -12px rgba(0, 0, 0, 0.25);
+}
+
+/* Base scroll animation - Default (auto fade-out-down) */
+.scroll-animate {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+.scroll-animate.animate-in {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.scroll-animate.animate-out {
+    opacity: 0;
+    transform: translateY(20px);
+    /* Auto fade-out-down */
+    transition: opacity 0.4s ease-in, transform 0.4s ease-in;
+}
+
+/* Fade In Left (auto fade-out-right) */
+.scroll-animate.fade-in-left {
+    opacity: 0;
+    transform: translateX(-30px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+.scroll-animate.fade-in-left.animate-in {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.scroll-animate.fade-in-left.animate-out {
+    opacity: 0;
+    transform: translateX(30px);
+    /* Auto fade-out-right */
+    transition: opacity 0.4s ease-in, transform 0.4s ease-in;
+}
+
+/* Fade In Right (auto fade-out-left) */
+.scroll-animate.fade-in-right {
+    opacity: 0;
+    transform: translateX(30px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+.scroll-animate.fade-in-right.animate-in {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.scroll-animate.fade-in-right.animate-out {
+    opacity: 0;
+    transform: translateX(-30px);
+    /* Auto fade-out-left */
+    transition: opacity 0.4s ease-in, transform 0.4s ease-in;
+}
+
+/* Scale In (auto scale-out smaller) */
+.scroll-animate.scale-in {
+    opacity: 0;
+    transform: scale(0.8);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+.scroll-animate.scale-in.animate-in {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.scroll-animate.scale-in.animate-out {
+    opacity: 0;
+    transform: scale(1.1);
+    /* Auto scale-out bigger */
+    transition: opacity 0.4s ease-in, transform 0.4s ease-in;
+}
+
+/* Fade In Up (auto fade-out-down) */
+.scroll-animate.fade-in-up {
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+.scroll-animate.fade-in-up.animate-in {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.scroll-animate.fade-in-up.animate-out {
+    opacity: 0;
+    transform: translateY(-40px);
+    /* Auto fade-out-up */
+    transition: opacity 0.4s ease-in, transform 0.4s ease-in;
+}
+
+/* Fade In Down (auto fade-out-up) */
+.scroll-animate.fade-in-down {
+    opacity: 0;
+    transform: translateY(-40px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+.scroll-animate.fade-in-down.animate-in {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.scroll-animate.fade-in-down.animate-out {
+    opacity: 0;
+    transform: translateY(40px);
+    /* Auto fade-out-down */
+    transition: opacity 0.4s ease-in, transform 0.4s ease-in;
+}
+
+/* Rotate In (auto rotate-out opposite) */
+.scroll-animate.rotate-in {
+    opacity: 0;
+    transform: rotate(-5deg) scale(0.9);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+.scroll-animate.rotate-in.animate-in {
+    opacity: 1;
+    transform: rotate(0deg) scale(1);
+}
+
+.scroll-animate.rotate-in.animate-out {
+    opacity: 0;
+    transform: rotate(5deg) scale(0.9);
+    /* Auto rotate-out opposite */
+    transition: opacity 0.4s ease-in, transform 0.4s ease-in;
+}
+
+/* Slide In Left (auto slide-out-right) */
+.scroll-animate.slide-in-left {
+    opacity: 0;
+    transform: translateX(-100px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+.scroll-animate.slide-in-left.animate-in {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.scroll-animate.slide-in-left.animate-out {
+    opacity: 0;
+    transform: translateX(100px);
+    /* Auto slide-out-right */
+    transition: opacity 0.4s ease-in, transform 0.4s ease-in;
+}
+
+/* Slide In Right (auto slide-out-left) */
+.scroll-animate.slide-in-right {
+    opacity: 0;
+    transform: translateX(100px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+.scroll-animate.slide-in-right.animate-in {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.scroll-animate.slide-in-right.animate-out {
+    opacity: 0;
+    transform: translateX(-100px);
+    /* Auto slide-out-left */
+    transition: opacity 0.4s ease-in, transform 0.4s ease-in;
+}
+
+/* Zoom In (auto zoom-out) */
+.scroll-animate.zoom-in {
+    opacity: 0;
+    transform: scale(0.5);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+.scroll-animate.zoom-in.animate-in {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.scroll-animate.zoom-in.animate-out {
+    opacity: 0;
+    transform: scale(1.5);
+    /* Auto zoom-out bigger */
+    transition: opacity 0.4s ease-in, transform 0.4s ease-in;
+}
+
+/* Flip In (auto flip-out) */
+.scroll-animate.flip-in {
+    opacity: 0;
+    transform: rotateY(-90deg);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+.scroll-animate.flip-in.animate-in {
+    opacity: 1;
+    transform: rotateY(0deg);
+}
+
+.scroll-animate.flip-in.animate-out {
+    opacity: 0;
+    transform: rotateY(90deg);
+    /* Auto flip-out opposite */
+    transition: opacity 0.4s ease-in, transform 0.4s ease-in;
+}
+
+/* Reset scroll transition setelah animasi selesai */
+.scroll-animate.animate-in.animation-complete {
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+/* Override untuk hover effects yang menggunakan transition-all */
+.scroll-animate.animate-in.animation-complete.transition-all {
+    transition: all 0.3s ease-in-out !important;
+}
+
+.scroll-animate.animate-in.animation-complete[class*="hover:"] {
+    transition: all 0.3s ease-in-out !important;
+}
+
+/* Stagger animation delays untuk IN animation */
+.scroll-animate:not(.animate-in):nth-child(1) {
+    transition-delay: 0.1s;
+}
+
+.scroll-animate:not(.animate-in):nth-child(2) {
+    transition-delay: 0.2s;
+}
+
+.scroll-animate:not(.animate-in):nth-child(3) {
+    transition-delay: 0.3s;
+}
+
+.scroll-animate:not(.animate-in):nth-child(4) {
+    transition-delay: 0.4s;
+}
+
+.scroll-animate:not(.animate-in):nth-child(5) {
+    transition-delay: 0.5s;
+}
+
+.scroll-animate:not(.animate-in):nth-child(6) {
+    transition-delay: 0.8s;
+}
+
+/* Stagger animation delays untuk OUT animation */
+.scroll-animate.animate-out:nth-child(1) {
+    transition-delay: 0.07s;
+}
+
+.scroll-animate.animate-out:nth-child(2) {
+    transition-delay: 0.3s;
+}
+
+.scroll-animate.animate-out:nth-child(3) {
+    transition-delay: 0.17s;
+}
+
+.scroll-animate.animate-out:nth-child(4) {
+    transition-delay: 0.5s;
+}
+
+.scroll-animate.animate-out:nth-child(5) {
+    transition-delay: 0.27s;
+}
+
+.scroll-animate.animate-out:nth-child(6) {
+    transition-delay: 0.5s;
+}
+
+/* Stagger untuk child elements dalam container yang sama */
+.scroll-animate-container > .scroll-animate:not(.animate-in):nth-child(1) {
+    transition-delay: 0.1s;
+}
+
+.scroll-animate-container > .scroll-animate:not(.animate-in):nth-child(2) {
+    transition-delay: 0.15s;
+}
+
+.scroll-animate-container > .scroll-animate:not(.animate-in):nth-child(3) {
+    transition-delay: 0.2s;
+}
+
+.scroll-animate-container > .scroll-animate:not(.animate-in):nth-child(4) {
+    transition-delay: 0.25s;
+}
+
+.scroll-animate-container > .scroll-animate:not(.animate-in):nth-child(5) {
+    transition-delay: 0.3s;
+}
+
+.scroll-animate-container > .scroll-animate:not(.animate-in):nth-child(6) {
+    transition-delay: 0.35s;
+}
+
+.scroll-animate-container > .scroll-animate.animate-out:nth-child(1) {
+    transition-delay: 0.05s;
+}
+
+.scroll-animate-container > .scroll-animate.animate-out:nth-child(2) {
+    transition-delay: 0.1s;
+}
+
+.scroll-animate-container > .scroll-animate.animate-out:nth-child(3) {
+    transition-delay: 0.15s;
+}
+
+.scroll-animate-container > .scroll-animate.animate-out:nth-child(4) {
+    transition-delay: 0.2s;
+}
+
+.scroll-animate-container > .scroll-animate.animate-out:nth-child(5) {
+    transition-delay: 0.25s;
+}
+
+.scroll-animate-container > .scroll-animate.animate-out:nth-child(6) {
+    transition-delay: 0.3s;
+}
+
+/* Reverse stagger option - elements animate out in reverse order */
+.scroll-animate-reverse > .scroll-animate.animate-out:nth-child(1) {
+    transition-delay: 0.3s;
+}
+
+.scroll-animate-reverse > .scroll-animate.animate-out:nth-child(2) {
+    transition-delay: 0.25s;
+}
+
+.scroll-animate-reverse > .scroll-animate.animate-out:nth-child(3) {
+    transition-delay: 0.2s;
+}
+
+.scroll-animate-reverse > .scroll-animate.animate-out:nth-child(4) {
+    transition-delay: 0.15s;
+}
+
+.scroll-animate-reverse > .scroll-animate.animate-out:nth-child(5) {
+    transition-delay: 0.1s;
+}
+
+.scroll-animate-reverse > .scroll-animate.animate-out:nth-child(6) {
+    transition-delay: 0.05s;
+}
+
+/* Quick hover untuk elemen yang tidak punya scroll animation */
+.quick-hover {
+    transition: all 0.2s ease-in-out;
+}
+
+/* Hover effects khusus untuk cards */
+.card-hover {
+    transition: all 0.3s ease-in-out;
+}
+
+/* Smooth re-entry untuk elemen yang keluar masuk viewport berulang */
+.scroll-animate.re-entry {
+    transition: opacity 0.4s ease-out, transform 0.4s ease-out;
+}
