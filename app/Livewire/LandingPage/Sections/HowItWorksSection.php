@@ -22,7 +22,7 @@ class HowItWorksSection extends Component
                     <div class="scroll-animate fade-in-down">
                         <div class="gap-2 badge badge-xl badge-outline badge-info bg-info/20 mb-6">
                             <div aria-label="info" class="status status-info status-md animate-pulse"></div>
-                            <span class="text-sm font-medium text-info">Workflow Process</span>
+                            <span class="text-sm font-medium text-info">Alur Kerja Digital</span>
                         </div>
                     </div>
 
@@ -34,7 +34,8 @@ class HowItWorksSection extends Component
                             </span>
                         </h2>
                         <p class="text-lg md:text-xl text-base-content/70 max-w-3xl mx-auto">
-                            Alur kerja yang terstruktur dan efisien untuk mengoptimalkan operasi transportasi
+                            Workflow {{ config('landingpage.stats.paperless_percentage') }} digital dengan {{ config('landingpage.features.multi_role_count') }} role
+                            untuk mengoptimalkan operasi {{ config('landingpage.company_name') }} di {{ config('landingpage.business.primary_location') }}
                         </p>
                     </div>
                 </div>
@@ -64,7 +65,7 @@ class HowItWorksSection extends Component
                                             </div>
                                             <h4 class="font-bold text-lg mb-3">Input & Validasi</h4>
                                             <p class="text-base-content/70 text-sm mb-4 leading-relaxed flex-grow">
-                                                Petugas Lapangan menginput data surat jalan dan melakukan validasi dokumen
+                                                Petugas Lapangan melakukan input dan validasi dokumen dengan akurasi {{ config('landingpage.stats.data_accuracy') }}
                                             </p>
                                             <div class="flex justify-center mt-auto">
                                                 <span class="px-3 py-1 bg-primary/20 text-primary rounded-full text-xs font-medium">Petugas Lapangan</span>
@@ -74,7 +75,7 @@ class HowItWorksSection extends Component
                                 </div>
                             </div>
 
-                            <!-- Step 2: Assign ke Sopir -->
+                            <!-- Step 2: Auto Assignment -->
                             <div class="scroll-animate fade-in-up group h-full">
                                 <div class="relative h-full flex flex-col">
                                     <div class="w-16 h-16 bg-gradient-to-br from-secondary to-secondary/80 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg group-hover:scale-110 transition-transform relative z-10">
@@ -86,12 +87,12 @@ class HowItWorksSection extends Component
                                             <div class="w-12 h-12 bg-secondary/20 rounded-xl flex items-center justify-center mx-auto mb-3">
                                                 <x-icon name="phosphor.user-plus" class="w-6 h-6 text-secondary" />
                                             </div>
-                                            <h4 class="font-bold text-lg mb-3">Assign ke Sopir</h4>
+                                            <h4 class="font-bold text-lg mb-3">Auto Assignment</h4>
                                             <p class="text-base-content/70 text-sm mb-4 leading-relaxed flex-grow">
-                                                Sistem mengassign surat jalan ke sopir yang sesuai berdasarkan rute
+                                                Sistem otomatis assign pengemudi berdasarkan rute optimal untuk coverage area {{ config('landingpage.business.primary_location') }}
                                             </p>
                                             <div class="flex justify-center mt-auto">
-                                                <span class="px-3 py-1 bg-secondary/20 text-secondary rounded-full text-xs font-medium">Sopir</span>
+                                                <span class="px-3 py-1 bg-secondary/20 text-secondary rounded-full text-xs font-medium">Smart Assignment</span>
                                             </div>
                                         </div>
                                     </x-card>
@@ -110,19 +111,19 @@ class HowItWorksSection extends Component
                                             <div class="w-12 h-12 bg-accent/20 rounded-xl flex items-center justify-center mx-auto mb-3">
                                                 <x-icon name="phosphor.map-pin" class="w-6 h-6 text-accent" />
                                             </div>
-                                            <h4 class="font-bold text-lg mb-3">Real-time Tracking</h4>
+                                            <h4 class="font-bold text-lg mb-3">GPS Tracking</h4>
                                             <p class="text-base-content/70 text-sm mb-4 leading-relaxed flex-grow">
-                                                Sopir melakukan perjalanan dengan tracking GPS yang akurat dan real-time
+                                                Monitoring {{ config('landingpage.stats.uptime') }} dengan teknologi WebSocket untuk tracking real-time di {{ config('landingpage.business.primary_location') }}
                                             </p>
                                             <div class="flex justify-center mt-auto">
-                                                <span class="px-3 py-1 bg-accent/20 text-accent rounded-full text-xs font-medium">GPS Tracking</span>
+                                                <span class="px-3 py-1 bg-accent/20 text-accent rounded-full text-xs font-medium">{{ config('landingpage.stats.uptime') }}</span>
                                             </div>
                                         </div>
                                     </x-card>
                                 </div>
                             </div>
 
-                            <!-- Step 4: Konfirmasi Penerimaan -->
+                            <!-- Step 4: Digital Confirmation -->
                             <div class="scroll-animate fade-in-up group h-full">
                                 <div class="relative h-full flex flex-col">
                                     <div class="w-16 h-16 bg-gradient-to-br from-info to-info/80 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg group-hover:scale-110 transition-transform relative z-10">
@@ -134,9 +135,9 @@ class HowItWorksSection extends Component
                                             <div class="w-12 h-12 bg-info/20 rounded-xl flex items-center justify-center mx-auto mb-3">
                                                 <x-icon name="phosphor.check-circle" class="w-6 h-6 text-info" />
                                             </div>
-                                            <h4 class="font-bold text-lg mb-3">Konfirmasi Penerimaan</h4>
+                                            <h4 class="font-bold text-lg mb-3">Konfirmasi Digital</h4>
                                             <p class="text-base-content/70 text-sm mb-4 leading-relaxed flex-grow">
-                                                Petugas Gudang mengkonfirmasi penerimaan dan verifikasi barang
+                                                Petugas Gudang melakukan konfirmasi penerimaan dengan sistem paperless {{ config('landingpage.stats.paperless_percentage') }}
                                             </p>
                                             <div class="flex justify-center mt-auto">
                                                 <span class="px-3 py-1 bg-info/20 text-info rounded-full text-xs font-medium">Petugas Gudang</span>
@@ -146,7 +147,7 @@ class HowItWorksSection extends Component
                                 </div>
                             </div>
 
-                            <!-- Step 5: Status Update -->
+                            <!-- Step 5: Auto Reporting -->
                             <div class="scroll-animate fade-in-up group h-full">
                                 <div class="relative h-full flex flex-col">
                                     <div class="w-16 h-16 bg-gradient-to-br from-success to-success/80 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg group-hover:scale-110 transition-transform relative z-10">
@@ -158,9 +159,9 @@ class HowItWorksSection extends Component
                                             <div class="w-12 h-12 bg-success/20 rounded-xl flex items-center justify-center mx-auto mb-3">
                                                 <x-icon name="phosphor.printer" class="w-6 h-6 text-success" />
                                             </div>
-                                            <h4 class="font-bold text-lg mb-3">Status Update</h4>
+                                            <h4 class="font-bold text-lg mb-3">Auto Reporting</h4>
                                             <p class="text-base-content/70 text-sm mb-4 leading-relaxed flex-grow">
-                                                Sistem mengupdate status final dan generate laporan otomatis
+                                                Sistem generate laporan otomatis untuk {{ config('landingpage.stats.documents_processed') }} dokumen yang telah diproses
                                             </p>
                                             <div class="flex justify-center mt-auto">
                                                 <span class="px-3 py-1 bg-success/20 text-success rounded-full text-xs font-medium">Completed</span>
@@ -179,11 +180,12 @@ class HowItWorksSection extends Component
                         <div class="scroll-animate">
                             <h3 class="text-3xl md:text-4xl font-bold mb-4">
                                 <span class="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                                    Akses Berdasarkan Role
+                                    {{ config('landingpage.features.multi_role_count') }} Role Management
                                 </span>
                             </h3>
                             <p class="text-base-content/70 max-w-2xl mx-auto">
-                                Setiap role memiliki akses dan fungsi yang berbeda sesuai dengan tanggung jawab masing-masing
+                                Sistem dengan {{ config('landingpage.features.multi_role_count') }} role berbeda untuk mengoptimalkan operasi
+                                {{ config('landingpage.company_name') }} dengan pengalaman {{ config('landingpage.stats.years_experience') }} tahun
                             </p>
                         </div>
                     </div>
@@ -202,21 +204,22 @@ class HowItWorksSection extends Component
 
                                         <h4 class="text-xl font-bold text-center mb-3">Manager/Admin</h4>
                                         <p class="text-base-content/70 text-sm text-center mb-6 leading-relaxed flex-grow">
-                                            Oversight seluruh operasi, monitoring dashboard, dan analisis performa sistem
+                                            Oversight penuh dengan dashboard monitoring {{ config('landingpage.stats.uptime') }}
+                                            dan analisis untuk {{ config('landingpage.stats.clients_served') }} klien
                                         </p>
 
                                         <div class="space-y-3 mt-auto">
                                             <div class="flex items-center text-sm text-base-content/60">
                                                 <x-icon name="phosphor.check" class="w-4 h-4 mr-2 text-success flex-shrink-0" />
-                                                <span>Dashboard monitoring</span>
+                                                <span>Dashboard {{ config('landingpage.stats.uptime') }}</span>
                                             </div>
                                             <div class="flex items-center text-sm text-base-content/60">
                                                 <x-icon name="phosphor.check" class="w-4 h-4 mr-2 text-success flex-shrink-0" />
-                                                <span>Laporan lengkap</span>
+                                                <span>Laporan Analytics</span>
                                             </div>
                                             <div class="flex items-center text-sm text-base-content/60">
                                                 <x-icon name="phosphor.check" class="w-4 h-4 mr-2 text-success flex-shrink-0" />
-                                                <span>Manajemen user</span>
+                                                <span>User Management</span>
                                             </div>
                                         </div>
                                     </x-card>
@@ -233,23 +236,23 @@ class HowItWorksSection extends Component
                                             <x-icon name="phosphor.building-office" class="w-8 h-8 text-secondary" />
                                         </div>
 
-                                        <h4 class="text-xl font-bold text-center mb-3">Client</h4>
+                                        <h4 class="text-xl font-bold text-center mb-3">Client Portal</h4>
                                         <p class="text-base-content/70 text-sm text-center mb-6 leading-relaxed flex-grow">
-                                            Melihat daftar surat jalan miliknya dan tracking sopir real-time
+                                            Akses real-time untuk tracking pengiriman di seluruh coverage area {{ config('landingpage.business.primary_location') }}
                                         </p>
 
                                         <div class="space-y-3 mt-auto">
                                             <div class="flex items-center text-sm text-base-content/60">
                                                 <x-icon name="phosphor.check" class="w-4 h-4 mr-2 text-success flex-shrink-0" />
-                                                <span>Tracking real-time</span>
+                                                <span>Real-time Tracking</span>
                                             </div>
                                             <div class="flex items-center text-sm text-base-content/60">
                                                 <x-icon name="phosphor.check" class="w-4 h-4 mr-2 text-success flex-shrink-0" />
-                                                <span>Status pengiriman</span>
+                                                <span>Status Updates</span>
                                             </div>
                                             <div class="flex items-center text-sm text-base-content/60">
                                                 <x-icon name="phosphor.check" class="w-4 h-4 mr-2 text-success flex-shrink-0" />
-                                                <span>Riwayat pengiriman</span>
+                                                <span>History Log</span>
                                             </div>
                                         </div>
                                     </x-card>
@@ -268,28 +271,29 @@ class HowItWorksSection extends Component
 
                                         <h4 class="text-xl font-bold text-center mb-3">Petugas Lapangan</h4>
                                         <p class="text-base-content/70 text-sm text-center mb-6 leading-relaxed flex-grow">
-                                            Input & validasi surat jalan, cetak fisik untuk sopir
+                                            Input dan validasi dengan akurasi {{ config('landingpage.stats.data_accuracy') }} untuk
+                                            operasi {{ config('landingpage.company_description') }}
                                         </p>
 
                                         <div class="space-y-3 mt-auto">
                                             <div class="flex items-center text-sm text-base-content/60">
                                                 <x-icon name="phosphor.check" class="w-4 h-4 mr-2 text-success flex-shrink-0" />
-                                                <span>Input data</span>
+                                                <span>Input Digital</span>
                                             </div>
                                             <div class="flex items-center text-sm text-base-content/60">
                                                 <x-icon name="phosphor.check" class="w-4 h-4 mr-2 text-success flex-shrink-0" />
-                                                <span>Validasi dokumen</span>
+                                                <span>Auto Validation</span>
                                             </div>
                                             <div class="flex items-center text-sm text-base-content/60">
                                                 <x-icon name="phosphor.check" class="w-4 h-4 mr-2 text-success flex-shrink-0" />
-                                                <span>Cetak surat jalan</span>
+                                                <span>Print Documents</span>
                                             </div>
                                         </div>
                                     </x-card>
                                 </div>
                             </div>
 
-                            <!-- Sopir -->
+                            <!-- Pengemudi -->
                             <div class="scroll-animate fade-in-left h-full">
                                 <div class="group relative h-full">
                                     <div class="absolute -inset-0.5 bg-gradient-to-r from-info to-success rounded-2xl blur opacity-20 group-hover:opacity-40 transition-opacity duration-300"></div>
@@ -299,23 +303,24 @@ class HowItWorksSection extends Component
                                             <x-icon name="phosphor.truck-trailer" class="w-8 h-8 text-info" />
                                         </div>
 
-                                        <h4 class="text-xl font-bold text-center mb-3">Sopir</h4>
+                                        <h4 class="text-xl font-bold text-center mb-3">Pengemudi</h4>
                                         <p class="text-base-content/70 text-sm text-center mb-6 leading-relaxed flex-grow">
-                                            Melihat surat jalan yang dibawa, update lokasi real-time
+                                            Portal mobile untuk pengemudi dengan GPS tracking real-time dan akses surat jalan digital
+                                            di {{ config('landingpage.business.primary_location') }}
                                         </p>
 
                                         <div class="space-y-3 mt-auto">
                                             <div class="flex items-center text-sm text-base-content/60">
                                                 <x-icon name="phosphor.check" class="w-4 h-4 mr-2 text-success flex-shrink-0" />
-                                                <span>Surat jalan aktif</span>
+                                                <span>Surat Jalan Mobile</span>
                                             </div>
                                             <div class="flex items-center text-sm text-base-content/60">
                                                 <x-icon name="phosphor.check" class="w-4 h-4 mr-2 text-success flex-shrink-0" />
-                                                <span>GPS tracking</span>
+                                                <span>GPS Auto Update</span>
                                             </div>
                                             <div class="flex items-center text-sm text-base-content/60">
                                                 <x-icon name="phosphor.check" class="w-4 h-4 mr-2 text-success flex-shrink-0" />
-                                                <span>Update status</span>
+                                                <span>Status Progress</span>
                                             </div>
                                         </div>
                                     </x-card>
@@ -334,21 +339,22 @@ class HowItWorksSection extends Component
 
                                         <h4 class="text-xl font-bold text-center mb-3">Petugas Ruangan</h4>
                                         <p class="text-base-content/70 text-sm text-center mb-6 leading-relaxed flex-grow">
-                                            Monitoring dan koordinasi operasional dari ruang kontrol
+                                            Monitoring dan koordinasi operasional dari control center dengan dashboard
+                                            {{ config('landingpage.stats.uptime') }} untuk {{ config('landingpage.company_name') }}
                                         </p>
 
                                         <div class="space-y-3 mt-auto">
                                             <div class="flex items-center text-sm text-base-content/60">
                                                 <x-icon name="phosphor.check" class="w-4 h-4 mr-2 text-success flex-shrink-0" />
-                                                <span>Monitoring real-time</span>
+                                                <span>Control Center</span>
                                             </div>
                                             <div class="flex items-center text-sm text-base-content/60">
                                                 <x-icon name="phosphor.check" class="w-4 h-4 mr-2 text-success flex-shrink-0" />
-                                                <span>Koordinasi operasi</span>
+                                                <span>Live Monitoring</span>
                                             </div>
                                             <div class="flex items-center text-sm text-base-content/60">
                                                 <x-icon name="phosphor.check" class="w-4 h-4 mr-2 text-success flex-shrink-0" />
-                                                <span>Laporan harian</span>
+                                                <span>Daily Reports</span>
                                             </div>
                                         </div>
                                     </x-card>
@@ -367,21 +373,22 @@ class HowItWorksSection extends Component
 
                                         <h4 class="text-xl font-bold text-center mb-3">Petugas Gudang</h4>
                                         <p class="text-base-content/70 text-sm text-center mb-6 leading-relaxed flex-grow">
-                                            Terima surat jalan fisik, update status hingga selesai
+                                            Konfirmasi penerimaan dengan sistem digital dan update status final untuk
+                                            {{ config('landingpage.stats.documents_processed') }} dokumen yang diproses
                                         </p>
 
                                         <div class="space-y-3 mt-auto">
                                             <div class="flex items-center text-sm text-base-content/60">
                                                 <x-icon name="phosphor.check" class="w-4 h-4 mr-2 text-success flex-shrink-0" />
-                                                <span>Penerimaan dokumen</span>
+                                                <span>Digital Confirmation</span>
                                             </div>
                                             <div class="flex items-center text-sm text-base-content/60">
                                                 <x-icon name="phosphor.check" class="w-4 h-4 mr-2 text-success flex-shrink-0" />
-                                                <span>Verifikasi barang</span>
+                                                <span>Cargo Verification</span>
                                             </div>
                                             <div class="flex items-center text-sm text-base-content/60">
                                                 <x-icon name="phosphor.check" class="w-4 h-4 mr-2 text-success flex-shrink-0" />
-                                                <span>Update status final</span>
+                                                <span>Final Status Update</span>
                                             </div>
                                         </div>
                                     </x-card>
@@ -402,7 +409,8 @@ class HowItWorksSection extends Component
                                     Otomatisasi Penuh
                                 </h3>
                                 <p class="text-base-content/70 max-w-2xl mx-auto">
-                                    Sistem yang dirancang untuk meminimalkan intervensi manual dan memaksimalkan efisiensi
+                                    Sistem {{ config('landingpage.stats.paperless_percentage') }} digital yang dirancang untuk
+                                    {{ config('landingpage.company_name') }} dengan efisiensi {{ config('landingpage.stats.efficiency_improvement') }}
                                 </p>
                             </div>
 
@@ -412,24 +420,48 @@ class HowItWorksSection extends Component
                                     <div class="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:bg-primary/20 transition-colors">
                                         <x-icon name="phosphor.robot" class="w-6 h-6 text-primary" />
                                     </div>
-                                    <h4 class="font-semibold mb-2">Auto Assignment</h4>
-                                    <p class="text-sm text-base-content/60">Sistem otomatis assign sopir berdasarkan rute optimal</p>
+                                    <h4 class="font-semibold mb-2">Smart Assignment</h4>
+                                    <p class="text-sm text-base-content/60">Auto assign pengemudi berdasarkan rute optimal {{ config('landingpage.business.primary_location') }}</p>
                                 </div>
 
                                 <div class="text-center group">
                                     <div class="w-12 h-12 bg-secondary/10 rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:bg-secondary/20 transition-colors">
                                         <x-icon name="phosphor.bell-ringing" class="w-6 h-6 text-secondary" />
                                     </div>
-                                    <h4 class="font-semibold mb-2">Smart Notifications</h4>
-                                    <p class="text-sm text-base-content/60">Notifikasi real-time untuk setiap perubahan status</p>
+                                    <h4 class="font-semibold mb-2">Notifikasi Real-Time</h4>
+                                    <p class="text-sm text-base-content/60">Update otomatis {{ config('landingpage.stats.uptime') }} untuk semua perubahan status</p>
                                 </div>
 
                                 <div class="text-center group">
                                     <div class="w-12 h-12 bg-accent/10 rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:bg-accent/20 transition-colors">
                                         <x-icon name="phosphor.chart-line-up" class="w-6 h-6 text-accent" />
                                     </div>
-                                    <h4 class="font-semibold mb-2">Auto Reports</h4>
-                                    <p class="text-sm text-base-content/60">Generate laporan otomatis setiap akhir proses</p>
+                                    <h4 class="font-semibold mb-2">Auto Analytics</h4>
+                                    <p class="text-sm text-base-content/60">Generate laporan dengan akurasi {{ config('landingpage.stats.data_accuracy') }} otomatis</p>
+                                </div>
+                            </div>
+
+                            <!-- Additional System Info -->
+                            <div class="mt-8 pt-6 border-t border-base-content/10">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-10 h-10 bg-success/10 rounded-lg flex items-center justify-center">
+                                            <x-icon name="phosphor.check-circle" class="w-5 h-5 text-success" />
+                                        </div>
+                                        <div>
+                                            <h5 class="font-semibold">Pengalaman {{ config('landingpage.stats.years_experience') }} Tahun</h5>
+                                            <p class="text-sm text-base-content/60">Melayani industri transportasi {{ config('landingpage.business.primary_location') }}</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-10 h-10 bg-info/10 rounded-lg flex items-center justify-center">
+                                            <x-icon name="phosphor.users-three" class="w-5 h-5 text-info" />
+                                        </div>
+                                        <div>
+                                            <h5 class="font-semibold">{{ config('landingpage.stats.clients_served') }} Klien Aktif</h5>
+                                            <p class="text-sm text-base-content/60">Dipercaya oleh berbagai perusahaan transportasi</p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </x-card>
