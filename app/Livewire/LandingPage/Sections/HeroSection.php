@@ -54,13 +54,30 @@ class HeroSection extends Component
                     <!-- Action Buttons -->
                     <div class="scroll-animate">
                         <div class="flex flex-col sm:flex-row gap-4 justify-center mb-16">
-                            <!-- Driver Button -->
-                            <x-button link="{{ route('driver.dashboard') }}" class="btn-info btn-lg btn-outline" label="Portal Pengemudi"
-                                icon="phosphor.truck-trailer" />
+                            @guest
+                                <!-- Tampilkan kedua tombol jika belum login -->
+                                <!-- Driver Button -->
+                                <x-button link="{{ route('driver.dashboard') }}" class="btn-info btn-lg btn-outline" label="Portal Pengemudi"
+                                    icon="phosphor.truck-trailer" />
 
-                            <!-- Management App Button -->
-                            <x-button link="{{ route('app.dashboard') }}" wire:navigate.hover class="btn-primary btn-lg"
-                                label="Akses Dashboard" icon="phosphor.gauge" />
+                                <!-- Management App Button -->
+                                <x-button link="{{ route('app.dashboard') }}" wire:navigate.hover class="btn-primary btn-lg"
+                                    label="Masuk Ke Dashboard" icon="phosphor.sign-in" />
+                            @else
+                                <!-- Logout Button -->
+                                <form method="GET" action="{{ route('logout') }}" class="inline">
+                                    @csrf
+                                    <button type="submit"
+                                        class="btn btn-warning btn-outline btn-lg">
+                                        <x-icon name="phosphor.sign-out" class="w-5 h-5" />
+                                        Keluar
+                                    </button>
+                                </form>
+
+                                <!-- Tampilkan tombol Dashboard saja jika sudah login -->
+                                <x-button link="{{ route('app.dashboard') }}" wire:navigate.hover class="btn-primary btn-lg"
+                                    label="Buka Dashboard" icon="phosphor.gauge" />
+                            @endguest
                         </div>
                     </div>
 
