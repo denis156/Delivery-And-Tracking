@@ -24,7 +24,7 @@ class HeroSection extends Component
                         <div class="flex justify-center mb-8">
                             <div class="gap-2 badge badge-xl badge-outline badge-primary bg-primary/20 mb-6">
                                 <div aria-label="info" class="status status-primary status-md animate-pulse"></div>
-                                <span class="text-sm font-medium text-primary">Real-time Tracking System</span>
+                                <span class="text-sm font-medium text-primary">Sistem Tracking Real-Time</span>
                             </div>
                         </div>
                     </div>
@@ -32,9 +32,9 @@ class HeroSection extends Component
                     <!-- Hero Title - Centered -->
                     <div class="scroll-animate">
                         <h1 class="text-5xl md:text-7xl lg:text-8xl font-bold mb-6 leading-tight text-center">
-                            <span class="block text-base-content">Transform Your</span>
+                            <span class="block text-base-content">Revolusi Digital</span>
                             <span class="block bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
-                                Delivery System
+                                {{ config('landingpage.business.primary_location') }}
                             </span>
                         </h1>
                     </div>
@@ -43,9 +43,10 @@ class HeroSection extends Component
                     <div class="scroll-animate">
                         <div class="flex justify-center mb-12">
                             <p class="text-xl md:text-2xl text-base-content/70 max-w-4xl leading-relaxed text-center">
-                                Solusi tracking dan manajemen transportasi terdepan dengan teknologi
-                                <span class="font-semibold text-primary">WebSocket Realtime</span> untuk
-                                <span class="font-semibold text-secondary">{{ config('landingpage.company_name') }}</span>
+                                Solusi transportasi cerdas dengan teknologi
+                                <span class="font-semibold text-primary">WebSocket Real-Time</span> untuk
+                                <span class="font-semibold text-accent">{{ config('landingpage.company_name') }}</span> -
+                                {{ config('landingpage.company_description') }} terdepan di {{ config('landingpage.business.primary_location') }}
                             </p>
                         </div>
                     </div>
@@ -54,12 +55,12 @@ class HeroSection extends Component
                     <div class="scroll-animate">
                         <div class="flex flex-col sm:flex-row gap-4 justify-center mb-16">
                             <!-- Driver Button -->
-                            <x-button link="#driver" class="btn-info btn-lg btn-outline" label="Masuk Sebagai Sopir"
+                            <x-button link="{{ route('driver.dashboard') }}" class="btn-info btn-lg btn-outline" label="Portal Sopir"
                                 icon="phosphor.truck-trailer" />
 
                             <!-- Management App Button -->
                             <x-button link="{{ route('app.dashboard') }}" wire:navigate.hover class="btn-primary btn-lg"
-                                label="Masuk Ke Dashboard" icon="phosphor.gauge" />
+                                label="Akses Dashboard" icon="phosphor.gauge" />
                         </div>
                     </div>
 
@@ -72,8 +73,8 @@ class HeroSection extends Component
                                     <div class="w-14 h-14 bg-primary/20 rounded-xl flex items-center justify-center mb-4 group-hover:bg-primary/30 transition-colors mx-auto">
                                         <x-icon name="phosphor.map-pin" class="w-7 h-7 text-primary" />
                                     </div>
-                                    <h3 class="text-xl font-bold mb-2 text-center">GPS Tracking</h3>
-                                    <p class="text-base-content/60 text-center">Real-time location tracking dengan akurasi tinggi</p>
+                                    <h3 class="text-xl font-bold mb-2 text-center">Tracking Real-Time</h3>
+                                    <p class="text-base-content/60 text-center">Monitoring posisi armada dan status pengiriman secara real-time</p>
                                 </x-card>
                             </div>
 
@@ -83,8 +84,8 @@ class HeroSection extends Component
                                     <div class="w-14 h-14 bg-secondary/20 rounded-xl flex items-center justify-center mb-4 group-hover:bg-secondary/30 transition-colors mx-auto">
                                         <x-icon name="phosphor.chart-line-up" class="w-7 h-7 text-secondary" />
                                     </div>
-                                    <h3 class="text-xl font-bold mb-2 text-center">Analytics</h3>
-                                    <p class="text-base-content/60 text-center">Dashboard analytics dengan insights mendalam</p>
+                                    <h3 class="text-xl font-bold mb-2 text-center">Laporan Analytics</h3>
+                                    <p class="text-base-content/60 text-center">Dashboard analytics lengkap untuk monitoring performa operasional</p>
                                 </x-card>
                             </div>
 
@@ -94,8 +95,8 @@ class HeroSection extends Component
                                     <div class="w-14 h-14 bg-accent/20 rounded-xl flex items-center justify-center mb-4 group-hover:bg-accent/30 transition-colors mx-auto">
                                         <x-icon name="phosphor.shield-checkered" class="w-7 h-7 text-accent" />
                                     </div>
-                                    <h3 class="text-xl font-bold mb-2 text-center">Secure</h3>
-                                    <p class="text-base-content/60 text-center">Keamanan data terjamin dengan enkripsi end-to-end</p>
+                                    <h3 class="text-xl font-bold mb-2 text-center">Digital Security</h3>
+                                    <p class="text-base-content/60 text-center">Sistem keamanan berlapis dengan audit trail dan backup otomatis</p>
                                 </x-card>
                             </div>
                         </div>
@@ -128,7 +129,7 @@ class HeroSection extends Component
                                     <x-card class="p-6 bg-gradient-to-br from-base-100 to-base-200 min-h-64">
                                         <img
                                             src="https://picsum.photos/1200/600?random=dashboard&blur=1"
-                                            alt="Dashboard Preview"
+                                            alt="Dashboard DelivTrack Preview"
                                             class="w-full h-full object-cover rounded-xl opacity-60 group-hover:opacity-80 transition-opacity duration-300"
                                         />
                                     </x-card>
@@ -141,20 +142,20 @@ class HeroSection extends Component
                     <div class="scroll-animate">
                         <div class="mt-16 grid grid-cols-2 md:grid-cols-4 gap-8">
                             <div class="text-center">
-                                <div class="text-3xl md:text-4xl font-bold text-primary mb-2">{{ config('landingpage.stats.clients_count', '100+') }}</div>
-                                <div class="text-sm text-base-content/60">Happy Clients</div>
+                                <div class="text-3xl md:text-4xl font-bold text-primary mb-2">{{ config('landingpage.stats.clients_served')}}</div>
+                                <div class="text-sm text-base-content/60">Klien Aktif</div>
                             </div>
                             <div class="text-center">
-                                <div class="text-3xl md:text-4xl font-bold text-secondary mb-2">{{ config('landingpage.stats.documents_processed', '50K+') }}</div>
-                                <div class="text-sm text-base-content/60">Deliveries Tracked</div>
+                                <div class="text-3xl md:text-4xl font-bold text-secondary mb-2">{{ config('landingpage.stats.documents_processed') }}</div>
+                                <div class="text-sm text-base-content/60">Surat Jalan Digital</div>
                             </div>
                             <div class="text-center">
-                                <div class="text-3xl md:text-4xl font-bold text-accent mb-2">{{ config('landingpage.stats.uptime', '99.9%') }}</div>
-                                <div class="text-sm text-base-content/60">Uptime</div>
+                                <div class="text-3xl md:text-4xl font-bold text-accent mb-2">{{ config('landingpage.stats.uptime')}}</div>
+                                <div class="text-sm text-base-content/60">Sistem Aktif</div>
                             </div>
                             <div class="text-center">
-                                <div class="text-3xl md:text-4xl font-bold text-info mb-2">{{ config('landingpage.stats.years_experience', '5+') }}</div>
-                                <div class="text-sm text-base-content/60">Years Experience</div>
+                                <div class="text-3xl md:text-4xl font-bold text-info mb-2">{{ config('landingpage.stats.years_experience') }}</div>
+                                <div class="text-sm text-base-content/60">Tahun Berpengalaman</div>
                             </div>
                         </div>
                     </div>
@@ -165,7 +166,7 @@ class HeroSection extends Component
             <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20">
                 <a href="#features" class="group flex flex-col items-center">
                     <div class="text-xs font-medium text-base-content/50 mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        Explore Features
+                        Lihat Fitur Lengkap
                     </div>
                     <div class="w-8 h-14 border-2 border-base-content/30 rounded-full flex justify-center group-hover:border-primary/50 transition-colors duration-300">
                         <div class="w-1 h-3 bg-base-content/50 rounded-full mt-2 animate-bounce group-hover:bg-primary/70 transition-colors duration-300"></div>
