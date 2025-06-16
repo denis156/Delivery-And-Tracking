@@ -22,7 +22,7 @@ class BenefitsSection extends Component
                     <div class="scroll-animate fade-in-down">
                         <div class="gap-2 badge badge-xl badge-outline badge-success bg-success/20 mb-6">
                             <div aria-label="info" class="status status-success status-md animate-pulse"></div>
-                            <span class="text-sm font-medium text-success">Key Benefits</span>
+                            <span class="text-sm font-medium text-success">Manfaat Utama</span>
                         </div>
                     </div>
 
@@ -30,11 +30,12 @@ class BenefitsSection extends Component
                         <h2 class="text-4xl md:text-6xl font-bold mb-6 leading-tight">
                             <span class="block text-base-content">Keunggulan</span>
                             <span class="block bg-gradient-to-r from-primary via-secondary to-success bg-clip-text text-transparent">
-                                Sistem
+                                {{ config('app.name') }}
                             </span>
                         </h2>
                         <p class="text-lg md:text-xl text-base-content/70 max-w-3xl mx-auto">
-                            Transformasi digital yang memberikan dampak nyata untuk efisiensi operasional transportasi
+                            Solusi digital yang memberikan dampak nyata untuk {{ config('landingpage.company_name') }}
+                            dalam mengoptimalkan operasi {{ config('landingpage.company_description', 'transportasi') }}
                         </p>
                     </div>
                 </div>
@@ -57,13 +58,13 @@ class BenefitsSection extends Component
                                         <div class="flex-1">
                                             <h3 class="text-xl font-bold text-base-content mb-3">Efisiensi Operasional</h3>
                                             <p class="text-base-content/70 mb-4 leading-relaxed">
-                                                Meningkatkan efisiensi operasional hingga <strong class="text-primary">{{ config('landingpage.stats.efficiency_improvement', '60%') }}</strong>
-                                                dengan otomatisasi workflow dan eliminasi proses manual yang berulang.
+                                                Meningkatkan efisiensi operasional hingga <strong class="text-primary">{{ config('landingpage.stats.efficiency_improvement') }}</strong>
+                                                dengan digitalisasi workflow dan eliminasi proses manual berulang untuk {{ config('landingpage.business.primary_location') }}.
                                             </p>
                                             <div class="flex flex-wrap gap-2">
-                                                <span class="px-3 py-1 badge bg-primary/20 text-primary rounded-full text-sm font-medium">Otomatisasi</span>
-                                                <span class="px-3 py-1 badge bg-secondary/20 text-secondary rounded-full text-sm font-medium">Workflow</span>
-                                                <span class="px-3 py-1 badge bg-accent/20 text-accent rounded-full text-sm font-medium">{{ config('landingpage.stats.efficiency_improvement', '60%') }} Faster</span>
+                                                <span class="px-3 py-1 badge bg-primary/20 text-primary rounded-full text-sm font-medium">Digital Workflow</span>
+                                                <span class="px-3 py-1 badge bg-secondary/20 text-secondary rounded-full text-sm font-medium">Otomatisasi</span>
+                                                <span class="px-3 py-1 badge bg-accent/20 text-accent rounded-full text-sm font-medium">{{ config('landingpage.stats.efficiency_improvement') }} Faster</span>
                                             </div>
                                         </div>
                                     </div>
@@ -71,7 +72,7 @@ class BenefitsSection extends Component
                             </div>
                         </div>
 
-                        <!-- Benefit 2: Transparansi Proses -->
+                        <!-- Benefit 2: Transparansi Real-Time -->
                         <div class="scroll-animate fade-in-left">
                             <div class="group relative">
                                 <div class="absolute -inset-0.5 bg-gradient-to-r from-secondary to-accent rounded-2xl blur opacity-20 group-hover:opacity-40 transition-opacity duration-300"></div>
@@ -82,14 +83,14 @@ class BenefitsSection extends Component
                                             <x-icon name="phosphor.eye" class="w-7 h-7 text-secondary" />
                                         </div>
                                         <div class="flex-1">
-                                            <h3 class="text-xl font-bold text-base-content mb-3">Transparansi Proses</h3>
+                                            <h3 class="text-xl font-bold text-base-content mb-3">Transparansi Real-Time</h3>
                                             <p class="text-base-content/70 mb-4 leading-relaxed">
-                                                Real-time visibility untuk semua stakeholder dengan tracking yang akurat dan update status
-                                                otomatis di setiap tahap proses pengiriman.
+                                                Monitoring ketersediaan sistem {{ config('landingpage.stats.uptime') }} dengan visibility penuh untuk semua stakeholder.
+                                                Update status otomatis di setiap tahap pengiriman untuk wilayah {{ config('landingpage.business.primary_location') }}.
                                             </p>
                                             <div class="flex flex-wrap gap-2">
                                                 <span class="px-3 py-1 badge bg-secondary/20 text-secondary rounded-full text-sm font-medium">Real-time</span>
-                                                <span class="px-3 py-1 badge bg-accent/20 text-accent rounded-full text-sm font-medium">Tracking</span>
+                                                <span class="px-3 py-1 badge bg-accent/20 text-accent rounded-full text-sm font-medium">{{ config('landingpage.stats.uptime') }}</span>
                                                 <span class="px-3 py-1 badge bg-info/20 text-info rounded-full text-sm font-medium">Transparency</span>
                                             </div>
                                         </div>
@@ -109,15 +110,15 @@ class BenefitsSection extends Component
                                             <x-icon name="phosphor.target" class="w-7 h-7 text-accent" />
                                         </div>
                                         <div class="flex-1">
-                                            <h3 class="text-xl font-bold text-base-content mb-3">Akurasi Data</h3>
+                                            <h3 class="text-xl font-bold text-base-content mb-3">Akurasi Data Tinggi</h3>
                                             <p class="text-base-content/70 mb-4 leading-relaxed">
-                                                Mencapai akurasi data hingga <strong class="text-accent">{{ config('landingpage.stats.data_accuracy', '99.5%') }}</strong>
-                                                dengan validasi otomatis dan eliminasi human error dalam input data.
+                                                Mencapai akurasi data hingga <strong class="text-accent">{{ config('landingpage.stats.data_accuracy') }}</strong>
+                                                dengan validasi otomatis dan eliminasi human error dalam pengelolaan {{ config('landingpage.stats.documents_processed') }} dokumen.
                                             </p>
                                             <div class="flex flex-wrap gap-2">
-                                                <span class="px-3 py-1 badge bg-accent/20 text-accent rounded-full text-sm font-medium">{{ config('landingpage.stats.data_accuracy', '99.5%') }} Akurat</span>
-                                                <span class="px-3 py-1 badge bg-info/20 text-info rounded-full text-sm font-medium">Validasi</span>
-                                                <span class="px-3 py-1 badge bg-success/20 text-success rounded-full text-sm font-medium">No Error</span>
+                                                <span class="px-3 py-1 badge bg-accent/20 text-accent rounded-full text-sm font-medium">{{ config('landingpage.stats.data_accuracy') }} Akurat</span>
+                                                <span class="px-3 py-1 badge bg-info/20 text-info rounded-full text-sm font-medium">Auto Validasi</span>
+                                                <span class="px-3 py-1 badge bg-success/20 text-success rounded-full text-sm font-medium">Zero Error</span>
                                             </div>
                                         </div>
                                     </div>
@@ -125,34 +126,7 @@ class BenefitsSection extends Component
                             </div>
                         </div>
 
-                        <!-- Benefit 4: Real-time Monitoring -->
-                        <div class="scroll-animate fade-in-left">
-                            <div class="group relative">
-                                <div class="absolute -inset-0.5 bg-gradient-to-r from-info to-success rounded-2xl blur opacity-20 group-hover:opacity-40 transition-opacity duration-300"></div>
-
-                                <x-card class="relative bg-base-100/90 backdrop-blur border border-base-content/10 rounded-2xl p-6 hover:bg-base-100 transition-all duration-300">
-                                    <div class="flex items-start space-x-4">
-                                        <div class="w-14 h-14 bg-gradient-to-br from-info/20 to-info/10 flex-shrink-0 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                                            <x-icon name="phosphor.desktop-tower" class="w-7 h-7 text-info" />
-                                        </div>
-                                        <div class="flex-1">
-                                            <h3 class="text-xl font-bold text-base-content mb-3">Real-time Monitoring</h3>
-                                            <p class="text-base-content/70 mb-4 leading-relaxed">
-                                                Monitoring operasional <strong class="text-info">{{ config('landingpage.stats.uptime', '99.9%') }}</strong>
-                                                dengan dashboard yang memberikan insights mendalam untuk pengambilan keputusan.
-                                            </p>
-                                            <div class="flex flex-wrap gap-2">
-                                                <span class="px-3 py-1 badge bg-info/20 text-info rounded-full text-sm font-medium">{{ config('landingpage.stats.uptime', '99.9%') }}</span>
-                                                <span class="px-3 py-1 badge bg-success/20 text-success rounded-full text-sm font-medium">Dashboard</span>
-                                                <span class="px-3 py-1 badge bg-warning/20 text-warning rounded-full text-sm font-medium">Analytics</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </x-card>
-                            </div>
-                        </div>
-
-                        <!-- Benefit 5: Paperless Workflow -->
+                        <!-- Benefit 4: Digital Transformation -->
                         <div class="scroll-animate fade-in-left">
                             <div class="group relative">
                                 <div class="absolute -inset-0.5 bg-gradient-to-r from-success to-primary rounded-2xl blur opacity-20 group-hover:opacity-40 transition-opacity duration-300"></div>
@@ -163,15 +137,15 @@ class BenefitsSection extends Component
                                             <x-icon name="phosphor.leaf" class="w-7 h-7 text-success" />
                                         </div>
                                         <div class="flex-1">
-                                            <h3 class="text-xl font-bold text-base-content mb-3">Paperless Workflow</h3>
+                                            <h3 class="text-xl font-bold text-base-content mb-3">Transformasi Digital</h3>
                                             <p class="text-base-content/70 mb-4 leading-relaxed">
-                                                Digitalisasi <strong class="text-success">{{ config('landingpage.stats.paperless_percentage', '100%') }}</strong>
-                                                proses dokumentasi dengan arsip digital yang aman dan mudah diakses kapan saja.
+                                                Digitalisasi {{ config('landingpage.stats.paperless_percentage') }} proses dokumentasi dengan pengalaman
+                                                {{ config('landingpage.stats.years_experience') }} tahun dalam industri transportasi {{ config('landingpage.business.primary_location') }}.
                                             </p>
                                             <div class="flex flex-wrap gap-2">
-                                                <span class="px-3 py-1 badge bg-success/20 text-success rounded-full text-sm font-medium">{{ config('landingpage.stats.paperless_percentage', '100%') }} Digital</span>
-                                                <span class="px-3 py-1 badge bg-accent/20 text-accent rounded-full text-sm font-medium">Eco-friendly</span>
-                                                <span class="px-3 py-1 badge bg-info/20 text-info rounded-full text-sm font-medium">Cloud Storage</span>
+                                                <span class="px-3 py-1 badge bg-success/20 text-success rounded-full text-sm font-medium">{{ config('landingpage.stats.paperless_percentage') }} Digital</span>
+                                                <span class="px-3 py-1 badge bg-accent/20 text-accent rounded-full text-sm font-medium">{{ config('landingpage.stats.years_experience') }} Tahun</span>
+                                                <span class="px-3 py-1 badge bg-info/20 text-info rounded-full text-sm font-medium">Cloud Ready</span>
                                             </div>
                                         </div>
                                     </div>
@@ -193,26 +167,26 @@ class BenefitsSection extends Component
                                         <div class="w-16 h-16 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
                                             <x-icon name="phosphor.presentation-chart" class="w-8 h-8 text-primary" />
                                         </div>
-                                        <h4 class="text-xl font-bold text-base-content">Dashboard Control</h4>
-                                        <p class="text-base-content/60 text-sm">Pusat kendali operasional</p>
+                                        <h4 class="text-xl font-bold text-base-content">Monitoring Center</h4>
+                                        <p class="text-base-content/60 text-sm">Pusat kendali {{ config('landingpage.company_short') }}</p>
                                     </div>
 
                                     <!-- Stats Grid -->
                                     <div class="grid grid-cols-2 gap-4">
                                         <x-card class="bg-base-100/80 backdrop-blur border border-base-content/10 rounded-xl p-3 text-center hover:bg-base-100 transition-colors">
-                                            <div class="text-2xl font-bold text-primary mb-1">{{ config('landingpage.stats.efficiency_improvement', '60%') }}</div>
+                                            <div class="text-2xl font-bold text-primary mb-1">{{ config('landingpage.stats.efficiency_improvement') }}</div>
                                             <div class="text-xs text-base-content/60">Efisiensi</div>
                                         </x-card>
                                         <x-card class="bg-base-100/80 backdrop-blur border border-base-content/10 rounded-xl p-3 text-center hover:bg-base-100 transition-colors">
-                                            <div class="text-2xl font-bold text-secondary mb-1">{{ config('landingpage.stats.data_accuracy', '99.5%') }}</div>
+                                            <div class="text-2xl font-bold text-secondary mb-1">{{ config('landingpage.stats.data_accuracy') }}</div>
                                             <div class="text-xs text-base-content/60">Akurasi</div>
                                         </x-card>
                                         <x-card class="bg-base-100/80 backdrop-blur border border-base-content/10 rounded-xl p-3 text-center hover:bg-base-100 transition-colors">
-                                            <div class="text-2xl font-bold text-accent mb-1">{{ config('landingpage.stats.uptime', '99.9%') }}</div>
-                                            <div class="text-xs text-base-content/60">Uptime</div>
+                                            <div class="text-2xl font-bold text-accent mb-1">{{ config('landingpage.stats.clients_served') }}</div>
+                                            <div class="text-xs text-base-content/60">Klien</div>
                                         </x-card>
                                         <x-card class="bg-base-100/80 backdrop-blur border border-base-content/10 rounded-xl p-3 text-center hover:bg-base-100 transition-colors">
-                                            <div class="text-2xl font-bold text-info mb-1">{{ config('landingpage.stats.paperless_percentage', '100%') }}</div>
+                                            <div class="text-2xl font-bold text-info mb-1">{{ config('landingpage.stats.paperless_percentage') }}</div>
                                             <div class="text-xs text-base-content/60">Digital</div>
                                         </x-card>
                                     </div>
@@ -244,19 +218,20 @@ class BenefitsSection extends Component
                         <x-card class="relative bg-gradient-to-r from-primary to-secondary text-primary-content rounded-3xl p-8">
                             <div class="text-center">
                                 <h3 class="text-3xl md:text-4xl font-bold mb-4">
-                                    Siap Mengoptimalkan Operasi Anda?
+                                    Siap Transformasi Digital?
                                 </h3>
                                 <p class="text-lg mb-8 opacity-90 max-w-2xl mx-auto">
-                                    Bergabunglah dengan {{ config('landingpage.stats.clients_count', '100+') }} klien yang telah mempercayai sistem kami untuk mengoptimalkan operasi transportasi mereka
+                                    Bergabunglah dengan {{ config('landingpage.stats.clients_served') }} klien yang telah mempercayai
+                                    {{ config('landingpage.company_name') }} untuk mengoptimalkan operasi transportasi di {{ config('landingpage.business.primary_location') }}
                                 </p>
                                 <div class="flex flex-col sm:flex-row gap-4 justify-center">
                                     <x-button
-                                        label="Mulai Implementasi"
+                                        label="Mulai Konsultasi"
                                         icon="phosphor.rocket-launch"
                                         link="#contact"
                                         class="btn-accent btn-lg shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300" />
                                     <x-button
-                                        label="Konsultasi Gratis"
+                                        label="Hubungi Kami"
                                         icon="phosphor.phone"
                                         link="tel:{{ config('landingpage.contact.phone.primary') }}"
                                         class="btn-ghost btn-lg border-2 border-primary-content text-primary-content hover:bg-primary-content hover:text-primary transition-all duration-300" />
