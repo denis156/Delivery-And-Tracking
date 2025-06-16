@@ -22,19 +22,20 @@ class FeaturesSection extends Component
                     <div class="scroll-animate fade-in-down">
                         <div class="gap-2 badge badge-xl badge-outline badge-accent bg-accent/20 mb-6">
                             <div aria-label="info" class="status status-accent status-md animate-pulse"></div>
-                            <span class="text-sm font-medium text-accent">Advanced Features</span>
+                            <span class="text-sm font-medium text-accent">Fitur Terlengkap</span>
                         </div>
                     </div>
 
                     <div class="scroll-animate">
                         <h2 class="text-4xl md:text-6xl font-bold mb-6 leading-tight">
-                            <span class="block text-base-content">Fitur</span>
+                            <span class="block text-base-content">Fitur Unggulan</span>
                             <span class="block bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
-                                Unggulan
+                                {{ config('app.name') }}
                             </span>
                         </h2>
                         <p class="text-lg md:text-xl text-base-content/70 max-w-3xl mx-auto">
-                            Sistem terintegrasi dengan fitur lengkap untuk mengoptimalkan operasi transportasi Anda
+                            Sistem terintegrasi dengan {{ config('landingpage.features.multi_role_count') }} role berbeda
+                            untuk mengoptimalkan operasi {{ config('landingpage.company_description') }} di {{ config('landingpage.business.primary_location') }}
                         </p>
                     </div>
                 </div>
@@ -55,14 +56,14 @@ class FeaturesSection extends Component
                                         <x-icon name="phosphor.map-trifold" class="w-8 h-8 text-primary" />
                                     </div>
 
-                                    <h3 class="text-xl font-bold mb-3 text-center">Real-time Tracking</h3>
+                                    <h3 class="text-xl font-bold mb-3 text-center">GPS Tracking Real-Time</h3>
                                     <p class="text-base-content/70 mb-6 leading-relaxed text-center flex-grow">
-                                        Pantau lokasi sopir secara real-time menggunakan GPS dengan akurasi tinggi.
-                                        Berbasis Leaflet.js dan OpenStreetMap untuk performa optimal.
+                                        Pantau lokasi armada di seluruh {{ config('landingpage.business.primary_location') }} dengan akurasi tinggi.
+                                        Berbasis teknologi WebSocket untuk update real-time.
                                     </p>
 
                                     <div class="flex flex-wrap gap-2 justify-center mt-auto">
-                                        <span class="px-3 py-1 bg-primary/20 text-primary rounded-full text-sm font-medium">GPS Tracking</span>
+                                        <span class="px-3 py-1 bg-primary/20 text-primary rounded-full text-sm font-medium">WebSocket</span>
                                         <span class="px-3 py-1 bg-secondary/20 text-secondary rounded-full text-sm font-medium">Real-time</span>
                                     </div>
                                 </x-card>
@@ -79,21 +80,21 @@ class FeaturesSection extends Component
                                         <x-icon name="phosphor.users" class="w-8 h-8 text-secondary" />
                                     </div>
 
-                                    <h3 class="text-xl font-bold mb-3 text-center">Multi-role System</h3>
+                                    <h3 class="text-xl font-bold mb-3 text-center">Multi-Role System</h3>
                                     <p class="text-base-content/70 mb-6 leading-relaxed text-center flex-grow">
-                                        Sistem dengan {{ config('landingpage.features.multi_role_count', '7') }} role berbeda: Manager, Admin, Sopir, Client,
-                                        Petugas Lapangan, Petugas Ruangan, dan Petugas Gudang.
+                                        Sistem dengan {{ config('landingpage.features.multi_role_count') }} role berbeda: Manager, Admin, Pengemudi, Client,
+                                        Petugas Lapangan, Petugas Ruangan, dan Petugas Gudang untuk {{ config('landingpage.company_name') }}.
                                     </p>
 
                                     <div class="flex flex-wrap gap-2 justify-center mt-auto">
-                                        <span class="px-3 py-1 bg-accent/20 text-accent rounded-full text-sm font-medium">{{ config('landingpage.features.multi_role_count', '7') }} Roles</span>
-                                        <span class="px-3 py-1 bg-info/20 text-info rounded-full text-sm font-medium">Secure</span>
+                                        <span class="px-3 py-1 bg-accent/20 text-accent rounded-full text-sm font-medium">{{ config('landingpage.features.multi_role_count') }} Roles</span>
+                                        <span class="px-3 py-1 bg-info/20 text-info rounded-full text-sm font-medium">Secure Access</span>
                                     </div>
                                 </x-card>
                             </div>
                         </div>
 
-                        <!-- Feature 3: Automated Workflow -->
+                        <!-- Feature 3: Digital Workflow -->
                         <div class="scroll-animate fade-in-right h-full">
                             <div class="group relative h-full">
                                 <div class="absolute -inset-0.5 bg-gradient-to-r from-accent to-info rounded-2xl blur opacity-20 group-hover:opacity-40 transition-opacity duration-300"></div>
@@ -103,15 +104,15 @@ class FeaturesSection extends Component
                                         <x-icon name="phosphor.gear-six" class="w-8 h-8 text-accent" />
                                     </div>
 
-                                    <h3 class="text-xl font-bold mb-3 text-center">Automated Workflow</h3>
+                                    <h3 class="text-xl font-bold mb-3 text-center">Digital Workflow</h3>
                                     <p class="text-base-content/70 mb-6 leading-relaxed text-center flex-grow">
-                                        Alur kerja otomatis dari input surat jalan hingga selesai.
-                                        Validasi → Cetak → Tracking → Penerimaan → Update Status.
+                                        Digitalisasi {{ config('landingpage.stats.paperless_percentage') }} proses dengan workflow otomatis:
+                                        Input → Validasi → Assign → Tracking → Selesai.
                                     </p>
 
                                     <div class="flex flex-wrap gap-2 justify-center mt-auto">
-                                        <span class="px-3 py-1 bg-success/20 text-success rounded-full text-sm font-medium">Automation</span>
-                                        <span class="px-3 py-1 bg-warning/20 text-warning rounded-full text-sm font-medium">Workflow</span>
+                                        <span class="px-3 py-1 bg-success/20 text-success rounded-full text-sm font-medium">{{ config('landingpage.stats.paperless_percentage') }} Digital</span>
+                                        <span class="px-3 py-1 bg-warning/20 text-warning rounded-full text-sm font-medium">Auto Flow</span>
                                     </div>
                                 </x-card>
                             </div>
@@ -127,15 +128,15 @@ class FeaturesSection extends Component
                                         <x-icon name="phosphor.files" class="w-8 h-8 text-info" />
                                     </div>
 
-                                    <h3 class="text-xl font-bold mb-3 text-center">Digital Surat Jalan</h3>
+                                    <h3 class="text-xl font-bold mb-3 text-center">Surat Jalan Digital</h3>
                                     <p class="text-base-content/70 mb-6 leading-relaxed text-center flex-grow">
-                                        Digitalisasi surat jalan dengan template yang dapat disesuaikan.
-                                        Cetak fisik untuk Sopir, simpan digital untuk arsip.
+                                        Telah memproses {{ config('landingpage.stats.documents_processed') }} dokumen digital dengan template yang dapat disesuaikan.
+                                        Cetak fisik untuk pengemudi, simpan digital untuk arsip.
                                     </p>
 
                                     <div class="flex flex-wrap gap-2 justify-center mt-auto">
-                                        <span class="px-3 py-1 bg-error/20 text-error rounded-full text-sm font-medium">Digital</span>
-                                        <span class="px-3 py-1 bg-primary/20 text-primary rounded-full text-sm font-medium">{{ config('landingpage.stats.paperless_percentage', '100%') }} Paperless</span>
+                                        <span class="px-3 py-1 bg-error/20 text-error rounded-full text-sm font-medium">{{ config('landingpage.stats.documents_processed') }}</span>
+                                        <span class="px-3 py-1 bg-primary/20 text-primary rounded-full text-sm font-medium">Paperless</span>
                                     </div>
                                 </x-card>
                             </div>
@@ -153,19 +154,19 @@ class FeaturesSection extends Component
 
                                     <h3 class="text-xl font-bold mb-3 text-center">Analytics & Reporting</h3>
                                     <p class="text-base-content/70 mb-6 leading-relaxed text-center flex-grow">
-                                        Laporan lengkap dengan visualisasi data, analitik performa,
-                                        dan insights untuk optimasi operasional.
+                                        Dashboard analytics dengan akurasi {{ config('landingpage.stats.data_accuracy') }} dan
+                                        visualisasi data untuk {{ config('landingpage.stats.clients_served') }} klien aktif.
                                     </p>
 
                                     <div class="flex flex-wrap gap-2 justify-center mt-auto">
-                                        <span class="px-3 py-1 bg-warning/20 text-warning rounded-full text-sm font-medium">Analytics</span>
-                                        <span class="px-3 py-1 bg-success/20 text-success rounded-full text-sm font-medium">Reports</span>
+                                        <span class="px-3 py-1 bg-warning/20 text-warning rounded-full text-sm font-medium">{{ config('landingpage.stats.data_accuracy') }}</span>
+                                        <span class="px-3 py-1 bg-success/20 text-success rounded-full text-sm font-medium">Insights</span>
                                     </div>
                                 </x-card>
                             </div>
                         </div>
 
-                        <!-- Feature 6: Mobile Friendly -->
+                        <!-- Feature 6: Mobile Support -->
                         <div class="scroll-animate fade-in-right h-full">
                             <div class="group relative h-full">
                                 <div class="absolute -inset-0.5 bg-gradient-to-r from-error to-warning rounded-2xl blur opacity-20 group-hover:opacity-40 transition-opacity duration-300"></div>
@@ -175,15 +176,15 @@ class FeaturesSection extends Component
                                         <x-icon name="phosphor.device-mobile-camera" class="w-8 h-8 text-error" />
                                     </div>
 
-                                    <h3 class="text-xl font-bold mb-3 text-center">Mobile Friendly</h3>
+                                    <h3 class="text-xl font-bold mb-3 text-center">Mobile Ready</h3>
                                     <p class="text-base-content/70 mb-6 leading-relaxed text-center flex-grow">
-                                        Interface web responsif dan support React Native WebView
-                                        untuk pengalaman mobile yang optimal bagi sopir.
+                                        Interface responsif dan support React Native WebView untuk pengalaman mobile optimal
+                                        bagi pengemudi di {{ config('landingpage.business.primary_location') }}.
                                     </p>
 
                                     <div class="flex flex-wrap gap-2 justify-center mt-auto">
                                         <span class="px-3 py-1 bg-info/20 text-info rounded-full text-sm font-medium">Responsive</span>
-                                        <span class="px-3 py-1 bg-error/20 text-error rounded-full text-sm font-medium">Mobile</span>
+                                        <span class="px-3 py-1 bg-error/20 text-error rounded-full text-sm font-medium">Mobile First</span>
                                     </div>
                                 </x-card>
                             </div>
@@ -200,7 +201,8 @@ class FeaturesSection extends Component
                             <div class="text-center mb-8">
                                 <h3 class="text-3xl font-bold mb-4">Teknologi Terdepan</h3>
                                 <p class="text-base-content/70 max-w-2xl mx-auto">
-                                    Dibangun dengan stack teknologi modern dan terpercaya untuk performa dan keamanan maksimal
+                                    Dibangun oleh {{ config('landingpage.developer.company') }} dengan stack teknologi modern
+                                    dan terpercaya untuk performa maksimal {{ config('landingpage.company_name') }}
                                 </p>
                             </div>
 
@@ -223,7 +225,7 @@ class FeaturesSection extends Component
                                             <x-icon name="si.livewire" class="w-6 h-6 text-blue-600" />
                                         </div>
                                         <h4 class="font-semibold text-sm">Livewire 3</h4>
-                                        <p class="text-xs text-base-content/60 text-center">Frontend Framework</p>
+                                        <p class="text-xs text-base-content/60 text-center">Reactive UI</p>
                                     </div>
                                 </div>
 
@@ -245,7 +247,7 @@ class FeaturesSection extends Component
                                             <x-icon name="phosphor.squares-four" class="w-6 h-6 text-purple-600" />
                                         </div>
                                         <h4 class="font-semibold text-sm">Mary UI</h4>
-                                        <p class="text-xs text-base-content/60 text-center">Livewire Components</p>
+                                        <p class="text-xs text-base-content/60 text-center">Components</p>
                                     </div>
                                 </div>
 
@@ -256,7 +258,7 @@ class FeaturesSection extends Component
                                             <x-icon name="si.leaflet" class="w-6 h-6 text-amber-600" />
                                         </div>
                                         <h4 class="font-semibold text-sm">Leaflet.js</h4>
-                                        <p class="text-xs text-base-content/60 text-center">Maps & Tracking</p>
+                                        <p class="text-xs text-base-content/60 text-center">Maps & GPS</p>
                                     </div>
                                 </div>
 
@@ -267,7 +269,7 @@ class FeaturesSection extends Component
                                             <x-icon name="si.react" class="w-6 h-6 text-cyan-600" />
                                         </div>
                                         <h4 class="font-semibold text-sm">React Native</h4>
-                                        <p class="text-xs text-base-content/60 text-center">Mobile Interface</p>
+                                        <p class="text-xs text-base-content/60 text-center">Mobile App</p>
                                     </div>
                                 </div>
                             </div>
