@@ -150,13 +150,30 @@
 
     <div class="navbar-end">
         <div class="flex items-center space-x-3">
-            <!-- Driver Button -->
-            <x-button link="{{ route('driver.dashboard') }}" class="btn-info btn-sm btn-outline" label="Portal Pengemudi"
-                icon="phosphor.truck-trailer" responsive />
+            @guest
+                <!-- Tampilkan kedua tombol jika belum login -->
+                <!-- Driver Button -->
+                <x-button link="{{ route('driver.dashboard') }}" class="btn-info btn-sm btn-outline"
+                    label="Portal Pengemudi" icon="phosphor.truck-trailer" responsive />
 
-            <!-- Management App Button -->
-            <x-button link="{{ route('app.dashboard') }}" wire:navigate.hover class="btn-primary btn-sm"
-                label="Masuk Ke Dashboard" icon="phosphor.gauge" responsive />
+                <!-- Management App Button -->
+                <x-button link="{{ route('app.dashboard') }}" wire:navigate.hover class="btn-primary btn-sm"
+                    label="Masuk Ke Dashboard" icon="phosphor.sign-in" responsive />
+            @else
+                <!-- Optional: Tambahkan tombol logout -->
+                <form method="GET" action="{{ route('logout') }}" class="inline">
+                    @csrf
+                    <button type="submit"
+                        class="btn btn-outline btn-sm btn-warning">
+                        <x-icon name="phosphor.sign-out" class="w-4 h-4" />
+                        <span class="hidden sm:inline ml-1">Keluar</span>
+                    </button>
+                </form>
+                <!-- Tampilkan tombol Dashboard saja jika sudah login -->
+                <x-button link="{{ route('app.dashboard') }}" wire:navigate.hover class="btn-primary btn-sm"
+                    label="Buka Dashboard" icon="phosphor.gauge" responsive />
+
+            @endguest
         </div>
     </div>
 </nav>
