@@ -2,16 +2,17 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Casts\Attribute;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class DeliveryOrder extends Model
 {
@@ -496,11 +497,32 @@ class DeliveryOrder extends Model
     {
         return Attribute::make(
             get: function () {
-                if (!$this->planned_delivery_date || !$this->planned_delivery_time) {
+                if (!$this->planned_delivery_date) {
                     return null;
                 }
 
-                return Carbon::parse($this->planned_delivery_date->format('Y-m-d') . ' ' . $this->planned_delivery_time);
+                // Jika planned_delivery_time ada, gabungkan dengan tanggal
+                if ($this->planned_delivery_time) {
+                    try {
+                        // planned_delivery_time sudah berupa Carbon instance dari cast
+                        // Jadi kita hanya perlu ambil time component-nya
+                        $timeString = $this->planned_delivery_time->format('H:i:s');
+
+                        return Carbon::parse(
+                            $this->planned_delivery_date->format('Y-m-d') . ' ' . $timeString
+                        );
+                    } catch (\Exception $e) {
+                        Log::warning('Error parsing estimated_arrival', [
+                            'planned_delivery_date' => $this->planned_delivery_date,
+                            'planned_delivery_time' => $this->planned_delivery_time,
+                            'error' => $e->getMessage()
+                        ]);
+                        return null;
+                    }
+                }
+
+                // Jika tidak ada waktu spesifik, default ke jam 17:00
+                return Carbon::parse($this->planned_delivery_date->format('Y-m-d') . ' 17:00:00');
             }
         );
     }
