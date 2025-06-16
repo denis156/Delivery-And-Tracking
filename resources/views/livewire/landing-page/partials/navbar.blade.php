@@ -1,4 +1,4 @@
-<div
+<nav
     class="navbar w-full bg-base-100/85 backdrop-blur-md shadow-xl border-b border-base-content/10 sticky top-0 z-50 transition-all duration-300">
     <div class="navbar-start">
         <!-- Mobile menu button -->
@@ -151,7 +151,7 @@
     <div class="navbar-end">
         <div class="flex items-center space-x-3">
             <!-- Driver Button -->
-            <x-button link="#driver" class="btn-info btn-sm btn-outline" label="Masuk Sebagai Sopir"
+            <x-button link="{{ route('driver.dashboard') }}" class="btn-info btn-sm btn-outline" label="Portal Pengemudi"
                 icon="phosphor.truck-trailer" responsive />
 
             <!-- Management App Button -->
@@ -159,4 +159,4 @@
                 label="Masuk Ke Dashboard" icon="phosphor.gauge" responsive />
         </div>
     </div>
-</div>
+</nav>
