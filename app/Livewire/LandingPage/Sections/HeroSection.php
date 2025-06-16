@@ -55,7 +55,7 @@ class HeroSection extends Component
                     <div class="scroll-animate">
                         <div class="flex flex-col sm:flex-row gap-4 justify-center mb-16">
                             <!-- Driver Button -->
-                            <x-button link="{{ route('driver.dashboard') }}" class="btn-info btn-lg btn-outline" label="Portal Sopir"
+                            <x-button link="{{ route('driver.dashboard') }}" class="btn-info btn-lg btn-outline" label="Portal Pengemudi"
                                 icon="phosphor.truck-trailer" />
 
                             <!-- Management App Button -->
