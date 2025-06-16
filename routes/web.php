@@ -78,12 +78,6 @@ Route::prefix('app')->name('app.')->group(function () {
 Route::prefix('driver')->name('driver.')->group(function () {
     // Authenticated routes - menggunakan custom auth middleware dengan parameter 'driver'
     Route::middleware(['auth', 'verified'])->group(function () {
-        Route::get('/', function () {
-            return redirect()->route('driver.dashboard');
-        });
-
-        Route::get('/dashboard', function () {
-            return 'Driver Dashboard - Coming Soon';
-        })->name('dashboard');
+        Route::get('/', App\Livewire\Driver\Pages\Dashboard::class)->name('dashboard');
     });
 });
