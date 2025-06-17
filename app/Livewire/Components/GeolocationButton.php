@@ -4,10 +4,9 @@ namespace App\Livewire\Components;
 
 use Mary\Traits\Toast;
 use Livewire\Component;
-use Livewire\Attributes\On;
-use Livewire\Attributes\Reactive;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 
 class GeolocationButton extends Component
 {
@@ -19,19 +18,18 @@ class GeolocationButton extends Component
     public string $address = '';
     public ?string $lastUpdated = null;
     public bool $autoUpdate = false;
-    public int $pollInterval = 300; // seconds - 5 minutes default
+    public int $pollInterval = 300;
     public string $buttonClass = 'btn-circle btn-md border-primary border-2';
     public string $iconName = 'phosphor.map-pin';
     public bool $showToast = true;
     public bool $showBadge = true;
     public bool $clickToOpenOnly = false;
 
-    // Track if request is from user interaction or polling
-    private bool $isUserTriggered = false;
-    // Track if request is from card button specifically
-    private bool $isCardButtonTriggered = false;
-    // Track if should show toast regardless of trigger type
-    private bool $shouldShowToast = false;
+    // Simple flag to track if user manually triggered the request
+    public bool $isManualRequest = false;
+
+    // Flag to control if polling is currently active
+    public bool $isPollingActive = false;
 
     public function mount(
         bool $autoUpdate = false,
@@ -50,54 +48,75 @@ class GeolocationButton extends Component
         $this->showBadge = $showBadge;
         $this->clickToOpenOnly = $clickToOpenOnly;
 
-        // Load cached location if exists
         $this->loadCachedLocation();
 
-        // Auto-request location if enabled (but not if clickToOpenOnly is true)
-        if ($this->autoUpdate && $this->status === 'waiting' && !$this->clickToOpenOnly) {
-            $this->requestLocationSilently(); // Use silent method for initial load
+        // Load polling state from cache - if user manually stopped, keep it stopped
+        $this->loadPollingState();
+
+        // Auto-request location on mount (silent) only if autoUpdate is enabled, no cached location, and polling is active
+        if ($this->autoUpdate && $this->status === 'waiting' && $this->isPollingActive && !$this->clickToOpenOnly) {
+            $this->requestLocationSilent();
         }
     }
 
     /**
-     * Handle navbar button click - only opens dropdown, doesn't request location
+     * Handle navbar button click
      */
     public function handleNavbarClick(): void
     {
+        // For clickToOpenOnly mode, just open dropdown
         if ($this->clickToOpenOnly) {
-            // Just open dropdown, don't request location
             return;
         }
 
-        // Original behavior for other instances - but no UI feedback
-        $this->isUserTriggered = false;
-        $this->isCardButtonTriggered = false;
-        $this->shouldShowToast = false;
-        $this->requestLocationSilently();
+        // For other modes, silently request location
+        $this->requestLocationSilent();
     }
 
     /**
-     * Request user location via browser geolocation (with UI feedback for card buttons only)
+     * Manual location request (triggered by user buttons)
      */
     public function requestLocation(): void
     {
-        $this->isUserTriggered = true;
-        $this->isCardButtonTriggered = true;
-        $this->shouldShowToast = true; // Always show toast for manual requests
+        $this->isManualRequest = true;
         $this->status = 'getting';
+
+        // Activate polling when user manually requests location
+        if ($this->autoUpdate) {
+            $this->isPollingActive = true;
+            $this->savePollingState();
+        }
+
         $this->dispatch('request-geolocation');
     }
 
     /**
-     * Request location silently (for polling and navbar - no UI changes)
+     * Silent location request (for auto-update/polling)
      */
-    private function requestLocationSilently(): void
+    private function requestLocationSilent(): void
     {
-        $this->isUserTriggered = false;
-        $this->isCardButtonTriggered = false;
-        $this->shouldShowToast = false; // No toast for silent requests
-        // Don't change status to 'getting' for silent requests
+        $this->isManualRequest = false;
+        // Don't change status for silent requests
         $this->dispatch('request-geolocation');
+    }
+
+    /**
+     * Auto refresh (called by wire:poll)
+     */
+    public function autoRefreshLocation(): void
+    {
+        // Only run if polling is active, autoUpdate is enabled, and not currently getting location
+        if ($this->autoUpdate && $this->isPollingActive && $this->status !== 'getting') {
+            $this->requestLocationSilent();
+        }
+    }
+
+    /**
+     * Refresh location (manual button)
+     */
+    public function refreshLocation(): void
+    {
+        $this->requestLocation();
     }
 
     /**
@@ -110,13 +129,11 @@ class GeolocationButton extends Component
         $this->status = 'success';
         $this->lastUpdated = now()->format('H:i');
 
-        // Update location using new geolocation service
+        // Update location in cache
         app('geolocation')->updateUserLocation(Auth::id(), $lat, $lng);
-
-        // Get updated address
         $this->updateAddress();
 
-        // Dispatch global event that location was updated
+        // Dispatch global event
         $this->dispatch('location-updated', [
             'latitude' => $lat,
             'longitude' => $lng,
@@ -124,26 +141,21 @@ class GeolocationButton extends Component
             'accuracy' => $accuracy
         ]);
 
-        // Show toast based on multiple conditions
-        if ($this->showToast && ($this->shouldShowToast || $this->isCardButtonTriggered || $this->isUserTriggered)) {
-            $this->success(
-                'Lokasi berhasil diperbarui!',
-                position: 'toast-top toast-end',
-                timeout: 3000
-            );
+        // Show toast ONLY for manual requests
+        if ($this->showToast && $this->isManualRequest) {
+            $this->success('Lokasi berhasil diperbarui!');
         }
+
+        // Reset manual flag
+        $this->isManualRequest = false;
 
         Log::info('User location updated', [
             'user_id' => Auth::id(),
             'latitude' => $lat,
             'longitude' => $lng,
             'accuracy' => $accuracy,
-            'triggered_by' => $this->isCardButtonTriggered ? 'card_button' : ($this->isUserTriggered ? 'user' : 'polling'),
-            'should_show_toast' => $this->shouldShowToast
+            'manual' => $this->isManualRequest
         ]);
-
-        // Reset trigger flags
-        $this->resetTriggerFlags();
     }
 
     /**
@@ -151,43 +163,27 @@ class GeolocationButton extends Component
      */
     public function handleLocationError(string $errorMessage): void
     {
-        // Change status to error if user triggered or should show toast
-        if ($this->shouldShowToast || $this->isCardButtonTriggered || $this->isUserTriggered) {
+        // Only update status and show toast for manual requests
+        if ($this->isManualRequest) {
             $this->status = 'error';
 
             if ($this->showToast) {
-                $this->warning(
-                    'Gagal mengambil lokasi: ' . $errorMessage,
-                    position: 'toast-top toast-end',
-                    timeout: 5000
-                );
+                $this->warning('Gagal mengambil lokasi: ' . $errorMessage);
             }
         }
+
+        // Reset manual flag
+        $this->isManualRequest = false;
 
         Log::warning('Geolocation error', [
             'user_id' => Auth::id(),
             'error' => $errorMessage,
-            'triggered_by' => $this->isCardButtonTriggered ? 'card_button' : ($this->isUserTriggered ? 'user' : 'polling'),
-            'should_show_toast' => $this->shouldShowToast
+            'manual' => $this->isManualRequest
         ]);
-
-        // Reset trigger flags
-        $this->resetTriggerFlags();
     }
 
     /**
-     * Refresh location (manual trigger from card)
-     */
-    public function refreshLocation(): void
-    {
-        $this->isUserTriggered = true;
-        $this->isCardButtonTriggered = true;
-        $this->shouldShowToast = true; // Always show toast for manual refresh
-        $this->requestLocation();
-    }
-
-    /**
-     * Stop location tracking and clear data
+     * Stop location tracking
      */
     public function stopLocation(): void
     {
@@ -197,41 +193,22 @@ class GeolocationButton extends Component
         $this->address = '';
         $this->lastUpdated = null;
 
-        // Clear location using new geolocation service
-        app('geolocation')->clearUserLocation(Auth::id());
+        // Stop polling when user stops location
+        $this->isPollingActive = false;
+        $this->savePollingState();
 
-        // Dispatch global event that location was cleared
+        app('geolocation')->clearUserLocation(Auth::id());
         $this->dispatch('location-cleared');
 
-        // Always show toast for stop action regardless of settings
         if ($this->showToast) {
-            $this->info(
-                'Lokasi telah dihentikan dan data dihapus',
-                position: 'toast-top toast-end',
-                timeout: 3000
-            );
+            $this->info('Lokasi telah dihentikan dan data dihapus');
         }
 
-        Log::info('User location stopped and cleared', [
-            'user_id' => Auth::id()
-        ]);
-
-        // Reset trigger flags
-        $this->resetTriggerFlags();
+        Log::info('User location stopped', ['user_id' => Auth::id()]);
     }
 
     /**
-     * Automatic location update via polling - SILENT
-     */
-    public function autoRefreshLocation(): void
-    {
-        if ($this->autoUpdate && $this->status !== 'getting') {
-            $this->requestLocationSilently();
-        }
-    }
-
-    /**
-     * Load cached location from geolocation service
+     * Load cached location
      */
     protected function loadCachedLocation(): void
     {
@@ -250,6 +227,33 @@ class GeolocationButton extends Component
     }
 
     /**
+     * Load polling state from cache
+     */
+    protected function loadPollingState(): void
+    {
+        $cacheKey = "user_polling_state_" . Auth::id();
+        $savedState = Cache::get($cacheKey);
+
+        if ($savedState !== null) {
+            // Use saved state from cache
+            $this->isPollingActive = $savedState && $this->autoUpdate;
+        } else {
+            // Default behavior for new users
+            $this->isPollingActive = $this->autoUpdate && $this->status === 'success';
+            $this->savePollingState();
+        }
+    }
+
+    /**
+     * Save polling state to cache
+     */
+    protected function savePollingState(): void
+    {
+        $cacheKey = "user_polling_state_" . Auth::id();
+        Cache::put($cacheKey, $this->isPollingActive, now()->addDays(30));
+    }
+
+    /**
      * Update address from coordinates
      */
     protected function updateAddress(): void
@@ -259,28 +263,12 @@ class GeolocationButton extends Component
     }
 
     /**
-     * Reset all trigger flags
-     */
-    private function resetTriggerFlags(): void
-    {
-        $this->isUserTriggered = false;
-        $this->isCardButtonTriggered = false;
-        $this->shouldShowToast = false;
-    }
-
-    /**
-     * Placeholder method for proximity alerts - this component doesn't handle proximity
-     * This method exists to prevent JavaScript errors when called incorrectly
+     * Placeholder for proximity alerts
      */
     public function checkProximityAlerts(): void
     {
-        // Log that this method was called on the wrong component
-        Log::info('checkProximityAlerts called on GeolocationButton component - this method should be called on dashboard components', [
-            'user_id' => Auth::id(),
-            'component' => self::class
-        ]);
+        Log::info('checkProximityAlerts called on GeolocationButton - should be on dashboard component');
 
-        // Optionally dispatch an event to notify dashboard components
         $this->dispatch('proximity-check-requested', [
             'latitude' => $this->latitude,
             'longitude' => $this->longitude,
@@ -294,80 +282,43 @@ class GeolocationButton extends Component
     public function getStatusBadge(): array
     {
         return match ($this->status) {
-            'waiting' => [
-                'class' => 'badge-warning badge-xs',
-                'text' => 'OFF',
-                'animate' => false
-            ],
-            'getting' => [
-                'class' => 'badge-info badge-xs',
-                'text' => 'GET',
-                'animate' => false
-            ],
-            'success' => [
-                'class' => 'badge-success badge-xs',
-                'text' => 'ON',
-                'animate' => false
-            ],
-            'error' => [
-                'class' => 'badge-error badge-xs',
-                'text' => 'ERROR',
-                'animate' => false
-            ]
+            'waiting' => ['class' => 'badge-warning badge-xs', 'text' => 'OFF'],
+            'success' => ['class' => 'badge-success badge-xs', 'text' => 'ON'],
+            'error' => ['class' => 'badge-error badge-xs', 'text' => 'ERROR'],
+            default => ['class' => '', 'text' => ''], // No badge for getting status
         };
     }
 
     /**
-     * Get button classes based on status
+     * Get button classes
      */
     public function getButtonClasses(): string
     {
-        $baseClass = $this->buttonClass;
+        $base = $this->buttonClass;
 
-        // If clickToOpenOnly is true, don't show loading state on main button
-        if ($this->clickToOpenOnly) {
-            return match ($this->status) {
-                'waiting' => $baseClass . ' btn-outline',
-                'success' => $baseClass . ' btn-success',
-                'error' => $baseClass . ' btn-error btn-outline',
-                default => $baseClass . ' btn-outline'
-            };
-        }
-
-        // For card buttons, show loading if any user interaction triggered it
         return match ($this->status) {
-            'waiting' => $baseClass . ' btn-outline',
-            'getting' => $baseClass . ' btn-warning' . (($this->isCardButtonTriggered || $this->shouldShowToast) ? ' loading' : ''),
-            'success' => $baseClass . ' btn-success',
-            'error' => $baseClass . ' btn-error btn-outline'
+            'waiting' => $base . ' btn-outline',
+            'getting' => $base . ' btn-warning' . ($this->isManualRequest ? ' loading' : ''),
+            'success' => $base . ' btn-success',
+            'error' => $base . ' btn-error btn-outline',
         };
     }
 
     /**
-     * Get icon name based on status
+     * Get icon name
      */
     public function getIconName(): string
     {
-        // If clickToOpenOnly is true, don't change icon on main button
-        if ($this->clickToOpenOnly) {
-            return match ($this->status) {
-                'success' => 'phosphor.map-pin-area',
-                'error' => 'phosphor.map-pin-simple',
-                default => $this->iconName
-            };
-        }
-
-        // For card buttons, show spinner if any user interaction triggered it
         return match ($this->status) {
-            'getting' => ($this->isCardButtonTriggered || $this->shouldShowToast) ? 'phosphor.spinner' : $this->iconName,
+            'getting' => $this->isManualRequest ? 'phosphor.spinner' : $this->iconName,
             'success' => 'phosphor.map-pin-area',
             'error' => 'phosphor.map-pin-simple',
-            default => $this->iconName
+            default => $this->iconName,
         };
     }
 
     /**
-     * Check if location is recent (within last hour)
+     * Check if location is recent
      */
     public function isLocationRecent(): bool
     {
@@ -378,7 +329,7 @@ class GeolocationButton extends Component
     }
 
     /**
-     * Get location accuracy status using geolocation service
+     * Get location accuracy status
      */
     public function getLocationAccuracy(): array
     {

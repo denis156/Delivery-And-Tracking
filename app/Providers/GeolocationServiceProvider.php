@@ -69,10 +69,14 @@ class GeolocationServiceProvider extends ServiceProvider
                 public function clearUserLocation(int $userId): bool
                 {
                     try {
-                        $cacheKey = "user_location_{$userId}";
-                        Cache::forget($cacheKey);
+                        $locationCacheKey = "user_location_{$userId}";
+                        $pollStateCacheKey = "user_polling_state_{$userId}";
 
-                        Log::info('User location cleared from cache', ['user_id' => $userId]);
+                        // Clear both location data and polling state
+                        Cache::forget($locationCacheKey);
+                        Cache::forget($pollStateCacheKey);
+
+                        Log::info('User location and polling state cleared from cache', ['user_id' => $userId]);
 
                         return true;
                     } catch (\Exception $e) {
@@ -320,16 +324,19 @@ class GeolocationServiceProvider extends ServiceProvider
                 {
                     try {
                         $pattern = 'user_location_*';
+                        $pollingPattern = 'user_polling_state_*';
+
                         $keys = Cache::get($pattern, []);
+                        $pollingKeys = Cache::get($pollingPattern, []);
 
                         if (method_exists(Cache::store(), 'flush')) {
                             // For cache stores that support pattern deletion
-                            foreach ($keys as $key) {
+                            foreach (array_merge($keys, $pollingKeys) as $key) {
                                 Cache::forget($key);
                             }
                         }
 
-                        Log::info('All location cache cleared');
+                        Log::info('All location and polling state cache cleared');
                         return true;
                     } catch (\Exception $e) {
                         Log::error('Failed to clear all location cache', [

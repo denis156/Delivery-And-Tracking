@@ -1,6 +1,6 @@
 <div
     x-data="geolocationHandler()"
-    @if($autoUpdate)
+    @if($autoUpdate && $isPollingActive)
         wire:poll.{{ $pollInterval }}s="autoRefreshLocation"
     @endif
     class="relative"
@@ -24,7 +24,7 @@
                 :title="$tooltipText"
                 class="{{ $buttonClasses }} indicator"
             >
-                @if($showBadge)
+                @if($showBadge && $statusBadge['text'])
                     <x-badge
                         :value="$statusBadge['text']"
                         :class="$statusBadge['class'] . ' indicator-item'"
@@ -64,8 +64,8 @@
                                 {{ $currentStatus['label'] }}
                             </span>
                             <x-icon
-                                name="{{ $status === 'getting' ? 'phosphor.spinner' : $iconName }}"
-                                class="h-4 w-4 {{ $status === 'getting' ? 'animate-spin' : '' }}"
+                                name="{{ $status === 'getting' && $isManualRequest ? 'phosphor.spinner' : $iconName }}"
+                                class="h-4 w-4 {{ $status === 'getting' && $isManualRequest ? 'animate-spin' : '' }}"
                             />
                         </div>
                     </div>
@@ -106,7 +106,6 @@
                             label="Perbarui"
                             icon="phosphor.arrow-clockwise"
                             class="btn-sm btn-primary flex-1"
-                            spinner="refreshLocation"
                             wire:loading.attr="disabled"
                             wire:target="refreshLocation"
                         />
@@ -115,7 +114,6 @@
                             label="Hentikan"
                             icon="phosphor.stop"
                             class="btn-sm btn-error btn-outline"
-                            spinner="stopLocation"
                             wire:loading.attr="disabled"
                             wire:target="stopLocation"
                         />
@@ -155,7 +153,6 @@
                         label="Coba Lagi"
                         icon="phosphor.arrow-clockwise"
                         class="btn-sm btn-error btn-block"
-                        spinner="requestLocation"
                         wire:loading.attr="disabled"
                         wire:target="requestLocation"
                     />
@@ -170,7 +167,6 @@
                             label="Ambil Lokasi Sekarang"
                             icon="phosphor.crosshair"
                             class="btn-sm btn-primary"
-                            spinner="requestLocation"
                             wire:loading.attr="disabled"
                             wire:target="requestLocation"
                         />
@@ -183,18 +179,24 @@
                 <div class="pt-2 border-t border-base-300">
                     <div class="flex items-center justify-between text-xs text-base-content/60">
                         <span>Auto-update setiap {{ $pollInterval }}s</span>
-                        <x-icon name="phosphor.timer" class="h-3 w-3" />
+                        <div class="flex items-center gap-1">
+                            <span class="text-xs {{ $isPollingActive ? 'text-success' : 'text-warning' }}">
+                                {{ $isPollingActive ? 'Aktif' : 'Tidak aktif' }}
+                            </span>
+                            <x-icon name="phosphor.timer" class="h-3 w-3" />
+                        </div>
                     </div>
                 </div>
             @endif
         </div>
     </x-dropdown>
 
-    <!-- Alpine.js Geolocation Handler -->
+    <!-- Simplified Alpine.js Handler -->
     <script>
         function geolocationHandler() {
             return {
                 init() {
+                    // Listen for geolocation requests
                     this.$wire.on('request-geolocation', () => {
                         this.getCurrentPosition();
                     });
@@ -202,45 +204,33 @@
 
                 getCurrentPosition() {
                     if (!navigator.geolocation) {
-                        this.$wire.call('handleLocationError', 'Browser tidak mendukung geolocation');
+                        this.$wire.handleLocationError('Browser tidak mendukung geolocation');
                         return;
                     }
 
                     const options = {
                         enableHighAccuracy: true,
-                        timeout: 20000,
-                        maximumAge: 300000 // 5 minutes cache
+                        timeout: 15000,
+                        maximumAge: 60000 // 1 minute cache
                     };
 
                     navigator.geolocation.getCurrentPosition(
                         (position) => {
                             const { latitude, longitude, accuracy } = position.coords;
-
-                            console.log('📍 Location obtained:', {
-                                latitude,
-                                longitude,
-                                accuracy: accuracy + 'm'
-                            });
-
-                            this.$wire.call('handleLocationSuccess', latitude, longitude, accuracy);
+                            this.$wire.handleLocationSuccess(latitude, longitude, accuracy);
                         },
                         (error) => {
-                            const errorMessage = this.getGeolocationErrorMessage(error);
-                            console.error('❌ Geolocation error:', error);
-                            this.$wire.call('handleLocationError', errorMessage);
+                            const errorMessages = {
+                                1: "Akses lokasi ditolak. Silakan aktifkan di pengaturan browser.",
+                                2: "Informasi lokasi tidak tersedia. Periksa GPS/layanan lokasi.",
+                                3: "Permintaan lokasi timeout. Silakan coba lagi."
+                            };
+
+                            const message = errorMessages[error.code] || "Terjadi kesalahan saat mengambil lokasi.";
+                            this.$wire.handleLocationError(message);
                         },
                         options
                     );
-                },
-
-                getGeolocationErrorMessage(error) {
-                    const errorMessages = {
-                        [error.PERMISSION_DENIED]: "Akses lokasi ditolak. Silakan aktifkan di pengaturan browser.",
-                        [error.POSITION_UNAVAILABLE]: "Informasi lokasi tidak tersedia. Periksa GPS/layanan lokasi.",
-                        [error.TIMEOUT]: "Permintaan lokasi timeout. Silakan coba lagi."
-                    };
-
-                    return errorMessages[error.code] || "Terjadi kesalahan tidak diketahui saat mengambil lokasi.";
                 }
             }
         }
