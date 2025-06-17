@@ -13,102 +13,106 @@
 
 <body class="min-h-dvh antialiased bg-base-200">
     <div class="flex flex-col h-dvh">
-        <header class="navbar bg-base-100 shadow-sm border-b-4 border-primary/80">
-            <div class="navbar-start ml-2">
-                {{-- Geolocation Button Component - Click to open only dengan polling setiap 3 menit --}}
-                <livewire:components.geolocation-button :auto-update="true" :poll-interval="180"
-                    button-class="btn-circle btn-md border-primary border-2" icon-name="phosphor.map-pin"
-                    :show-toast="true" :show-badge="true" :click-to-open-only="true" />
-            </div>
-            <div class="navbar-center flex flex-col justify-center items-center">
-                <span
-                    class="font-bold text-md bg-gradient-to-r from-primary to-info bg-clip-text text-transparent">{{ config('app.name') }}</span>
-                <span class="font-semibold text-md">Beranda</span>
-            </div>
-            <div class="navbar-end mr-2">
-                {{-- User Avatar with Dropdown --}}
-                <x-dropdown class="z-50" no-x-anchor right>
-                    <x-slot:trigger>
-                        <x-avatar placeholder="{{ Auth::user()->avatar_placeholder }}"
-                            class="w-10 border-2 border-primary cursor-pointer" />
-                    </x-slot:trigger>
+        <header class="sticky top-0 z-50 bg-transparent">
+            <nav class="navbar bg-gradient-to-tr from-base-200 to-primary/20 shadow-xl border-b-4 border-primary/80">
+                <div class="navbar-start ml-2">
+                    {{-- Geolocation Button Component - Click to open only dengan polling setiap 30 detik --}}
+                    <livewire:components.geolocation-button :auto-update="true" :poll-interval="30"
+                        button-class="btn-circle btn-md border-primary border-2" icon-name="phosphor.map-pin"
+                        :show-toast="true" :show-badge="true" :click-to-open-only="true" />
+                </div>
+                <div class="navbar-center flex flex-col justify-center items-center">
+                    <span
+                        class="font-bold text-md bg-gradient-to-r from-primary to-info bg-clip-text text-transparent">{{ config('app.name') }}</span>
+                    <span class="font-semibold text-md text-base-content/78">{{ $title ?? '' }}</span>
+                </div>
+                <div class="navbar-end mr-2">
+                    {{-- User Avatar with Dropdown --}}
+                    <x-dropdown class="z-50" no-x-anchor right>
+                        <x-slot:trigger>
+                            <x-avatar placeholder="{{ Auth::user()->avatar_placeholder }}"
+                                class="w-10 border-2 border-primary cursor-pointer" />
+                        </x-slot:trigger>
 
-                    <div class="w-64 p-3 space-y-3">
-                        <!-- User Info -->
-                        <div class="pb-2 border-b border-base-300">
-                            <h3 class="font-semibold text-lg">{{ Auth::user()->name }}</h3>
-                            <p class="text-xs text-base-content/60">{{ Auth::user()->role_label }}</p>
+                        <div class="w-64 p-3 space-y-3">
+                            <!-- User Info -->
+                            <div class="pb-2 border-b border-base-300">
+                                <h3 class="font-semibold text-lg">{{ Auth::user()->name }}</h3>
+                                <p class="text-xs text-base-content/60">{{ Auth::user()->role_label }}</p>
 
-                            {{-- Location Status in Dropdown --}}
-                            @php
-                                $userLocation = app('geolocation')->getUserLocation(Auth::id());
-                                $locationAccuracy = app('geolocation')->getLocationAccuracyStatus(Auth::id());
-                            @endphp
+                                {{-- Location Status in Dropdown --}}
+                                @php
+                                    $userLocation = app('geolocation')->getUserLocation(Auth::id());
+                                    $locationAccuracy = app('geolocation')->getLocationAccuracyStatus(Auth::id());
+                                @endphp
 
-                            @if ($userLocation['latitude'] && $userLocation['longitude'])
-                                <div class="flex items-center gap-1 mt-1">
-                                    <x-icon name="phosphor.map-pin-area"
-                                        class="h-3 w-3 text-{{ $locationAccuracy['color'] }}" />
-                                    <span
-                                        class="text-xs text-{{ $locationAccuracy['color'] }}">{{ $locationAccuracy['label'] }}</span>
-                                </div>
-                            @else
-                                <div class="flex items-center gap-1 mt-1">
-                                    <x-icon name="phosphor.map-pin" class="h-3 w-3 text-base-content/40" />
-                                    <span class="text-xs text-base-content/40">Lokasi belum diaktifkan</span>
-                                </div>
-                            @endif
-                        </div>
-
-                        <!-- Quick Stats -->
-                        @php
-                            $todayStats = app('dashboard.stats')->getTodayStats(Auth::id());
-                        @endphp
-
-                        <div class="grid grid-cols-2 gap-2 text-xs">
-                            <div class="text-center p-2 bg-primary/10 rounded">
-                                <div class="font-bold text-primary">{{ $todayStats['active_orders'] ?? 0 }}</div>
-                                <div class="text-base-content/60">Aktif</div>
-                            </div>
-                            <div class="text-center p-2 bg-success/10 rounded">
-                                <div class="font-bold text-success">{{ $todayStats['completed'] ?? 0 }}</div>
-                                <div class="text-base-content/60">Selesai</div>
-                            </div>
-                        </div>
-
-                        <!-- Current Location Info (if available) -->
-                        @if ($userLocation['latitude'] && $userLocation['longitude'])
-                            <div class="p-2 bg-info/10 rounded">
-                                <div class="flex items-center justify-between">
-                                    <span class="text-xs text-base-content/70">Lokasi Saat Ini:</span>
-                                    <x-button
-                                        onclick="window.open('https://www.google.com/maps?q={{ $userLocation['latitude'] }},{{ $userLocation['longitude'] }}', '_blank')"
-                                        icon="phosphor.map-pin-area" class="btn-xs btn-ghost"
-                                        tooltip="Buka di Google Maps" />
-                                </div>
-                                <p class="text-xs font-medium text-info">
-                                    {{ $userLocation['city'] ?? 'Alamat tidak tersedia' }}</p>
-                                @if ($userLocation['last_updated'])
-                                    <p class="text-xs text-base-content/50">
-                                        Update:
-                                        {{ \Carbon\Carbon::parse($userLocation['last_updated'])->format('H:i') }} WIB
-                                    </p>
+                                @if ($userLocation['latitude'] && $userLocation['longitude'])
+                                    <div class="flex items-center gap-1 mt-1">
+                                        <x-icon name="phosphor.map-pin-area"
+                                            class="h-3 w-3 text-{{ $locationAccuracy['color'] }}" />
+                                        <span
+                                            class="text-xs text-{{ $locationAccuracy['color'] }}">{{ $locationAccuracy['label'] }}</span>
+                                    </div>
+                                @else
+                                    <div class="flex items-center gap-1 mt-1">
+                                        <x-icon name="phosphor.map-pin" class="h-3 w-3 text-base-content/40" />
+                                        <span class="text-xs text-base-content/40">Lokasi belum diaktifkan</span>
+                                    </div>
                                 @endif
                             </div>
-                        @endif
 
-                        <!-- Menu Actions -->
-                        <div class="space-y-1">
-                            <x-button wire:navigate {{-- href="{{ route('driver.profile') }}" --}} label="Profil Saya"
-                                icon="phosphor.user-circle" class="btn-sm btn-ghost btn-block justify-start" />
-                            <x-button wire:navigate {{-- href="{{ route('driver.settings') }}" --}} label="Pengaturan" icon="phosphor.gear"
-                                class="btn-sm btn-ghost btn-block justify-start" />
-                            <x-button wire:navigate href="{{ route('logout') }}" label="Keluar"
-                                icon="phosphor.sign-out" class="btn-sm btn-ghost btn-block justify-start text-error" />
+                            <!-- Quick Stats -->
+                            @php
+                                $todayStats = app('dashboard.stats')->getTodayStats(Auth::id());
+                            @endphp
+
+                            <div class="grid grid-cols-2 gap-2 text-xs">
+                                <div class="text-center p-2 bg-primary/10 rounded">
+                                    <div class="font-bold text-primary">{{ $todayStats['active_orders'] ?? 0 }}</div>
+                                    <div class="text-base-content/60">Aktif</div>
+                                </div>
+                                <div class="text-center p-2 bg-success/10 rounded">
+                                    <div class="font-bold text-success">{{ $todayStats['completed'] ?? 0 }}</div>
+                                    <div class="text-base-content/60">Selesai</div>
+                                </div>
+                            </div>
+
+                            <!-- Current Location Info (if available) -->
+                            @if ($userLocation['latitude'] && $userLocation['longitude'])
+                                <div class="p-2 bg-info/10 rounded">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-xs text-base-content/70">Lokasi Saat Ini:</span>
+                                        <x-button
+                                            onclick="window.open('https://www.google.com/maps?q={{ $userLocation['latitude'] }},{{ $userLocation['longitude'] }}', '_blank')"
+                                            icon="phosphor.map-pin-area" class="btn-xs btn-ghost"
+                                            tooltip="Buka di Google Maps" />
+                                    </div>
+                                    <p class="text-xs font-medium text-info">
+                                        {{ $userLocation['city'] ?? 'Alamat tidak tersedia' }}</p>
+                                    @if ($userLocation['last_updated'])
+                                        <p class="text-xs text-base-content/50">
+                                            Update:
+                                            {{ \Carbon\Carbon::parse($userLocation['last_updated'])->format('H:i') }}
+                                            WIB
+                                        </p>
+                                    @endif
+                                </div>
+                            @endif
+
+                            <!-- Menu Actions -->
+                            <div class="space-y-1">
+                                <x-button wire:navigate {{-- href="{{ route('driver.profile') }}" --}} label="Profil Saya"
+                                    icon="phosphor.user-circle" class="btn-sm btn-ghost btn-block justify-start" />
+                                <x-button wire:navigate {{-- href="{{ route('driver.settings') }}" --}} label="Pengaturan" icon="phosphor.gear"
+                                    class="btn-sm btn-ghost btn-block justify-start" />
+                                <x-button wire:navigate href="{{ route('logout') }}" label="Keluar"
+                                    icon="phosphor.sign-out"
+                                    class="btn-sm btn-ghost btn-block justify-start text-error" />
+                            </div>
                         </div>
-                    </div>
-                </x-dropdown>
-            </div>
+                    </x-dropdown>
+                </div>
+            </nav>
         </header>
 
         <main class="flex-1 overflow-auto relative bg-base-200">
@@ -116,41 +120,43 @@
         </main>
 
         <!-- Custom Bottom Navigation dengan x-button -->
-        <nav class="bg-base-100 border-t-4 border-primary/60 px-4 py-3 shadow-lg rounded-t-3xl">
+        <nav
+            class="bg-gradient-to-bl from-base-200 to-primary/10 border-t-4 border-primary/80 px-4 py-3 shadow-xl rounded-t-2xl">
             <div class="flex justify-around items-center max-w-md mx-auto">
 
                 <!-- Beranda - Active -->
                 <div class="flex flex-col items-center mt-2">
-                    <x-button wire:navigate href="{{ route('driver.dashboard') }}" icon="phosphor.house"
-                        class="btn-sm btn-primary btn-circle" />
+                    <x-button link="{{ route('driver.dashboard') }}" icon="phosphor.speedometer-fill"
+                        class="btn-sm btn-primary bg-info/10 text-primary btn-circle" />
                     <span class="text-xs font-medium text-primary">Beranda</span>
                 </div>
 
                 <!-- Surat Jalan -->
                 <div class="flex flex-col items-center mt-2">
-                    <x-button wire:navigate {{-- href="{{ route('driver.delivery-orders') }}" --}} icon="phosphor.file-text"
-                        class="btn-sm btn-outline glass btn-circle" />
-                    <span class="text-xs text-base-content/60">Surat Jalan</span>
+                    <x-button link="{{ route('driver.delivery-orders') }}" icon="phosphor.files-fill"
+                        class="btn-sm btn-secondary bg-secondary/10 text-secondary btn-circle" />
+                    <span class="text-xs text-secondary">Surat Jalan</span>
                 </div>
 
                 <!-- Navigasi - Center Button (Larger) -->
                 <div class="flex flex-col items-center">
-                    <x-button wire:navigate {{-- href="{{ route('driver.navigation') }}" --}} icon="phosphor.map-pin-area"
-                        class="btn-xl btn-primary btn-circle" />
+                    <x-button link="{{ route('driver.navigate') }}" class="btn-xl btn-primary bg-info/20 btn-circle">
+                        <x-icon name="phosphor.map-trifold-fill" class="h-8 text-primary" />
+                    </x-button>
                 </div>
 
-                <!-- History -->
+                <!-- Profil -->
                 <div class="flex flex-col items-center mt-2">
-                    <x-button wire:navigate {{-- href="{{ route('driver.history') }}" --}} icon="phosphor.files"
-                        class="btn-sm btn-outline glass btn-circle" />
-                    <span class="text-xs text-base-content/60">History</span>
+                    <x-button link="{{ route('driver.profile') }}" icon="phosphor.user-circle-fill"
+                        class="btn-sm btn-secondary bg-secondary/10 text-secondary btn-circle" />
+                    <span class="text-xs text-secondary">Profil</span>
                 </div>
 
-                <!-- Profile -->
+                <!-- Logout -->
                 <div class="flex flex-col items-center mt-2">
-                    <x-button wire:navigate {{-- href="{{ route('driver.profile') }}" --}} icon="phosphor.user-circle"
-                        class="btn-sm btn-outline glass btn-circle" />
-                    <span class="text-xs text-base-content/60">Profile</span>
+                    <x-button link="{{ route('logout') }}" icon="phosphor.sign-out-fill"
+                        class="btn-sm btn-warning bg-warning/10 text-warning btn-circle" />
+                    <span class="text-xs text-warning">Keluar</span>
                 </div>
 
             </div>
@@ -161,7 +167,6 @@
     <x-toast />
     @livewireScripts
 
-    {{-- Replace the JavaScript section in driver.blade.php with this improved version --}}
     <script>
         document.addEventListener('livewire:init', () => {
             // Listen for global location updates

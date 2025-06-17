@@ -79,5 +79,8 @@ Route::prefix('driver')->name('driver.')->group(function () {
     // Authenticated routes - menggunakan custom auth middleware dengan parameter 'driver'
     Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/', App\Livewire\Driver\Pages\Dashboard::class)->name('dashboard');
+        Route::get('/delivery-orders', App\Livewire\Driver\Pages\DeliveryOrder\Index::class)->name('delivery-orders');
+        Route::get('/navigate', App\Livewire\Driver\Pages\Navigate::class)->name('navigate');
+        Route::get('/profile', App\Livewire\Driver\Pages\Profile::class)->name('profile');
     });
 });
