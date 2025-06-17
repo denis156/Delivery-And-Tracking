@@ -448,7 +448,7 @@ class DashboardServiceProvider extends ServiceProvider
                         2 => 'cloud-sun', // Cerah Berawan/Partly Cloudy
                         3 => 'cloud', // Berawan/Cloudy
                         4 => 'cloud', // Berawan Tebal/Overcast
-                        60, 61, 62, 63 => 'cloud-drizzle', // Hujan ringan/Light rain
+                        60, 61, 62, 63 => 'cloud-fog', // Hujan ringan/Light rain
                         80, 81, 82 => 'cloud-rain', // Hujan/Rain
                         95, 96, 97 => 'cloud-lightning', // Badai petir/Thunderstorm
                         71, 73, 75 => 'cloud-snow', // Salju/Snow
@@ -484,7 +484,7 @@ class DashboardServiceProvider extends ServiceProvider
                         $code === 0 => 'sun',
                         $code >= 1 && $code <= 3 => 'cloud-sun',
                         $code >= 45 && $code <= 48 => 'cloud',
-                        $code >= 51 && $code <= 57 => 'cloud-drizzle',
+                        $code >= 51 && $code <= 57 => 'cloud-fog',
                         $code >= 61 && $code <= 67 => 'cloud-rain',
                         $code >= 71 && $code <= 77 => 'cloud-snow',
                         $code >= 80 && $code <= 82 => 'cloud-rain-heavy',
