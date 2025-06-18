@@ -12,23 +12,25 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Support\Str;
-use App\Traits\AuthRateLimiting;
 
 #[Title('Reset Password')]
 #[Layout('livewire.layouts.auth')]
 class ResetPassword extends Component
 {
-    use Toast, AuthRateLimiting;
+    use Toast;
 
     public string $token = '';
 
-    #[Validate('required|email|max:255')]
+    #[Validate('required', message: 'Email wajib diisi')]
+    #[Validate('email', message: 'Format email tidak valid')]
     public string $email = '';
 
-    #[Validate('required|string|min:8|confirmed')]
+    #[Validate('required', message: 'Password baru wajib diisi')]
+    #[Validate('min:8', message: 'Password minimal 8 karakter')]
+    #[Validate('confirmed', message: 'Konfirmasi password tidak sesuai')]
     public string $password = '';
 
-    #[Validate('required')]
+    #[Validate('required', message: 'Konfirmasi password wajib diisi')]
     public string $password_confirmation = '';
 
     public bool $passwordReset = false;
@@ -36,27 +38,15 @@ class ResetPassword extends Component
     public function mount(string $token): void
     {
         $this->token = $token;
-
-        if (request()->has('email')) {
-            $this->email = request()->get('email');
-        }
+        $this->email = request()->get('email', '');
 
         if (Auth::check()) {
-            $this->redirectToDashboard(Auth::user());
+            $this->redirectBasedOnRole();
         }
-
-        $this->resetRateLimitState();
-        $this->checkAuthRateLimit('password_reset', ['token' => $this->token]);
     }
 
     public function resetPassword(): void
     {
-        // Check rate limit before processing
-        if ($this->checkAuthRateLimit('password_reset', ['token' => $this->token])) {
-            $this->showRateLimitError('password_reset');
-            return;
-        }
-
         $this->validate();
 
         $status = Password::reset([
@@ -74,61 +64,11 @@ class ResetPassword extends Component
         });
 
         if ($status === Password::PASSWORD_RESET) {
-            // Clear rate limit for successful reset
-            $this->clearAuthRateLimit('password_reset', ['token' => $this->token]);
-
             $this->passwordReset = true;
-
-            $this->success(
-                title: 'Password Berhasil Direset!',
-                description: 'Password Anda telah berhasil diubah. Silakan login dengan password baru.',
-                position: 'toast-top toast-end',
-                timeout: 5000
-            );
+            $this->success('Password berhasil direset! Silakan login dengan password baru.');
         } else {
-            $this->handleResetFailure($status);
-
-            // Show remaining attempts if low
-            if ($this->shouldShowRateLimitWarning('password_reset')) {
-                $this->info(
-                    title: 'Perhatian',
-                    description: "Anda memiliki {$this->remainingAttempts} percobaan tersisa.",
-                    position: 'toast-top toast-end',
-                    timeout: 3000
-                );
-            }
+            $this->error('Token tidak valid atau sudah kadaluarsa.');
         }
-    }
-
-    private function handleResetFailure(string $status): void
-    {
-        $message = match($status) {
-            Password::INVALID_TOKEN => 'Token reset password tidak valid atau sudah kadaluarsa.',
-            Password::INVALID_USER => 'Email tidak ditemukan dalam sistem.',
-            default => 'Gagal mereset password. Silakan coba lagi.'
-        };
-
-        $this->error(
-            title: 'Reset Password Gagal',
-            description: $message,
-            position: 'toast-top toast-end',
-            timeout: 5000
-        );
-    }
-
-    /**
-     * Show rate limit error message
-     */
-    private function showRateLimitError(string $action): void
-    {
-        $message = $this->getRateLimitMessage($action);
-
-        $this->error(
-            title: 'Terlalu Banyak Percobaan',
-            description: $message,
-            position: 'toast-top toast-end',
-            timeout: 5000
-        );
     }
 
     public function goToLogin(): void
@@ -141,21 +81,10 @@ class ResetPassword extends Component
         $this->redirect(route('password.request'), navigate: true);
     }
 
-    /**
-     * Redirect user to appropriate dashboard
-     */
-    private function redirectToDashboard($user): void
+    private function redirectBasedOnRole(): void
     {
-        $route = $user->isDriver() ? 'driver.dashboard' : 'app.dashboard';
+        $route = Auth::user()->hasRole('driver') ? 'driver.dashboard' : 'app.dashboard';
         $this->redirect(route($route), navigate: true);
-    }
-
-    /**
-     * Get rate limit information for the view
-     */
-    public function getRateLimitInfoProperty(): array
-    {
-        return $this->getRateLimitInfo('password_reset');
     }
 
     public function render()

@@ -9,19 +9,17 @@ use Livewire\Attributes\Layout;
 use Livewire\Attributes\Validate;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Password;
-use App\Traits\AuthRateLimiting;
+use Illuminate\Support\Facades\DB;
 
 #[Title('Lupa Password')]
 #[Layout('livewire.layouts.auth')]
 class ForgotPassword extends Component
 {
-    use Toast, AuthRateLimiting;
+    use Toast;
 
-    #[Validate('required|email|max:255|exists:users,email', message: [
-        'required' => 'Email wajib diisi.',
-        'email' => 'Format email tidak valid.',
-        'exists' => 'Email tidak terdaftar dalam sistem.',
-    ])]
+    #[Validate('required', message: 'Email wajib diisi')]
+    #[Validate('email', message: 'Format email tidak valid')]
+    #[Validate('exists:users,email', message: 'Email tidak terdaftar dalam sistem')]
     public string $email = '';
 
     public bool $linkSent = false;
@@ -29,73 +27,54 @@ class ForgotPassword extends Component
     public function mount(): void
     {
         if (Auth::check()) {
-            $this->redirectToDashboard(Auth::user());
-        }
-
-        $this->resetRateLimitState();
-        $this->checkInitialRateLimit();
-    }
-
-    public function updated($property): void
-    {
-        if ($property === 'email' && !empty($this->email)) {
-            $this->checkInitialRateLimit();
+            $this->redirectBasedOnRole();
         }
     }
 
     public function sendResetLink(): void
     {
-        // Check rate limit before processing
-        if ($this->checkAuthRateLimit('forgot_password', ['email' => $this->email])) {
-            $this->showRateLimitError('forgot_password');
-            return;
-        }
-
         $this->validate();
-
-        // Send reset link
-        $status = Password::sendResetLink(['email' => $this->email]);
-
-        if ($status === Password::RESET_LINK_SENT) {
-            $this->linkSent = true;
-
-            $this->success(
-                title: 'Link Berhasil Dikirim!',
-                description: 'Link reset password telah dikirim ke ' . $this->email,
-                position: 'toast-top toast-end',
-                timeout: 5000
-            );
-
-            // Show remaining attempts if low
-            if ($this->shouldShowRateLimitWarning('forgot_password')) {
-                $this->info(
-                    title: 'Perhatian',
-                    description: "Anda memiliki {$this->remainingAttempts} percobaan tersisa.",
-                    position: 'toast-top toast-end',
-                    timeout: 3000
-                );
-            }
-        } else {
-            $this->warning(
-                title: 'Gagal Mengirim Link',
-                description: 'Tidak dapat mengirim link reset password. Coba lagi nanti.',
-                position: 'toast-top toast-end',
-                timeout: 4000
-            );
-        }
+        $this->processSendReset();
     }
 
     public function resendLink(): void
     {
-        $this->reset(['linkSent']);
+        // Full reset state
+        $this->linkSent = false;
+        $this->resetValidation();
+        $this->resetErrorBag();
 
-        if ($this->checkAuthRateLimit('forgot_password', ['email' => $this->email])) {
-            $this->showRateLimitError('forgot_password');
-            return;
+        // Clear existing tokens to bypass throttling
+        DB::table('password_reset_tokens')->where('email', $this->email)->delete();
+
+        // Process resend
+        $this->processSendReset(true);
+    }
+
+    private function processSendReset(bool $isResend = false): void
+    {
+        $status = Password::sendResetLink(['email' => $this->email]);
+
+        if ($status === Password::RESET_LINK_SENT) {
+            $this->linkSent = true;
+            $message = $isResend
+                ? 'Link reset password telah dikirim ulang ke ' . $this->email
+                : 'Link reset password telah dikirim ke ' . $this->email;
+            $this->success($message);
+        } else {
+            $this->handleError($status);
         }
+    }
 
-        $this->info('Mengirim ulang link...', timeout: 2000);
-        $this->sendResetLink();
+    private function handleError(string $status): void
+    {
+        $message = match($status) {
+            Password::RESET_THROTTLED => 'Terlalu banyak percobaan. Coba lagi dalam 1 menit.',
+            Password::INVALID_USER => 'Email tidak ditemukan dalam sistem.',
+            default => 'Gagal mengirim link reset password. Coba lagi nanti.'
+        };
+
+        $this->error($message);
     }
 
     public function backToLogin(): void
@@ -103,45 +82,10 @@ class ForgotPassword extends Component
         $this->redirect(route('login'), navigate: true);
     }
 
-    /**
-     * Check initial rate limit without hitting the limiter
-     */
-    private function checkInitialRateLimit(): void
+    private function redirectBasedOnRole(): void
     {
-        // This is just to update the UI state, not to actually hit the rate limiter
-        $this->checkAuthRateLimit('forgot_password', ['email' => $this->email]);
-    }
-
-    /**
-     * Show rate limit error message
-     */
-    private function showRateLimitError(string $action): void
-    {
-        $message = $this->getRateLimitMessage($action);
-
-        $this->error(
-            title: 'Terlalu Banyak Percobaan',
-            description: $message,
-            position: 'toast-top toast-end',
-            timeout: 5000
-        );
-    }
-
-    /**
-     * Redirect user to appropriate dashboard
-     */
-    private function redirectToDashboard($user): void
-    {
-        $route = $user->isDriver() ? 'driver.dashboard' : 'app.dashboard';
+        $route = Auth::user()->hasRole('driver') ? 'driver.dashboard' : 'app.dashboard';
         $this->redirect(route($route), navigate: true);
-    }
-
-    /**
-     * Get rate limit information for the view
-     */
-    public function getRateLimitInfoProperty(): array
-    {
-        return $this->getRateLimitInfo('forgot_password');
     }
 
     public function render()

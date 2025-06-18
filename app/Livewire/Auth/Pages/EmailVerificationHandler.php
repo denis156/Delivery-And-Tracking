@@ -9,13 +9,12 @@ use Livewire\Attributes\Layout;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Auth\Events\Verified;
-use App\Traits\AuthRateLimiting;
 
 #[Title('Verifikasi Email')]
 #[Layout('livewire.layouts.auth')]
 class EmailVerificationHandler extends Component
 {
-    use Toast, AuthRateLimiting;
+    use Toast;
 
     public bool $verificationProcessed = false;
     public bool $verificationSuccess = false;
@@ -23,12 +22,6 @@ class EmailVerificationHandler extends Component
 
     public function mount(Request $request, string $id, string $hash): void
     {
-        // Initialize default state
-        $this->verificationProcessed = false;
-        $this->verificationSuccess = false;
-        $this->message = '';
-        $this->resetRateLimitState();
-
         if (!Auth::check()) {
             $this->redirect(route('login'), navigate: true);
             return;
@@ -37,120 +30,55 @@ class EmailVerificationHandler extends Component
         $user = Auth::user();
 
         if ($user->hasVerifiedEmail()) {
-            $this->redirectToDashboard($user);
+            $this->redirectBasedOnRole();
             return;
         }
 
-        // Process verification immediately
         $this->processVerification($request, $user, $id, $hash);
     }
 
     private function processVerification(Request $request, $user, string $id, string $hash): void
     {
-        // Verifikasi signature URL
-        if (!$request->hasValidSignature()) {
-            $this->handleVerificationFailure('Link verifikasi tidak valid atau sudah kadaluarsa.');
+        $this->verificationProcessed = true;
+
+        // Basic validation
+        if (!$request->hasValidSignature() ||
+            (string) $id !== (string) $user->getKey() ||
+            !hash_equals((string) $hash, sha1($user->getEmailForVerification()))) {
+
+            $this->verificationSuccess = false;
+            $this->message = 'Link verifikasi tidak valid atau sudah kadaluarsa.';
+            $this->error($this->message);
             return;
         }
 
-        // Cek apakah ID dan hash cocok
-        if ((string) $id !== (string) $user->getKey()) {
-            $this->handleVerificationFailure('Link verifikasi tidak sesuai dengan akun Anda.');
-            return;
-        }
-
-        if (!hash_equals((string) $hash, sha1($user->getEmailForVerification()))) {
-            $this->handleVerificationFailure('Link verifikasi tidak valid.');
-            return;
-        }
-
-        // Proses verifikasi
+        // Process verification
         if ($user->markEmailAsVerified()) {
             event(new Verified($user));
-
-            // Clear any existing rate limits for this user since verification is successful
-            $this->clearAuthRateLimit('email_verification');
-
-            $this->handleVerificationSuccess();
+            $this->verificationSuccess = true;
+            $this->message = 'Email Anda berhasil diverifikasi!';
+            $this->success($this->message);
         } else {
-            $this->handleVerificationFailure('Gagal memverifikasi email. Silakan coba lagi.');
+            $this->verificationSuccess = false;
+            $this->message = 'Gagal memverifikasi email. Silakan coba lagi.';
+            $this->error($this->message);
         }
-    }
-
-    private function handleVerificationSuccess(): void
-    {
-        $this->verificationProcessed = true;
-        $this->verificationSuccess = true;
-        $this->message = 'Email Anda berhasil diverifikasi!';
-
-        $this->success(
-            title: 'Email Terverifikasi!',
-            description: 'Selamat! Email Anda berhasil diverifikasi.',
-            position: 'toast-top toast-end',
-            timeout: 5000
-        );
-    }
-
-    private function handleVerificationFailure(string $message): void
-    {
-        $this->verificationProcessed = true;
-        $this->verificationSuccess = false;
-        $this->message = $message;
-
-        $this->error(
-            title: 'Verifikasi Gagal',
-            description: $message,
-            position: 'toast-top toast-end',
-            timeout: 5000
-        );
     }
 
     public function continueToApp(): void
     {
-        $this->redirectToDashboard(Auth::user());
+        $this->redirectBasedOnRole();
     }
 
     public function resendVerification(): void
     {
-        // Check rate limit before redirecting
-        if ($this->checkAuthRateLimit('email_verification')) {
-            $this->showRateLimitError('email_verification');
-            return;
-        }
-
         $this->redirect(route('verification.notice'), navigate: true);
     }
 
-    /**
-     * Show rate limit error message
-     */
-    private function showRateLimitError(string $action): void
+    private function redirectBasedOnRole(): void
     {
-        $message = $this->getRateLimitMessage($action);
-
-        $this->error(
-            title: 'Terlalu Banyak Percobaan',
-            description: $message,
-            position: 'toast-top toast-end',
-            timeout: 5000
-        );
-    }
-
-    /**
-     * Redirect user to appropriate dashboard
-     */
-    private function redirectToDashboard($user): void
-    {
-        $route = $user->isDriver() ? 'driver.dashboard' : 'app.dashboard';
+        $route = Auth::user()->hasRole('driver') ? 'driver.dashboard' : 'app.dashboard';
         $this->redirect(route($route), navigate: true);
-    }
-
-    /**
-     * Get rate limit information for the view
-     */
-    public function getRateLimitInfoProperty(): array
-    {
-        return $this->getRateLimitInfo('email_verification');
     }
 
     public function render()
