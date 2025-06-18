@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\RateLimiter;
 
 #[Title('Reset Password')]
 #[Layout('livewire.layouts.auth')]
@@ -49,6 +50,18 @@ class ResetPassword extends Component
     {
         $this->validate();
 
+        // Rate limiting key berdasarkan IP dan email
+        $rateLimitKey = 'password-reset-attempt:' . request()->ip() . ':' . strtolower($this->email);
+
+        // Cek rate limit - 6 percobaan per 15 menit
+        if (RateLimiter::tooManyAttempts($rateLimitKey, 6)) {
+            $seconds = RateLimiter::availableIn($rateLimitKey);
+            $minutes = ceil($seconds / 60);
+
+            $this->error("Terlalu banyak percobaan reset password. Coba lagi dalam {$minutes} menit.");
+            return;
+        }
+
         $status = Password::reset([
             'email' => $this->email,
             'password' => $this->password,
@@ -64,10 +77,24 @@ class ResetPassword extends Component
         });
 
         if ($status === Password::PASSWORD_RESET) {
+            // Reset berhasil - clear rate limit attempts
+            RateLimiter::clear($rateLimitKey);
+
             $this->passwordReset = true;
             $this->success('Password berhasil direset! Silakan login dengan password baru.');
         } else {
-            $this->error('Token tidak valid atau sudah kadaluarsa.');
+            // Reset gagal - increment attempts
+            RateLimiter::increment($rateLimitKey, 1, 900); // 15 menit
+
+            $remaining = RateLimiter::remaining($rateLimitKey, 6);
+
+            if ($remaining > 0) {
+                $this->error("Token tidak valid atau sudah kadaluarsa. Sisa percobaan: {$remaining}");
+            } else {
+                $seconds = RateLimiter::availableIn($rateLimitKey);
+                $minutes = ceil($seconds / 60);
+                $this->error("Terlalu banyak percobaan reset password gagal. Coba lagi dalam {$minutes} menit.");
+            }
         }
     }
 

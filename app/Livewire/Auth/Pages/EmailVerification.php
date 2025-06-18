@@ -7,6 +7,7 @@ use Livewire\Component;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Layout;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\RateLimiter;
 
 #[Title('Verifikasi Email')]
 #[Layout('livewire.layouts.auth')]
@@ -40,10 +41,36 @@ class EmailVerification extends Component
             return;
         }
 
+        // Rate limiting key berdasarkan user ID
+        $rateLimitKey = 'email-verification:' . $user->id;
+
+        // Cek rate limit - 6 percobaan per 10 menit
+        if (RateLimiter::tooManyAttempts($rateLimitKey, 6)) {
+            $seconds = RateLimiter::availableIn($rateLimitKey);
+            $minutes = ceil($seconds / 60);
+
+            $this->error("Terlalu banyak permintaan verifikasi email. Coba lagi dalam {$minutes} menit.");
+            return;
+        }
+
         try {
             $user->sendEmailVerificationNotification();
-            $this->success('Email verifikasi telah dikirim ulang ke ' . $user->email);
+
+            // Increment rate limit counter
+            RateLimiter::increment($rateLimitKey, 1, 600); // 10 menit
+
+            $remaining = RateLimiter::remaining($rateLimitKey, 6);
+            $message = 'Email verifikasi telah dikirim ulang ke ' . $user->email;
+
+            if ($remaining > 0) {
+                $message .= ". Sisa percobaan: {$remaining}";
+            }
+
+            $this->success($message);
         } catch (\Exception $e) {
+            // Increment rate limit counter bahkan jika gagal
+            RateLimiter::increment($rateLimitKey, 1, 600);
+
             $this->error('Gagal mengirim email verifikasi. Coba lagi nanti.');
         }
     }

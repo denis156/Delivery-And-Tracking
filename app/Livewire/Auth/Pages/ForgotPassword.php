@@ -9,7 +9,7 @@ use Livewire\Attributes\Layout;
 use Livewire\Attributes\Validate;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Password;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\RateLimiter;
 
 #[Title('Lupa Password')]
 #[Layout('livewire.layouts.auth')]
@@ -44,35 +44,62 @@ class ForgotPassword extends Component
         $this->resetValidation();
         $this->resetErrorBag();
 
-        // Clear existing tokens to bypass throttling
-        DB::table('password_reset_tokens')->where('email', $this->email)->delete();
-
         // Process resend
         $this->processSendReset(true);
     }
 
     private function processSendReset(bool $isResend = false): void
     {
+        // Rate limiting key berdasarkan IP dan email
+        $rateLimitKey = 'forgot-password:' . request()->ip() . ':' . strtolower($this->email);
+
+        // Cek rate limit - 5 percobaan per 15 menit
+        if (RateLimiter::tooManyAttempts($rateLimitKey, 5)) {
+            $seconds = RateLimiter::availableIn($rateLimitKey);
+            $minutes = ceil($seconds / 60);
+
+            $this->error("Terlalu banyak permintaan reset password. Coba lagi dalam {$minutes} menit.");
+            return;
+        }
+
         $status = Password::sendResetLink(['email' => $this->email]);
 
         if ($status === Password::RESET_LINK_SENT) {
+            // Reset berhasil - clear rate limit attempts
+            RateLimiter::clear($rateLimitKey);
+
             $this->linkSent = true;
             $message = $isResend
                 ? 'Link reset password telah dikirim ulang ke ' . $this->email
                 : 'Link reset password telah dikirim ke ' . $this->email;
             $this->success($message);
         } else {
-            $this->handleError($status);
+            // Reset gagal - increment attempts
+            RateLimiter::increment($rateLimitKey, 1, 900); // 15 menit
+
+            $remaining = RateLimiter::remaining($rateLimitKey, 5);
+
+            if ($remaining > 0) {
+                $this->handleError($status, $remaining);
+            } else {
+                $seconds = RateLimiter::availableIn($rateLimitKey);
+                $minutes = ceil($seconds / 60);
+                $this->error("Terlalu banyak percobaan gagal. Coba lagi dalam {$minutes} menit.");
+            }
         }
     }
 
-    private function handleError(string $status): void
+    private function handleError(string $status, int $remaining = 0): void
     {
         $message = match($status) {
             Password::RESET_THROTTLED => 'Terlalu banyak percobaan. Coba lagi dalam 1 menit.',
             Password::INVALID_USER => 'Email tidak ditemukan dalam sistem.',
             default => 'Gagal mengirim link reset password. Coba lagi nanti.'
         };
+
+        if ($remaining > 0) {
+            $message .= " Sisa percobaan: {$remaining}";
+        }
 
         $this->error($message);
     }
