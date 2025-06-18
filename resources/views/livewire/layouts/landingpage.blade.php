@@ -39,7 +39,7 @@
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
 
     <!-- Styles -->
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @vite(['resources/js/app.js'])
     @livewireStyles
 
     <!-- Smart Scroll Animation Styles with Auto Out Effects -->

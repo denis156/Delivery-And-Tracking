@@ -7,7 +7,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ isset($title) ? $title . ' - ' . config('app.name') : config('app.name') }}</title>
 
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @vite(['resources/js/app.js'])
     @livewireStyles
 </head>
 
@@ -115,52 +115,60 @@
             </nav>
         </header>
 
-        <main class="flex-1 overflow-auto relative bg-base-200">
+        <main class="flex-1 overflow-auto relative">
             {{ $slot }}
         </main>
 
-        <!-- Custom Bottom Navigation dengan x-button -->
-        <nav
-            class="bg-gradient-to-bl from-base-200 to-primary/10 border-t-4 border-primary/80 px-4 py-3 shadow-xl rounded-t-2xl">
-            <div class="flex justify-around items-center max-w-md mx-auto">
+<nav class="bg-gradient-to-bl from-base-200 to-primary/10 border-t-4 border-primary/80 py-1 shadow-xl rounded-t-2xl">
+    <div class="grid grid-cols-5 items-baseline justify-items-baseline max-w-md mx-auto gap-4">
 
-                <!-- Beranda - Active -->
-                <div class="flex flex-col items-center mt-2">
-                    <x-button link="{{ route('driver.dashboard') }}" icon="phosphor.speedometer-fill"
-                        class="btn-sm btn-primary bg-info/10 text-primary btn-circle" />
-                    <span class="text-xs font-medium text-primary">Beranda</span>
-                </div>
+        <!-- Beranda -->
+        <div class="flex flex-col items-center">
+            <x-button link="{{ route('driver.dashboard') }}"
+                class="{{ request()->routeIs('driver.dashboard') ? 'btn-xl btn-primary bg-info/20 btn-circle' : 'btn-md btn-secondary bg-secondary/10 text-secondary btn-circle' }}">
+                <x-icon name="phosphor.speedometer-fill" class="{{ request()->routeIs('driver.dashboard') ? 'h-8 text-primary' : 'h-6 text-secondary' }}" />
+            </x-button>
+            <span class="{{ request()->routeIs('driver.dashboard') ? 'text-md text-primary font-bold' : 'text-xs text-secondary font-semibold' }} mt-1">Beranda</span>
+        </div>
 
-                <!-- Surat Jalan -->
-                <div class="flex flex-col items-center mt-2">
-                    <x-button link="{{ route('driver.delivery-orders') }}" icon="phosphor.files-fill"
-                        class="btn-sm btn-secondary bg-secondary/10 text-secondary btn-circle" />
-                    <span class="text-xs text-secondary">Surat Jalan</span>
-                </div>
+        <!-- Surat Jalan -->
+        <div class="flex flex-col items-center">
+            <x-button link="{{ route('driver.delivery-orders') }}"
+                class="{{ request()->routeIs('driver.delivery-orders') ? 'btn-xl btn-primary bg-info/20 btn-circle' : 'btn-md btn-secondary bg-secondary/10 text-secondary btn-circle' }}">
+                <x-icon name="phosphor.files-fill" class="{{ request()->routeIs('driver.delivery-orders') ? 'h-8 text-primary' : 'h-6 text-secondary' }}" />
+            </x-button>
+            <span class="{{ request()->routeIs('driver.delivery-orders') ? 'text-md text-primary font-bold' : 'text-xs text-secondary font-semibold' }} mt-1">Dokumen</span>
+        </div>
 
-                <!-- Navigasi - Center Button (Larger) -->
-                <div class="flex flex-col items-center">
-                    <x-button link="{{ route('driver.navigate') }}" class="btn-xl btn-primary bg-info/20 btn-circle">
-                        <x-icon name="phosphor.map-trifold-fill" class="h-8 text-primary" />
-                    </x-button>
-                </div>
+        <!-- Navigasi -->
+        <div class="flex flex-col items-center">
+            <x-button link="{{ route('driver.navigate') }}"
+                class="{{ request()->routeIs('driver.navigate') ? 'btn-xl btn-primary bg-info/20 btn-circle' : 'btn-md btn-secondary bg-secondary/10 text-secondary btn-circle' }}">
+                <x-icon name="phosphor.map-pin-area-fill" class="{{ request()->routeIs('driver.navigate') ? 'h-8 text-primary' : 'h-6 text-secondary' }}" />
+            </x-button>
+            <span class="{{ request()->routeIs('driver.navigate') ? 'text-md text-primary font-bold' : 'text-xs text-secondary font-semibold' }} mt-1">Navigasi</span>
+        </div>
 
-                <!-- Profil -->
-                <div class="flex flex-col items-center mt-2">
-                    <x-button link="{{ route('driver.profile') }}" icon="phosphor.user-circle-fill"
-                        class="btn-sm btn-secondary bg-secondary/10 text-secondary btn-circle" />
-                    <span class="text-xs text-secondary">Profil</span>
-                </div>
+        <!-- Profil -->
+        <div class="flex flex-col items-center">
+            <x-button link="{{ route('driver.profile') }}"
+                class="{{ request()->routeIs('driver.profile') ? 'btn-xl btn-primary bg-info/20 btn-circle' : 'btn-md btn-secondary bg-secondary/10 text-secondary btn-circle' }}">
+                <x-icon name="phosphor.user-circle-fill" class="{{ request()->routeIs('driver.profile') ? 'h-8 text-primary' : 'h-6 text-secondary' }}" />
+            </x-button>
+            <span class="{{ request()->routeIs('driver.profile') ? 'text-md text-primary font-bold' : 'text-xs text-secondary font-semibold' }} mt-1">Profil</span>
+        </div>
 
-                <!-- Logout -->
-                <div class="flex flex-col items-center mt-2">
-                    <x-button link="{{ route('logout') }}" icon="phosphor.sign-out-fill"
-                        class="btn-sm btn-warning bg-warning/10 text-warning btn-circle" />
-                    <span class="text-xs text-warning">Keluar</span>
-                </div>
+        <!-- Logout -->
+        <div class="flex flex-col items-center">
+            <x-button link="{{ route('logout') }}"
+                class="btn-md btn-secondary bg-secondary/10 text-secondary btn-circle">
+                <x-icon name="phosphor.sign-out-fill" class="h-6 text-secondary" />
+            </x-button>
+            <span class="text-xs text-secondary font-semibold mt-1">Keluar</span>
+        </div>
 
-            </div>
-        </nav>
+    </div>
+</nav>
     </div>
 
     <!-- TOAST area -->
