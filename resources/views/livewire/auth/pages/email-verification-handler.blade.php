@@ -19,7 +19,7 @@
                     </div>
 
                     <x-slot:actions separator class="items-center">
-                        <x-button wire:click="continueToApp" class="btn-primary btn-wide" type="button">
+                        <x-button wire:click="continueToApp" class="btn-primary btn-block" type="button">
                             <x-icon name="phosphor.house" class="w-5 h-5 mr-2" />
                             Masuk ke Dashboard
                         </x-button>

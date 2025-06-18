@@ -76,7 +76,7 @@
                 Password Anda telah berhasil diubah. Sekarang Anda dapat login dengan password baru.
             </p>
 
-            <x-button wire:click="goToLogin" class="btn-primary btn-wide" type="button">
+            <x-button wire:click="goToLogin" class="btn-primary btn-block" type="button">
                 <x-icon name="phosphor.sign-in" class="w-5 h-5 mr-2" />
                 Login Sekarang
             </x-button>
