@@ -2,17 +2,18 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, SoftDeletes;
+    use HasRoles, HasFactory, Notifiable, SoftDeletes;
 
     // * ========================================
     // * KONSTANTA PERAN PENGGUNA
@@ -67,7 +68,6 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
-        'role',
         'is_active',
         'password',
         'avatar_url',
@@ -107,9 +107,24 @@ class User extends Authenticatable
         return $query->where('is_active', false);
     }
 
+    /**
+     * Scope untuk exclude drivers - menggunakan Spatie Permission
+     */
     public function scopeExcludeDrivers($query)
     {
-        return $query->where('role', '!=', self::ROLE_DRIVER);
+        return $query->whereDoesntHave('roles', function ($query) {
+            $query->where('name', self::ROLE_DRIVER);
+        });
+    }
+
+    /**
+     * Scope untuk hanya drivers - menggunakan Spatie Permission
+     */
+    public function scopeOnlyDrivers($query)
+    {
+        return $query->whereHas('roles', function ($query) {
+            $query->where('name', self::ROLE_DRIVER);
+        });
     }
 
     // * ========================================
@@ -149,22 +164,28 @@ class User extends Authenticatable
     }
 
     /**
-     * Get role color for badge - konsisten di seluruh aplikasi
+     * Get role color for badge - menggunakan Spatie role pertama
      */
     protected function roleColor(): Attribute
     {
         return Attribute::make(
-            get: fn () => self::$roleColors[$this->role] ?? 'neutral',
+            get: function () {
+                $role = $this->roles->first();
+                return $role ? (self::$roleColors[$role->name] ?? 'neutral') : 'neutral';
+            }
         );
     }
 
     /**
-     * Get role label in Indonesian
+     * Get role label in Indonesian - menggunakan Spatie role pertama
      */
     protected function roleLabel(): Attribute
     {
         return Attribute::make(
-            get: fn () => self::$roleLabels[$this->role] ?? ucfirst($this->role),
+            get: function () {
+                $role = $this->roles->first();
+                return $role ? (self::$roleLabels[$role->name] ?? ucfirst($role->name)) : 'Tidak ada role';
+            }
         );
     }
 
@@ -223,7 +244,7 @@ class User extends Authenticatable
     }
 
     // * ========================================
-    // * HELPER METHODS
+    // * HELPER METHODS - Updated untuk Spatie Permission
     // * ========================================
 
     /**
@@ -267,11 +288,11 @@ class User extends Authenticatable
     }
 
     /**
-     * Check if user is driver
+     * Check if user is driver - menggunakan Spatie hasRole()
      */
     public function isDriver(): bool
     {
-        return $this->role === self::ROLE_DRIVER;
+        return $this->hasRole(self::ROLE_DRIVER);
     }
 
     /**
@@ -280,5 +301,69 @@ class User extends Authenticatable
     public function isManageable(): bool
     {
         return !$this->isDriver();
+    }
+
+    /**
+     * Check if user is admin - menggunakan Spatie hasRole()
+     */
+    public function isAdmin(): bool
+    {
+        return $this->hasRole(self::ROLE_ADMIN);
+    }
+
+    /**
+     * Check if user is manager - menggunakan Spatie hasRole()
+     */
+    public function isManager(): bool
+    {
+        return $this->hasRole(self::ROLE_MANAGER);
+    }
+
+    /**
+     * Check if user is client - menggunakan Spatie hasRole()
+     */
+    public function isClient(): bool
+    {
+        return $this->hasRole(self::ROLE_CLIENT);
+    }
+
+    /**
+     * Check if user has management access (admin or manager)
+     */
+    public function hasManagementAccess(): bool
+    {
+        return $this->hasAnyRole([self::ROLE_ADMIN, self::ROLE_MANAGER]);
+    }
+
+    /**
+     * Get primary role name (first role) - menggunakan Spatie
+     */
+    public function getPrimaryRole(): ?string
+    {
+        return $this->roles->first()?->name;
+    }
+
+    /**
+     * Get all role names as array - menggunakan Spatie
+     */
+    public function getRoleNames(): array
+    {
+        return $this->roles->pluck('name')->toArray();
+    }
+
+    /**
+     * Assign role ke user - wrapper untuk Spatie assignRole
+     */
+    public function setRole(string $role): void
+    {
+        $this->syncRoles($role); // Sync menghapus role lama dan assign role baru
+    }
+
+    /**
+     * Get first role name untuk backward compatibility
+     */
+    public function getRoleAttribute(): ?string
+    {
+        return $this->getPrimaryRole();
     }
 }

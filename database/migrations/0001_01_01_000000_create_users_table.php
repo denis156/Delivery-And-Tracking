@@ -15,7 +15,6 @@ return new class extends Migration
             $table->id();
             $table->string('name')->comment('Nama lengkap pengguna');
             $table->string('email')->unique()->comment('Email pengguna (unik)');
-            $table->string('role')->default('client')->comment('Peran pengguna: manager, admin, driver, client, petugas-lapangan, petugas-ruangan, petugas-gudang, dll');
             $table->boolean('is_active')->default(true)->comment('Status aktif pengguna: true = aktif, false = nonaktif');
             $table->timestamp('email_verified_at')->nullable()->comment('Waktu verifikasi email');
             $table->string('password')->comment('Password terenkripsi');
