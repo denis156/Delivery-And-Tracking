@@ -56,7 +56,7 @@
                     $currentStatus = $statusConfig[$status];
                 @endphp
 
-                <div class="p-3 rounded-lg {{ $currentStatus['bg'] }}">
+                {{-- <div class="p-3 rounded-lg {{ $currentStatus['bg'] }}">
                     <div class="flex items-center justify-between">
                         <span class="font-medium">Status:</span>
                         <div class="flex items-center gap-2">
@@ -69,16 +69,16 @@
                             />
                         </div>
                     </div>
-                </div>
+                </div> --}}
 
                 @if($status === 'success' && $latitude && $longitude)
                     <!-- Location Details -->
-                    <div class="space-y-2 text-sm">
+                    <div class="space-y-2 text-xs">
                         @php
                             $locationDetails = [
                                 'Alamat' => $address ?: 'Tidak diketahui',
                                 'Koordinat' => number_format($latitude, 6) . ', ' . number_format($longitude, 6),
-                                'Update terakhir' => ($lastUpdated ?? '-') . ' WIB',
+                                'Update terakhir' => ($lastUpdated ?? '-') . ' WITA',
                             ];
                         @endphp
 
@@ -100,41 +100,55 @@
                     </div>
 
                     <!-- Quick Actions -->
-                    <div class="flex gap-2">
-                        <x-button
-                            wire:click="refreshLocation"
-                            label="Perbarui"
-                            icon="phosphor.arrow-clockwise"
-                            class="btn-sm btn-primary flex-1"
-                            wire:loading.attr="disabled"
-                            wire:target="refreshLocation"
-                        />
-                        <x-button
-                            wire:click="stopLocation"
-                            label="Hentikan"
-                            icon="phosphor.stop"
-                            class="btn-sm btn-error btn-outline"
-                            wire:loading.attr="disabled"
-                            wire:target="stopLocation"
-                        />
+                    <div class="space-y-2">
+                        <!-- Primary Actions -->
+                        <div class="flex gap-2">
+                            <x-button
+                                wire:click="refreshLocation"
+                                label="Perbarui Lokasi"
+                                icon="phosphor.arrow-clockwise"
+                                class="btn-sm btn-primary flex-1"
+                                wire:loading.attr="disabled"
+                                wire:target="refreshLocation"
+                            />
+                            <x-button
+                                wire:click="stopLocation"
+                                icon="phosphor.stop"
+                                class="btn-sm btn-error btn-outline"
+                                wire:loading.attr="disabled"
+                                wire:target="stopLocation"
+                                title="Hentikan dan hapus data lokasi"
+                            />
+                        </div>
+
+                        <!-- Secondary Actions -->
+                        <div class="flex gap-2">
+                            <x-button
+                                onclick="navigator.clipboard.writeText('{{ $latitude }}, {{ $longitude }}');
+                                         $dispatch('notify', {type: 'success', message: 'Koordinat disalin ke clipboard'})"
+                                label="Salin Koordinat"
+                                icon="phosphor.copy"
+                                class="btn-sm btn-outline flex-1"
+                            />
+                        </div>
                     </div>
 
-                    <!-- Copy Coordinates -->
-                    <x-button
-                        onclick="navigator.clipboard.writeText('{{ $latitude }}, {{ $longitude }}');
-                                 $dispatch('notify', {type: 'success', message: 'Koordinat disalin ke clipboard'})"
-                        label="Salin Koordinat"
-                        icon="phosphor.copy"
-                        class="btn-sm btn-outline btn-block"
-                    />
+                    <!-- External Links -->
+                    {{-- <div class="space-y-1">
+                        <x-button
+                            onclick="window.open('https://www.google.com/maps?q={{ $latitude }},{{ $longitude }}', '_blank')"
+                            label="Buka di Google Maps"
+                            icon="phosphor.map-pin-area"
+                            class="btn-sm btn-outline btn-block"
+                        />
 
-                    <!-- Map Link -->
-                    <x-button
-                        onclick="window.open('https://www.google.com/maps?q={{ $latitude }},{{ $longitude }}', '_blank')"
-                        label="Buka di Google Maps"
-                        icon="phosphor.map-pin-area"
-                        class="btn-sm btn-outline btn-block"
-                    />
+                        <x-button
+                            onclick="window.open('https://www.openstreetmap.org/?mlat={{ $latitude }}&mlon={{ $longitude }}&zoom=16', '_blank')"
+                            label="Buka di OpenStreetMap"
+                            icon="phosphor.globe"
+                            class="btn-sm btn-outline btn-block"
+                        />
+                    </div> --}}
 
                 @elseif($status === 'error')
                     <!-- Error Help -->
@@ -161,7 +175,10 @@
                     <!-- Initial State -->
                     <div class="text-center py-4">
                         <x-icon name="phosphor.map-pin" class="h-12 w-12 text-base-content/30 mx-auto mb-2" />
-                        <p class="text-sm text-base-content/60 mb-3">Belum ada data lokasi</p>
+                        <p class="text-sm text-base-content/60 mb-1">Belum ada data lokasi</p>
+                        <p class="text-xs text-base-content/40 mb-3">
+                            Data lokasi dan cuaca akan diambil dari de4a.space API
+                        </p>
                         <x-button
                             wire:click="requestLocation"
                             label="Ambil Lokasi Sekarang"
@@ -188,6 +205,14 @@
                     </div>
                 </div>
             @endif
+
+            <!-- API Info -->
+            <div class="pt-2 border-t border-base-300">
+                <div class="text-[10px] text-base-content/50 text-center">
+                    <x-icon name="si.cloudways" class="h-4 mr-1 text-primary" />
+                    Terintegrasi dengan API BMKG untuk lokasi dan cuaca
+                </div>
+            </div>
         </div>
     </x-dropdown>
 

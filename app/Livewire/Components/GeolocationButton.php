@@ -129,7 +129,7 @@ class GeolocationButton extends Component
         $this->status = 'success';
         $this->lastUpdated = now()->format('H:i');
 
-        // Update location in cache
+        // Update location in cache (this will get comprehensive data from de4a.space API)
         app('geolocation')->updateUserLocation(Auth::id(), $lat, $lng);
         $this->updateAddress();
 
@@ -154,7 +154,7 @@ class GeolocationButton extends Component
             'latitude' => $lat,
             'longitude' => $lng,
             'accuracy' => $accuracy,
-            'manual' => $this->isManualRequest
+            'address' => $this->address
         ]);
     }
 
@@ -260,6 +260,22 @@ class GeolocationButton extends Component
     {
         $location = app('geolocation')->getUserLocation(Auth::id());
         $this->address = $location['city'] ?? 'Lokasi tidak diketahui';
+    }
+
+    /**
+     * Get weather info for current location
+     */
+    public function getWeatherInfo(): array
+    {
+        return app('geolocation')->getWeatherInfo(Auth::id());
+    }
+
+    /**
+     * Get weather forecast for current location
+     */
+    public function getWeatherForecast(int $days = 3): array
+    {
+        return app('geolocation')->getWeatherForecast(Auth::id(), $days);
     }
 
     /**

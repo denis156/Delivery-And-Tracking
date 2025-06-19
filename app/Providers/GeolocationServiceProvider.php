@@ -18,7 +18,7 @@ class GeolocationServiceProvider extends ServiceProvider
             return new class {
 
                 /**
-                 * Get user location from cache or default to Makassar
+                 * Get user location from cache or default to Kendari
                  */
                 public function getUserLocation(int $userId): array
                 {
@@ -34,24 +34,25 @@ class GeolocationServiceProvider extends ServiceProvider
                 }
 
                 /**
-                 * Update user location in cache
+                 * Update user location in cache with data from de4a.space API
                  */
                 public function updateUserLocation(int $userId, float $lat, float $lng, ?string $address = null): void
                 {
                     $cacheKey = "user_location_{$userId}";
 
-                    // Try to get city name from coordinates if address not provided
-                    if (!$address) {
-                        $address = $this->reverseGeocode($lat, $lng);
-                    }
+                    // Get comprehensive data from de4a.space API
+                    $locationData = $this->getLocationDataFromDe4aApi($lat, $lng);
 
-                    $locationData = [
-                        'latitude' => $lat,
-                        'longitude' => $lng,
-                        'city' => $address ?? 'Lokasi Tidak Diketahui',
-                        'province' => '',
-                        'last_updated' => now()->toISOString()
-                    ];
+                    if (!$locationData) {
+                        // Fallback if API fails
+                        $locationData = [
+                            'latitude' => $lat,
+                            'longitude' => $lng,
+                            'city' => $address ?? 'Lokasi Tidak Diketahui',
+                            'province' => '',
+                            'last_updated' => now()->toISOString()
+                        ];
+                    }
 
                     Cache::put($cacheKey, $locationData, now()->addHours(24));
 
@@ -59,8 +60,289 @@ class GeolocationServiceProvider extends ServiceProvider
                         'user_id' => $userId,
                         'latitude' => $lat,
                         'longitude' => $lng,
-                        'address' => $address
+                        'address' => $locationData['city']
                     ]);
+                }
+
+                /**
+                 * Get comprehensive location and weather data from de4a.space API
+                 */
+                private function getLocationDataFromDe4aApi(float $lat, float $lng): ?array
+                {
+                    try {
+                        $response = Http::timeout(15)
+                            ->withHeaders([
+                                'User-Agent' => 'DeliveryTrackingApp/1.0',
+                                'Accept' => 'application/json'
+                            ])
+                            ->get('https://openapi.de4a.space/api/weather/forecast', [
+                                'lat' => (string) $lat,
+                                'long' => (string) $lng
+                            ]);
+
+                        if ($response->successful()) {
+                            $data = $response->json();
+
+                            // Check if response structure is correct
+                            if (
+                                isset($data['status']) &&
+                                $data['status'] == 1 &&
+                                isset($data['data'][0])
+                            ) {
+                                $responseData = $data['data'][0];
+                                $locationData = $responseData['location'] ?? [];
+                                $weatherData = $responseData['weather'][0][0] ?? null; // Current weather
+
+                                return [
+                                    'latitude' => $lat,
+                                    'longitude' => $lng,
+                                    'city' => $this->formatLocationName($locationData),
+                                    'province' => $locationData['province'] ?? '',
+                                    'village' => $locationData['village'] ?? '',
+                                    'subdistrict' => $locationData['subdistrict'] ?? '',
+                                    'last_updated' => now()->toISOString(),
+                                    'weather_data' => $weatherData ? [
+                                        'temperature' => $weatherData['t'] ?? 28,
+                                        'condition' => $weatherData['weather_desc'] ?? 'Cerah',
+                                        'humidity' => $weatherData['hu'] ?? 70,
+                                        'wind_speed' => $weatherData['ws'] ?? 5,
+                                        'weather_code' => $weatherData['weather'] ?? 1,
+                                        'icon' => $this->mapWeatherCodeToIcon($weatherData['weather'] ?? 1),
+                                        'datetime' => $weatherData['local_datetime'] ?? now()->toISOString(),
+                                        'source' => 'de4a.space'
+                                    ] : null
+                                ];
+                            }
+                        }
+                    } catch (\Exception $e) {
+                        Log::warning('de4a.space API failed for location and weather lookup', [
+                            'error' => $e->getMessage(),
+                            'lat' => $lat,
+                            'lng' => $lng
+                        ]);
+                    }
+
+                    return null;
+                }
+
+                /**
+                 * Get weather info for user location
+                 */
+                public function getWeatherInfo(?int $userId = null): array
+                {
+                    $location = $userId ?
+                        $this->getUserLocation($userId) :
+                        $this->getUserLocation(1);
+
+                    $cacheKey = "weather_info_{$location['latitude']}_{$location['longitude']}";
+
+                    return Cache::remember($cacheKey, 1800, function () use ($location) { // Cache 30 menit
+                        // Try to get fresh weather data
+                        $weatherData = $this->getLocationDataFromDe4aApi(
+                            $location['latitude'],
+                            $location['longitude']
+                        );
+
+                        if ($weatherData && isset($weatherData['weather_data'])) {
+                            $weather = $weatherData['weather_data'];
+                            return [
+                                'temperature' => round($weather['temperature']),
+                                'condition' => $weather['condition'],
+                                'humidity' => round($weather['humidity']),
+                                'wind_speed' => round($weather['wind_speed'], 1),
+                                'location' => $weatherData['city'],
+                                'icon' => $weather['icon'],
+                                'last_updated' => now()->format('H:i'),
+                                'source' => 'de4a.space',
+                                'weather_code' => $weather['weather_code']
+                            ];
+                        }
+
+                        // Fallback to Open-Meteo if de4a.space fails
+                        try {
+                            $response = Http::timeout(10)->get('https://api.open-meteo.com/v1/forecast', [
+                                'latitude' => $location['latitude'],
+                                'longitude' => $location['longitude'],
+                                'current' => 'temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m',
+                                'timezone' => 'Asia/Singapore',
+                                'forecast_days' => 1
+                            ]);
+
+                            if ($response->successful()) {
+                                $data = $response->json();
+                                $current = $data['current'] ?? [];
+
+                                $temperature = round($current['temperature_2m'] ?? 28);
+                                $humidity = round($current['relative_humidity_2m'] ?? 70);
+                                $windSpeed = round($current['wind_speed_10m'] ?? 5, 1);
+                                $weatherCode = $current['weather_code'] ?? 0;
+
+                                return [
+                                    'temperature' => $temperature,
+                                    'condition' => $this->getWeatherCondition($weatherCode),
+                                    'humidity' => $humidity,
+                                    'wind_speed' => $windSpeed,
+                                    'location' => $location['city'],
+                                    'icon' => $this->getWeatherIcon($weatherCode),
+                                    'last_updated' => now()->format('H:i'),
+                                    'source' => 'open-meteo'
+                                ];
+                            }
+                        } catch (\Exception $e) {
+                            Log::warning('Open-Meteo Weather API failed', ['error' => $e->getMessage()]);
+                        }
+
+                        // Ultimate fallback data
+                        return [
+                            'temperature' => rand(26, 32),
+                            'condition' => 'Umumnya Berawan',
+                            'humidity' => rand(65, 80),
+                            'wind_speed' => rand(3, 8),
+                            'location' => $location['city'],
+                            'icon' => 'cloud',
+                            'last_updated' => now()->format('H:i'),
+                            'source' => 'fallback'
+                        ];
+                    });
+                }
+
+                /**
+                 * Get detailed weather forecast for user location
+                 */
+                public function getWeatherForecast(?int $userId = null, int $days = 3): array
+                {
+                    $location = $userId ?
+                        $this->getUserLocation($userId) :
+                        $this->getUserLocation(1);
+
+                    $cacheKey = "weather_forecast_{$location['latitude']}_{$location['longitude']}_{$days}";
+
+                    return Cache::remember($cacheKey, 3600, function () use ($location, $days) { // Cache 1 jam
+                        try {
+                            $response = Http::timeout(15)
+                                ->withHeaders([
+                                    'User-Agent' => 'DeliveryTrackingApp/1.0',
+                                    'Accept' => 'application/json'
+                                ])
+                                ->get('https://openapi.de4a.space/api/weather/forecast', [
+                                    'lat' => (string) $location['latitude'],
+                                    'long' => (string) $location['longitude']
+                                ]);
+
+                            if ($response->successful()) {
+                                $data = $response->json();
+
+                                if (
+                                    isset($data['status']) &&
+                                    $data['status'] == 1 &&
+                                    isset($data['data'][0]['weather'])
+                                ) {
+                                    $weatherDays = $data['data'][0]['weather'];
+                                    $forecast = [];
+
+                                    // Process weather data for requested days
+                                    for ($i = 0; $i < min($days, count($weatherDays)); $i++) {
+                                        $dayData = $weatherDays[$i];
+                                        $forecast[] = [
+                                            'date' => now()->addDays($i)->format('Y-m-d'),
+                                            'day_name' => now()->addDays($i)->format('l'),
+                                            'hourly' => array_map(function ($hour) {
+                                                return [
+                                                    'datetime' => $hour['local_datetime'],
+                                                    'temperature' => $hour['t'],
+                                                    'condition' => $hour['weather_desc'],
+                                                    'humidity' => $hour['hu'],
+                                                    'wind_speed' => $hour['ws'],
+                                                    'weather_code' => $hour['weather'],
+                                                    'icon' => $this->mapWeatherCodeToIcon($hour['weather']),
+                                                    'precipitation' => $hour['tp'] ?? 0
+                                                ];
+                                            }, $dayData)
+                                        ];
+                                    }
+
+                                    return [
+                                        'location' => $this->formatLocationName($data['data'][0]['location'] ?? []),
+                                        'forecast' => $forecast,
+                                        'source' => 'de4a.space',
+                                        'last_updated' => now()->toISOString()
+                                    ];
+                                }
+                            }
+                        } catch (\Exception $e) {
+                            Log::warning('Weather forecast API failed', [
+                                'error' => $e->getMessage(),
+                                'location' => $location
+                            ]);
+                        }
+
+                        return [
+                            'location' => $location['city'],
+                            'forecast' => [],
+                            'source' => 'unavailable',
+                            'last_updated' => now()->toISOString()
+                        ];
+                    });
+                }
+
+                /**
+                 * Format location name using the same format as dashboard weather service
+                 */
+                private function formatLocationName(array $locationData): string
+                {
+                    if (empty($locationData)) {
+                        return 'Lokasi Tidak Diketahui';
+                    }
+
+                    $village = $locationData['village'] ?? '';
+                    $subdistrict = $locationData['subdistrict'] ?? '';
+                    $city = $locationData['city'] ?? '';
+                    $province = $locationData['province'] ?? '';
+
+                    // Build location string with available components
+                    $locationParts = [];
+
+                    if ($village) {
+                        $locationParts[] = $village;
+                    }
+
+                    if ($subdistrict && $subdistrict !== $village) {
+                        $locationParts[] = $subdistrict;
+                    }
+
+                    if ($city && $city !== $subdistrict) {
+                        $locationParts[] = $city;
+                    }
+
+                    if ($province && $province !== $city) {
+                        $locationParts[] = $province;
+                    }
+
+                    // Return formatted location string
+                    if (!empty($locationParts)) {
+                        return implode(', ', $locationParts);
+                    }
+
+                    return 'Lokasi Tidak Diketahui';
+                }
+
+                /**
+                 * Map de4a.space weather code to phosphor icons
+                 */
+                private function mapWeatherCodeToIcon(int $weatherCode): string
+                {
+                    return match ($weatherCode) {
+                        1 => 'sun', // Cerah/Sunny
+                        2 => 'cloud-sun', // Cerah Berawan/Partly Cloudy
+                        3 => 'cloud', // Berawan/Cloudy
+                        4 => 'cloud', // Berawan Tebal/Overcast
+                        60, 61, 62, 63 => 'cloud-fog', // Hujan ringan/Light rain
+                        80, 81, 82 => 'cloud-rain', // Hujan/Rain
+                        95, 96, 97 => 'cloud-lightning', // Badai petir/Thunderstorm
+                        71, 73, 75 => 'cloud-snow', // Salju/Snow
+                        45, 48 => 'cloud', // Kabut/Fog
+                        default => 'cloud' // Default
+                    };
                 }
 
                 /**
@@ -72,11 +354,26 @@ class GeolocationServiceProvider extends ServiceProvider
                         $locationCacheKey = "user_location_{$userId}";
                         $pollStateCacheKey = "user_polling_state_{$userId}";
 
-                        // Clear both location data and polling state
+                        // Get location for weather cache cleanup
+                        $location = $this->getUserLocation($userId);
+
+                        // Clear location and polling state
                         Cache::forget($locationCacheKey);
                         Cache::forget($pollStateCacheKey);
 
-                        Log::info('User location and polling state cleared from cache', ['user_id' => $userId]);
+                        // Also clear weather cache for this location
+                        if ($location['latitude'] && $location['longitude']) {
+                            $weatherCacheKey = "weather_info_{$location['latitude']}_{$location['longitude']}";
+                            Cache::forget($weatherCacheKey);
+
+                            // Clear forecast cache too
+                            for ($i = 1; $i <= 7; $i++) {
+                                $forecastCacheKey = "weather_forecast_{$location['latitude']}_{$location['longitude']}_{$i}";
+                                Cache::forget($forecastCacheKey);
+                            }
+                        }
+
+                        Log::info('User location and related weather cache cleared', ['user_id' => $userId]);
 
                         return true;
                     } catch (\Exception $e) {
@@ -87,6 +384,26 @@ class GeolocationServiceProvider extends ServiceProvider
 
                         return false;
                     }
+                }
+
+                /**
+                 * Clear weather cache for specific location
+                 */
+                public function clearWeatherCache(float $lat, float $lng): void
+                {
+                    $weatherCacheKey = "weather_info_{$lat}_{$lng}";
+                    Cache::forget($weatherCacheKey);
+
+                    // Clear forecast cache too
+                    for ($i = 1; $i <= 7; $i++) {
+                        $forecastCacheKey = "weather_forecast_{$lat}_{$lng}_{$i}";
+                        Cache::forget($forecastCacheKey);
+                    }
+
+                    Log::info('Weather cache cleared for location', [
+                        'latitude' => $lat,
+                        'longitude' => $lng
+                    ]);
                 }
 
                 /**
@@ -186,47 +503,39 @@ class GeolocationServiceProvider extends ServiceProvider
                 }
 
                 /**
-                 * Reverse geocoding to get address from coordinates
+                 * Convert Open-Meteo weather code to Indonesian condition (fallback)
                  */
-                private function reverseGeocode(float $lat, float $lng): ?string
+                private function getWeatherCondition(int $code): string
                 {
-                    try {
-                        $response = Http::timeout(5)->get('https://nominatim.openstreetmap.org/reverse', [
-                            'lat' => $lat,
-                            'lon' => $lng,
-                            'format' => 'json',
-                            'zoom' => 18,
-                            'addressdetails' => 1
-                        ]);
+                    return match (true) {
+                        $code === 0 => 'Cerah',
+                        $code >= 1 && $code <= 3 => 'Berawan Sebagian',
+                        $code >= 45 && $code <= 48 => 'Berkabut',
+                        $code >= 51 && $code <= 57 => 'Gerimis',
+                        $code >= 61 && $code <= 67 => 'Hujan',
+                        $code >= 71 && $code <= 77 => 'Salju',
+                        $code >= 80 && $code <= 82 => 'Hujan Deras',
+                        $code >= 95 && $code <= 99 => 'Badai Petir',
+                        default => 'Umumnya Berawan'
+                    };
+                }
 
-                        if ($response->successful()) {
-                            $data = $response->json();
-                            $addressParts = $data['address'] ?? [];
-
-                            // Extract detailed location components
-                            $village = $addressParts['village'] ?? $addressParts['hamlet'] ?? '';
-                            $subdistrict = $addressParts['suburb'] ?? $addressParts['neighbourhood'] ?? '';
-                            $city = $addressParts['city'] ?? $addressParts['county'] ?? $addressParts['state_district'] ?? '';
-                            $province = $addressParts['state'] ?? '';
-
-                            // Build comprehensive address
-                            $addressComponents = [];
-                            if ($village) $addressComponents[] = $village;
-                            if ($subdistrict && $subdistrict !== $village) $addressComponents[] = $subdistrict;
-                            if ($city && $city !== $subdistrict) $addressComponents[] = $city;
-                            if ($province && $province !== $city) $addressComponents[] = $province;
-
-                            return !empty($addressComponents) ? implode(', ', $addressComponents) : null;
-                        }
-                    } catch (\Exception $e) {
-                        Log::warning('Reverse geocoding failed', [
-                            'error' => $e->getMessage(),
-                            'lat' => $lat,
-                            'lng' => $lng
-                        ]);
-                    }
-
-                    return null;
+                /**
+                 * Get weather icon name for Open-Meteo codes (fallback)
+                 */
+                private function getWeatherIcon(int $code): string
+                {
+                    return match (true) {
+                        $code === 0 => 'sun',
+                        $code >= 1 && $code <= 3 => 'cloud-sun',
+                        $code >= 45 && $code <= 48 => 'cloud',
+                        $code >= 51 && $code <= 57 => 'cloud-fog',
+                        $code >= 61 && $code <= 67 => 'cloud-rain',
+                        $code >= 71 && $code <= 77 => 'cloud-snow',
+                        $code >= 80 && $code <= 82 => 'cloud-rain-heavy',
+                        $code >= 95 && $code <= 99 => 'cloud-lightning',
+                        default => 'cloud'
+                    };
                 }
 
                 /**
@@ -290,60 +599,42 @@ class GeolocationServiceProvider extends ServiceProvider
                 }
 
                 /**
-                 * Batch update locations (useful for bulk operations)
+                 * Refresh location and weather data
                  */
-                public function batchUpdateLocations(array $locationUpdates): array
+                public function refreshLocationData(int $userId): bool
                 {
-                    $results = [];
+                    $location = $this->getUserLocation($userId);
 
-                    foreach ($locationUpdates as $update) {
-                        try {
-                            $this->updateUserLocation(
-                                $update['user_id'],
-                                $update['latitude'],
-                                $update['longitude'],
-                                $update['address'] ?? null
-                            );
-                            $results[$update['user_id']] = true;
-                        } catch (\Exception $e) {
-                            $results[$update['user_id']] = false;
-                            Log::error('Batch location update failed for user', [
-                                'user_id' => $update['user_id'],
-                                'error' => $e->getMessage()
-                            ]);
-                        }
-                    }
-
-                    return $results;
-                }
-
-                /**
-                 * Clear all location cache (admin function)
-                 */
-                public function clearAllLocationCache(): bool
-                {
-                    try {
-                        $pattern = 'user_location_*';
-                        $pollingPattern = 'user_polling_state_*';
-
-                        $keys = Cache::get($pattern, []);
-                        $pollingKeys = Cache::get($pollingPattern, []);
-
-                        if (method_exists(Cache::store(), 'flush')) {
-                            // For cache stores that support pattern deletion
-                            foreach (array_merge($keys, $pollingKeys) as $key) {
-                                Cache::forget($key);
-                            }
-                        }
-
-                        Log::info('All location and polling state cache cleared');
-                        return true;
-                    } catch (\Exception $e) {
-                        Log::error('Failed to clear all location cache', [
-                            'error' => $e->getMessage()
-                        ]);
+                    if (!$location['latitude'] || !$location['longitude']) {
                         return false;
                     }
+
+                    try {
+                        // Clear existing cache
+                        $this->clearWeatherCache($location['latitude'], $location['longitude']);
+
+                        // Update location with fresh data from API
+                        $this->updateUserLocation(
+                            $userId,
+                            $location['latitude'],
+                            $location['longitude']
+                        );
+
+                        Log::info('Location and weather data refreshed', [
+                            'user_id' => $userId,
+                            'latitude' => $location['latitude'],
+                            'longitude' => $location['longitude']
+                        ]);
+
+                        return true;
+                    } catch (\Exception $e) {
+                        Log::error('Failed to refresh location data', [
+                            'user_id' => $userId,
+                            'error' => $e->getMessage()
+                        ]);
+                    }
+
+                    return false;
                 }
 
                 /**
