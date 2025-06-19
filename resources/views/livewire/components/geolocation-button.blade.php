@@ -177,7 +177,7 @@
                         <x-icon name="phosphor.map-pin" class="h-12 w-12 text-base-content/30 mx-auto mb-2" />
                         <p class="text-sm text-base-content/60 mb-1">Belum ada data lokasi</p>
                         <p class="text-xs text-base-content/40 mb-3">
-                            Data lokasi dan cuaca akan diambil dari de4a.space API
+                            Data lokasi dan cuaca akan diambil dari API BMKG
                         </p>
                         <x-button
                             wire:click="requestLocation"
