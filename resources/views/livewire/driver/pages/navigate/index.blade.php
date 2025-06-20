@@ -20,7 +20,7 @@
             <x-card title="Surat Jalan" subtitle="Lihat informasi surat jalan disini" class="bg-base-300">
                 <x-alert title="tidak ada surat jalan" icon="phosphor.files" class="alert-info alert-soft text-xs" />
                 <x-slot:actions separator>
-                    <x-button label="Lihat Detail" icon="phosphor.file-text"
+                    <x-button label="Lihat Detail" icon="phosphor.file-text" link="{{ route('driver.delivery-orders') }}"
                         class="btn-primary btn-dash btn-block btn-sm bg-primary/20 text-primary" />
                 </x-slot:actions>
             </x-card>
@@ -29,7 +29,7 @@
             <x-card title="Rute Anda" subtitle="Lihat informasi rute aktif disini" class="bg-base-300">
                 <x-alert title="tidak ada rute aktif" icon="phosphor.map-pin" class="alert-info alert-soft text-xs" />
                 <x-slot:actions separator>
-                    <x-button label="Lihat Rute" icon="phosphor.map-pin-area"
+                    <x-button label="Lihat Rute" icon="phosphor.map-pin-area" link="{{ route('driver.navigate.route') }}"
                         class="btn-primary btn-dash btn-block btn-sm bg-primary/20 text-primary" />
                 </x-slot:actions>
             </x-card>
