@@ -147,13 +147,13 @@
 
                 <!-- Navigasi -->
                 <div class="flex flex-col items-center">
-                    <x-button link="{{ route('driver.navigate') }}"
-                        class="{{ request()->routeIs('driver.navigate') ? 'btn-xl btn-primary bg-info/20 btn-circle' : 'btn-md btn-secondary bg-secondary/10 text-secondary btn-circle' }}">
+                    <x-button link="{{ route('driver.navigate.index') }}"
+                        class="{{ request()->routeIs('driver.navigate.*') ? 'btn-xl btn-primary bg-info/20 btn-circle' : 'btn-md btn-secondary bg-secondary/10 text-secondary btn-circle' }}">
                         <x-icon name="phosphor.map-pin-area-fill"
-                            class="{{ request()->routeIs('driver.navigate') ? 'h-8 text-primary' : 'h-6 text-secondary' }}" />
+                            class="{{ request()->routeIs('driver.navigate.*') ? 'h-8 text-primary' : 'h-6 text-secondary' }}" />
                     </x-button>
                     <span
-                        class="{{ request()->routeIs('driver.navigate') ? 'text-md text-primary font-bold' : 'text-xs text-secondary font-semibold' }} mt-1">Navigasi</span>
+                        class="{{ request()->routeIs('driver.navigate.*') ? 'text-md text-primary font-bold' : 'text-xs text-secondary font-semibold' }} mt-1">Navigasi</span>
                 </div>
 
                 <!-- Profil -->
