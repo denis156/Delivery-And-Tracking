@@ -120,7 +120,7 @@
         </main>
 
         <nav
-            class="bg-gradient-to-bl from-base-200 to-primary/10 border-t-4 border-primary/80 py-1 shadow-xl rounded-t-2xl">
+            class="bg-gradient-to-bl from-base-200 to-primary/10 border-t-4 border-primary/80 py-1 shadow-xl">
             <div class="grid grid-cols-5 items-baseline justify-items-baseline max-w-md mx-auto gap-4">
 
                 <!-- Beranda -->
