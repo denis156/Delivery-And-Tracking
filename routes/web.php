@@ -100,6 +100,11 @@ Route::prefix('driver')
     ->group(function () {
         Route::get('/', App\Livewire\Driver\Pages\Dashboard::class)->name('dashboard');
         Route::get('/delivery-orders', App\Livewire\Driver\Pages\DeliveryOrder\Index::class)->name('delivery-orders');
-        Route::get('/navigate', App\Livewire\Driver\Pages\Navigate\Index::class)->name('navigate');
         Route::get('/profile', App\Livewire\Driver\Pages\Profile::class)->name('profile');
+
+        // Navigate routes - menggunakan prefix untuk konsistensi
+        Route::prefix('navigate')->name('navigate.')->group(function () {
+            Route::get('/', App\Livewire\Driver\Pages\Navigate\Index::class)->name('index');
+            Route::get('/route', App\Livewire\Driver\Pages\Navigate\Route::class)->name('route');
+        });
     });
