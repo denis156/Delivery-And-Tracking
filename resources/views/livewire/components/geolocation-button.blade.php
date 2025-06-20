@@ -195,7 +195,7 @@
             @if($autoUpdate)
                 <div class="pt-2 border-t border-base-300">
                     <div class="flex items-center justify-between text-xs text-base-content/60">
-                        <span>Auto-update setiap {{ $pollInterval }}s</span>
+                        <span>Auto-update setiap {{ $pollInterval }} detik</span>
                         <div class="flex items-center gap-1">
                             <span class="text-xs {{ $isPollingActive ? 'text-success' : 'text-warning' }}">
                                 {{ $isPollingActive ? 'Aktif' : 'Tidak aktif' }}
