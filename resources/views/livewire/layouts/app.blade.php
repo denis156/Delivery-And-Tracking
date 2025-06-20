@@ -49,7 +49,7 @@
                 <x-menu-item title="Beranda" icon="phosphor.gauge" link="{{ route('app.dashboard') }}" exact />
 
                 <x-menu-sub title="Management Pengguna" icon="phosphor.users-three">
-                    <x-menu-item title="Pengguna" icon="phosphor.user-list" link="{{ route('app.user') }}" exact />
+                    <x-menu-item title="Pengguna" icon="phosphor.user-list" link="{{ route('app.user.index') }}" exact />
                     <x-menu-item title="Supir" icon="phosphor.archive" link="####" />
                 </x-menu-sub>
             </x-menu>
