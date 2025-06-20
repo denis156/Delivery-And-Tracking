@@ -1,5 +1,5 @@
 {{-- resources/views/livewire/driver/pages/navigate/index.blade.php --}}
-<div class="mx-auto max-w-4xl">
+<div class="w-full">
     <div class="space-y-4 relative z-10">
         <!-- Maps Component - akan handle sendiri jika lat/lng null -->
         <livewire:components.maps
