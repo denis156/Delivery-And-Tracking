@@ -16,8 +16,8 @@
         <header class="sticky top-0 z-50 bg-transparent">
             <nav class="navbar bg-gradient-to-tr from-base-200 to-primary/20 shadow-xl border-b-4 border-primary/80">
                 <div class="navbar-start ml-2">
-                    {{-- Geolocation Button Component - Click to open only dengan polling setiap 30 detik --}}
-                    <livewire:components.geolocation-button :auto-update="true" :poll-interval="30"
+                    {{-- Geolocation Button Component - Click to open only dengan polling setiap 5 detik --}}
+                    <livewire:components.geolocation-button :auto-update="true" :poll-interval="5"
                         button-class="btn-circle btn-md border-primary border-2" icon-name="phosphor.map-pin"
                         :show-toast="true" :show-badge="true" :click-to-open-only="true" />
                 </div>
