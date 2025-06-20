@@ -110,8 +110,16 @@
                         subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
                     }).addTo(map);
 
-                    // Add marker dengan popup yang dinamis berdasarkan status lokasi
-                    const marker = L.marker([lat, lng]).addTo(map);
+                    // Create custom user location icon
+                    const userLocationIcon = L.icon({
+                        iconUrl: '/images/map-pin/user-location.png',
+                        iconSize: [32, 32],
+                        iconAnchor: [16, 32],
+                        popupAnchor: [0, -32]
+                    });
+
+                    // Add marker dengan custom icon dan popup yang dinamis berdasarkan status lokasi
+                    const marker = L.marker([lat, lng], { icon: userLocationIcon }).addTo(map);
 
                     // Buat popup content berdasarkan status lokasi
                     const popupContent = `
