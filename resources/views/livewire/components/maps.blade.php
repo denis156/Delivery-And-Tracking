@@ -49,19 +49,14 @@
     @endif
 
     <!-- Badge Bottom Right - Lokasi Tujuan -->
-    @if($badgeBottomRight)
+    @if ($badgeBottomRight)
         <x-badge value="{{ $badgeBottomRight }}" class="absolute bottom-4 right-4 z-10 badge-primary badge-md" />
     @endif
 
     <!-- Flexible Map Container with inline style -->
-    <div id="{{ $mapId }}" wire:ignore
-        class="{{ $class ?? '' }}"
-        style="{{ $style }}"
-        data-lat="{{ $lat }}"
-        data-lng="{{ $lng }}"
-        data-zoom="{{ $zoom }}"
-        data-address="{{ $address }}"
-        data-is-actual="{{ $isActualLocation ? 'true' : 'false' }}"
+    <div id="{{ $mapId }}" wire:ignore class="{{ $class ?? '' }}" style="{{ $style }}"
+        data-lat="{{ $lat }}" data-lng="{{ $lng }}" data-zoom="{{ $zoom }}"
+        data-address="{{ $address }}" data-is-actual="{{ $isActualLocation ? 'true' : 'false' }}"
         data-status-text="{{ $this->getLocationStatusText() }}"
         data-status-class="{{ $this->getLocationStatusClass() }}"
         data-text-class="{{ $this->getLocationTextClass() }}">
@@ -120,17 +115,22 @@
 
                     // Buat popup content berdasarkan status lokasi
                     const popupContent = `
-                        <div class="min-w-40">
-                            <div class="flex items-center gap-2 mb-2">
+                        <div class="min-w-28 max-w-40 text-xs">
+                            <!-- Status Section - Compact -->
+                            <div class="flex items-center gap-1 mb-1">
                                 <div aria-label="${isActual ? 'success' : 'warning'}" class="status status-md ${statusClass} ${isActual ? '' : 'animate-pulse'}"></div>
-                                <span class="${textClass} font-semibold text-lg">${statusText}</span>
+                                <span class="${textClass} font-medium text-xs">${statusText}</span>
                             </div>
-                            <div class="text-md text-gray-600 font-bold mb-2">
+
+                            <!-- Address Section - Truncated -->
+                            <div class="text-xs text-gray-600 font-medium mb-1 line-clamp-2 leading-tight">
                                 ${address ? address.replace(/"/g, '&quot;').replace(/'/g, '&#39;') : 'Lokasi tidak diketahui'}
                             </div>
-                            <div class="flex gap-2 text-xs">
-                                <span class="badge badge-xs badge-outline badge-info px-2 py-1">Latitude: ${lat.toFixed(4)}°</span>
-                                <span class="badge badge-xs badge-outline badge-info px-2 py-1">Longitude: ${lng.toFixed(4)}°</span>
+
+                            <!-- Coordinates Section - Two Columns -->
+                            <div class="flex gap-1">
+                                <span class="badge badge-xs badge-soft badge-info">Lat: ${lat.toFixed(3)}°</span>
+                                <span class="badge badge-xs badge-soft badge-info">lng: ${lng.toFixed(3)}°</span>
                             </div>
                         </div>
                     `;
