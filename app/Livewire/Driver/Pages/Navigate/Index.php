@@ -19,12 +19,13 @@ class Index extends Component
 
     /**
      * Listen for location updates from geolocation button
+     * Component akan auto-refresh karena wire:poll.visible di Maps component
      */
     #[On('location-updated')]
     public function handleLocationUpdate(): void
     {
-        // Hanya refresh component
-        $this->render();
+        // Tidak perlu action khusus, Maps component akan handle sendiri
+        // via wire:poll.visible dan event dispatcher
     }
 
     /**
@@ -33,11 +34,9 @@ class Index extends Component
     #[On('location-cleared')]
     public function handleLocationCleared(): void
     {
-        // Hanya refresh component
-        $this->render();
+        // Tidak perlu action khusus, Maps component akan handle sendiri
+        // via wire:poll.visible dan event dispatcher
     }
-
-
 
     public function render()
     {

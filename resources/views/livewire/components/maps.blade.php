@@ -1,5 +1,5 @@
 {{-- resources/views/livewire/components/maps.blade.php --}}
-<div class="relative">
+<div class="relative" wire:poll.visible.15000ms="updateMapLocation">
     <!-- Offline Indicator -->
     <div wire:offline class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[9999]">
         <x-card class="text-center p-6 bg-base-100/95 backdrop-blur-sm border-2 border-error/20">
@@ -65,6 +65,9 @@
 
 @assets
     <script>
+        // Global object untuk menyimpan map instances dan markers
+        window.mapInstances = window.mapInstances || {};
+
         document.addEventListener('DOMContentLoaded', function() {
             initializeMaps();
         });
@@ -72,6 +75,14 @@
         // Handle Livewire navigation
         document.addEventListener('livewire:navigated', function() {
             setTimeout(initializeMaps, 50);
+        });
+
+        // Listen untuk update marker position events
+        document.addEventListener('livewire:init', function() {
+            Livewire.on('update-marker-position', (event) => {
+                console.log('Event received:', event); // Debug log
+                updateMarkerPosition(event);
+            });
         });
 
         function initializeMaps() {
@@ -118,35 +129,21 @@
                         popupAnchor: [0, -32]
                     });
 
-                    // Add marker dengan custom icon dan popup yang dinamis berdasarkan status lokasi
+                    // Add marker dengan custom icon
                     const marker = L.marker([lat, lng], { icon: userLocationIcon }).addTo(map);
 
-                    // Buat popup content berdasarkan status lokasi
-                    const popupContent = `
-                        <div class="min-w-28 max-w-40 text-xs">
-                            <!-- Status Section - Compact -->
-                            <div class="flex items-center gap-1 mb-1">
-                                <div aria-label="${isActual ? 'success' : 'warning'}" class="status status-md ${statusClass} ${isActual ? '' : 'animate-pulse'}"></div>
-                                <span class="${textClass} font-medium text-xs">${statusText}</span>
-                            </div>
-
-                            <!-- Address Section - Truncated -->
-                            <div class="text-xs text-gray-600 font-medium mb-1 line-clamp-2 leading-tight">
-                                ${address ? address.replace(/"/g, '&quot;').replace(/'/g, '&#39;') : 'Lokasi tidak diketahui'}
-                            </div>
-
-                            <!-- Coordinates Section - Two Columns -->
-                            <div class="flex gap-1">
-                                <span class="badge badge-xs badge-soft badge-info">Lat: ${lat.toFixed(3)}°</span>
-                                <span class="badge badge-xs badge-soft badge-info">lng: ${lng.toFixed(3)}°</span>
-                            </div>
-                        </div>
-                    `;
-
-                    marker.bindPopup(popupContent).openPopup();
+                    // Create initial popup
+                    updateMarkerPopup(marker, lat, lng, address, isActual, statusText, statusClass, textClass);
 
                     // Setup zoom controls
                     setupZoomControls(map, mapId);
+
+                    // Store map dan marker dalam global object untuk real-time updates
+                    window.mapInstances[mapId] = {
+                        map: map,
+                        marker: marker,
+                        userLocationIcon: userLocationIcon
+                    };
 
                     // Mark as initialized
                     container.setAttribute('data-initialized', 'true');
@@ -156,6 +153,108 @@
                     console.error('Map initialization error:', error);
                 }
             });
+        }
+
+        /**
+         * Update marker position - Core functionality untuk real-time updates
+         */
+        function updateMarkerPosition(eventData) {
+            console.log('Received event data:', eventData); // Debug log
+
+            // Extract data dari eventData (bisa berupa array atau object)
+            let mapId, lat, lng, address, isActual;
+
+            if (Array.isArray(eventData) && eventData.length > 0) {
+                // Jika data dalam format array (Livewire v3)
+                const data = eventData[0];
+                mapId = data.mapId;
+                lat = data.lat;
+                lng = data.lng;
+                address = data.address;
+                isActual = data.isActual;
+            } else if (typeof eventData === 'object') {
+                // Jika data dalam format object langsung
+                mapId = eventData.mapId;
+                lat = eventData.lat;
+                lng = eventData.lng;
+                address = eventData.address;
+                isActual = eventData.isActual;
+            } else {
+                console.error('Invalid event data format:', eventData);
+                return;
+            }
+
+            console.log('Extracted data:', { mapId, lat, lng, address, isActual }); // Debug log
+
+            // Ambil map instance dari global object
+            const mapInstance = window.mapInstances[mapId];
+
+            if (!mapInstance) {
+                console.warn('Map instance not found for:', mapId);
+                console.log('Available map instances:', Object.keys(window.mapInstances));
+                return;
+            }
+
+            const { map, marker } = mapInstance;
+
+            try {
+                // Update marker position menggunakan setLatLng
+                const newLatLng = L.latLng(lat, lng);
+                marker.setLatLng(newLatLng);
+
+                // Update popup content
+                updateMarkerPopup(
+                    marker,
+                    lat,
+                    lng,
+                    address,
+                    isActual,
+                    isActual ? 'Lokasi Aktual' : 'Lokasi Default',
+                    isActual ? 'status-success' : 'status-warning',
+                    isActual ? 'text-success' : 'text-warning'
+                );
+
+                // Optional: Center map pada lokasi baru (hanya jika perlu)
+                // map.setView(newLatLng, map.getZoom());
+
+                console.log(`📍 Marker updated for ${mapId}:`, { lat, lng, isActual });
+
+            } catch (error) {
+                console.error('Error updating marker position:', error);
+            }
+        }
+
+        /**
+         * Update popup content berdasarkan data lokasi
+         */
+        function updateMarkerPopup(marker, lat, lng, address, isActual, statusText, statusClass, textClass) {
+            const popupContent = `
+                <div class="min-w-28 max-w-40 text-xs">
+                    <!-- Status Section - Compact -->
+                    <div class="flex items-center gap-1 mb-1">
+                        <div aria-label="${isActual ? 'success' : 'warning'}" class="status status-md ${statusClass} ${isActual ? '' : 'animate-pulse'}"></div>
+                        <span class="${textClass} font-medium text-xs">${statusText}</span>
+                    </div>
+
+                    <!-- Address Section - Truncated -->
+                    <div class="text-xs text-gray-600 font-medium mb-1 line-clamp-2 leading-tight">
+                        ${address ? address.replace(/"/g, '&quot;').replace(/'/g, '&#39;') : 'Lokasi tidak diketahui'}
+                    </div>
+
+                    <!-- Coordinates Section - Two Columns -->
+                    <div class="flex gap-1">
+                        <span class="badge badge-xs badge-soft badge-info">Lat: ${lat.toFixed(3)}°</span>
+                        <span class="badge badge-xs badge-soft badge-info">Lng: ${lng.toFixed(3)}°</span>
+                    </div>
+                </div>
+            `;
+
+            marker.bindPopup(popupContent);
+
+            // Auto open popup jika marker baru dibuat atau posisi berubah signifikan
+            if (isActual) {
+                marker.openPopup();
+            }
         }
 
         function setupZoomControls(map, mapId) {
