@@ -1,30 +1,27 @@
 <div
     x-data="geolocationHandler()"
-    @if($autoUpdate && $isPollingActive)
-        wire:poll.{{ $pollInterval }}s="autoRefreshLocation"
-    @endif
+    {{-- wire:poll.5000ms="updateLocation" untuk real-time tracking --}}
+    wire:poll.5000ms="updateLocation"
     class="relative"
 >
-    <!-- Geolocation Button -->
+    <!-- Geolocation Dropdown - MaryUI Pattern -->
     <x-dropdown class="z-50" no-x-anchor>
         <x-slot:trigger>
             @php
                 $buttonClasses = $this->getButtonClasses();
                 $iconName = $this->getIconName();
                 $statusBadge = $this->getStatusBadge();
-                $tooltipText = $status === 'success'
-                    ? 'Lokasi: ' . $address . ' (Update: ' . $lastUpdated . ')'
-                    : 'Klik untuk buka menu lokasi';
+                $tooltipText = 'Klik untuk membuka menu lokasi';
             @endphp
 
             <x-button
                 :icon="$iconName"
                 :class="$buttonClasses"
-                wire:click="handleNavbarClick"
                 :title="$tooltipText"
                 class="{{ $buttonClasses }} indicator"
             >
-                @if($showBadge && $statusBadge['text'])
+                {{-- Badge hanya muncul saat live tracking aktif --}}
+                @if($showBadge && $statusBadge['text'] && $isTracking && $status === 'success')
                     <x-badge
                         :value="$statusBadge['text']"
                         :class="$statusBadge['class'] . ' indicator-item'"
@@ -33,226 +30,188 @@
             </x-button>
         </x-slot:trigger>
 
-        <!-- Dropdown Content -->
-        <div class="w-80 max-h-96 overflow-y-auto p-4 space-y-4">
-            <!-- Header -->
-            <div class="pb-2 border-b border-base-300">
-                <h3 class="font-semibold text-lg flex items-center gap-2">
-                    <x-icon name="phosphor.map-pin" class="h-5 w-5" />
-                    Status Lokasi
-                </h3>
+        <!-- Header Info -->
+        <div class="px-4 py-3 border-b border-base-300">
+            <h3 class="font-semibold text-lg flex items-center gap-2">
+                <x-icon name="phosphor.broadcast" class="h-5 w-5" />
+                Real-Time GPS Tracking
+            </h3>
+            @php
+                $trackingStatusColor = $this->getTrackingStatusColor();
+                $trackingStatusText = $this->getTrackingStatusText();
+            @endphp
+            <div class="flex items-center gap-2 mt-1">
+                <div class="w-2 h-2 rounded-full {{ $isTracking ? 'bg-success animate-pulse' : 'bg-base-300' }}"></div>
+                <span class="text-xs {{ $trackingStatusColor }}">{{ $trackingStatusText }}</span>
             </div>
+        </div>
 
-            <!-- Status Info -->
-            <div class="space-y-3">
-                <!-- Status Card -->
-                @php
-                    $statusConfig = [
-                        'waiting' => ['bg' => 'bg-warning/10', 'text' => 'text-warning', 'label' => 'Belum diambil'],
-                        'getting' => ['bg' => 'bg-info/10', 'text' => 'text-info', 'label' => 'Mengambil lokasi...'],
-                        'success' => ['bg' => 'bg-success/10', 'text' => 'text-success', 'label' => 'Berhasil'],
-                        'error' => ['bg' => 'bg-error/10', 'text' => 'text-error', 'label' => 'Gagal']
-                    ];
-                    $currentStatus = $statusConfig[$status];
-                @endphp
-
-                {{-- <div class="p-3 rounded-lg {{ $currentStatus['bg'] }}">
-                    <div class="flex items-center justify-between">
-                        <span class="font-medium">Status:</span>
-                        <div class="flex items-center gap-2">
-                            <span class="capitalize {{ $currentStatus['text'] }}">
-                                {{ $currentStatus['label'] }}
-                            </span>
-                            <x-icon
-                                name="{{ $status === 'getting' && $isManualRequest ? 'phosphor.spinner' : $iconName }}"
-                                class="h-4 w-4 {{ $status === 'getting' && $isManualRequest ? 'animate-spin' : '' }}"
-                            />
-                        </div>
+        <!-- Status Info (jika ada lokasi) -->
+        @if($status === 'success' && $latitude && $longitude)
+            <div class="px-4 py-2 bg-base-100 border-b border-base-300">
+                <div class="text-xs space-y-1">
+                    <div class="flex justify-between">
+                        <span class="text-base-content/70">Lokasi:</span>
+                        <span class="font-medium truncate">{{ Str::words($address ?: 'Tidak diketahui', 3, '...') }}</span>
                     </div>
-                </div> --}}
-
-                @if($status === 'success' && $latitude && $longitude)
-                    <!-- Location Details -->
-                    <div class="space-y-2 text-xs">
-                        @php
-                            $locationDetails = [
-                                'Alamat' => $address ?: 'Tidak diketahui',
-                                'Koordinat' => number_format($latitude, 6) . ', ' . number_format($longitude, 6),
-                                'Update terakhir' => ($lastUpdated ?? '-') . ' WITA',
-                            ];
-                        @endphp
-
-                        @foreach($locationDetails as $label => $value)
-                            <div class="flex justify-between">
-                                <span class="text-base-content/70">{{ $label }}:</span>
-                                <span class="{{ $label === 'Koordinat' ? 'font-mono text-xs' : 'font-medium' }}">
-                                    {{ $value }}
-                                </span>
-                            </div>
-                        @endforeach
-
-                        <div class="flex justify-between">
-                            <span class="text-base-content/70">Akurasi:</span>
-                            <span class="text-xs {{ $this->isLocationRecent() ? 'text-success' : 'text-warning' }}">
-                                {{ $this->isLocationRecent() ? 'Terbaru' : 'Perlu diperbarui' }}
-                            </span>
-                        </div>
+                    <div class="flex justify-between">
+                        <span class="text-base-content/70">Koordinat:</span>
+                        <span class="font-mono text-xs">{{ number_format($latitude, 6) }}, {{ number_format($longitude, 6) }}</span>
                     </div>
-
-                    <!-- Quick Actions -->
-                    <div class="space-y-2">
-                        <!-- Primary Actions -->
-                        <div class="flex gap-2">
-                            <x-button
-                                wire:click="refreshLocation"
-                                label="Perbarui Lokasi"
-                                icon="phosphor.arrow-clockwise"
-                                class="btn-sm btn-primary flex-1"
-                                wire:loading.attr="disabled"
-                                wire:target="refreshLocation"
-                            />
-                            <x-button
-                                wire:click="stopLocation"
-                                icon="phosphor.stop"
-                                class="btn-sm btn-error btn-outline"
-                                wire:loading.attr="disabled"
-                                wire:target="stopLocation"
-                                title="Hentikan dan hapus data lokasi"
-                            />
-                        </div>
-
-                        <!-- Secondary Actions -->
-                        <div class="flex gap-2">
-                            <x-button
-                                onclick="navigator.clipboard.writeText('{{ $latitude }}, {{ $longitude }}');
-                                         $dispatch('notify', {type: 'success', message: 'Koordinat disalin ke clipboard'})"
-                                label="Salin Koordinat"
-                                icon="phosphor.copy"
-                                class="btn-sm btn-outline flex-1"
-                            />
-                        </div>
+                    <div class="flex justify-between">
+                        <span class="text-base-content/70">Update:</span>
+                        <span class="font-mono text-xs">{{ $lastUpdated ?? '-' }} WITA</span>
                     </div>
-
-                    <!-- External Links -->
-                    {{-- <div class="space-y-1">
-                        <x-button
-                            onclick="window.open('https://www.google.com/maps?q={{ $latitude }},{{ $longitude }}', '_blank')"
-                            label="Buka di Google Maps"
-                            icon="phosphor.map-pin-area"
-                            class="btn-sm btn-outline btn-block"
-                        />
-
-                        <x-button
-                            onclick="window.open('https://www.openstreetmap.org/?mlat={{ $latitude }}&mlon={{ $longitude }}&zoom=16', '_blank')"
-                            label="Buka di OpenStreetMap"
-                            icon="phosphor.globe"
-                            class="btn-sm btn-outline btn-block"
-                        />
-                    </div> --}}
-
-                @elseif($status === 'error')
-                    <!-- Error Help -->
-                    <div class="text-sm space-y-2">
-                        <p class="text-error">Gagal mengambil lokasi. Pastikan:</p>
-                        <ul class="list-disc list-inside text-xs text-base-content/70 space-y-1">
-                            <li>Browser mendukung geolocation</li>
-                            <li>Izin lokasi sudah diberikan</li>
-                            <li>GPS/Layanan lokasi aktif</li>
-                            <li>Koneksi internet stabil</li>
-                        </ul>
-                    </div>
-
-                    <x-button
-                        wire:click="requestLocation"
-                        label="Coba Lagi"
-                        icon="phosphor.arrow-clockwise"
-                        class="btn-sm btn-error btn-block"
-                        wire:loading.attr="disabled"
-                        wire:target="requestLocation"
-                    />
-
-                @else
-                    <!-- Initial State -->
-                    <div class="text-center py-4">
-                        <x-icon name="phosphor.map-pin" class="h-12 w-12 text-base-content/30 mx-auto mb-2" />
-                        <p class="text-sm text-base-content/60 mb-1">Belum ada data lokasi</p>
-                        <p class="text-xs text-base-content/40 mb-3">
-                            Data lokasi dan cuaca akan diambil dari API BMKG
-                        </p>
-                        <x-button
-                            wire:click="requestLocation"
-                            label="Ambil Lokasi Sekarang"
-                            icon="phosphor.crosshair"
-                            class="btn-sm btn-primary"
-                            wire:loading.attr="disabled"
-                            wire:target="requestLocation"
-                        />
-                    </div>
-                @endif
-            </div>
-
-            <!-- Settings Info -->
-            @if($autoUpdate)
-                <div class="pt-2 border-t border-base-300">
-                    <div class="flex items-center justify-between text-xs text-base-content/60">
-                        <span>Auto-update setiap {{ $pollInterval }} detik</span>
-                        <div class="flex items-center gap-1">
-                            <span class="text-xs {{ $isPollingActive ? 'text-success' : 'text-warning' }}">
-                                {{ $isPollingActive ? 'Aktif' : 'Tidak aktif' }}
-                            </span>
-                            <x-icon name="phosphor.timer" class="h-3 w-3" />
-                        </div>
+                    <div class="flex justify-between">
+                        <span class="text-base-content/70">Status:</span>
+                        <span class="{{ $this->isLocationRecent() ? 'text-success' : 'text-warning' }}">
+                            {{ $this->isLocationRecent() ? 'Terbaru' : 'Perlu refresh' }}
+                        </span>
                     </div>
                 </div>
-            @endif
+            </div>
+        @endif
 
-            <!-- API Info -->
-            <div class="pt-2 border-t border-base-300">
-                <div class="text-[10px] text-base-content/50 text-center">
-                    <x-icon name="si.cloudways" class="h-4 mr-1 text-primary" />
-                    Terintegrasi dengan API BMKG untuk lokasi dan cuaca
+        <!-- Menu Items - MaryUI Pattern -->
+        @if(!$isTracking)
+            <!-- Tracking Non-aktif -->
+            <x-menu-item
+                title="Mulai Live Tracking"
+                icon="phosphor.play"
+                wire:click="startTracking"
+                wire:loading.attr="disabled"
+                wire:target="startTracking"
+            />
+            <x-menu-item
+                title="Ambil Lokasi Sekali"
+                icon="phosphor.crosshair"
+                wire:click="requestLocation"
+                wire:loading.attr="disabled"
+                wire:target="requestLocation"
+            />
+        @else
+            <!-- Tracking Aktif -->
+            <x-menu-item
+                title="Stop Live Tracking"
+                icon="phosphor.stop"
+                wire:click="stopTracking"
+                wire:loading.attr="disabled"
+                wire:target="stopTracking"
+                class="text-warning"
+            />
+            <x-menu-item
+                title="Refresh Manual"
+                icon="phosphor.arrow-clockwise"
+                wire:click="refreshLocation"
+                wire:loading.attr="disabled"
+                wire:target="refreshLocation"
+            />
+        @endif
+
+        <!-- Menu Items Lainnya -->
+        @if($latitude && $longitude)
+            <hr class="border-base-300">
+            <x-menu-item
+                title="Salin Koordinat"
+                icon="phosphor.copy"
+                onclick="navigator.clipboard.writeText('{{ $latitude }}, {{ $longitude }}'); $dispatch('notify', {type: 'success', message: 'Koordinat disalin'})"
+            />
+            <x-menu-item
+                title="Buka Google Maps"
+                icon="phosphor.map-pin-area"
+                onclick="window.open('https://www.google.com/maps?q={{ $latitude }},{{ $longitude }}', '_blank')"
+            />
+            <hr class="border-base-300">
+            <x-menu-item
+                title="Hapus Data Lokasi"
+                icon="phosphor.trash"
+                wire:click="clearLocation"
+                wire:loading.attr="disabled"
+                wire:target="clearLocation"
+                class="text-error"
+                onclick="confirm('Yakin ingin menghapus data lokasi?') || event.stopImmediatePropagation()"
+            />
+        @endif
+
+        <!-- Info Footer -->
+        <div class="px-4 py-2 border-t border-base-300 bg-base-100">
+            <div class="text-[10px] text-base-content/50 text-center">
+                @if($isTracking)
+                    <div class="flex items-center justify-center gap-1">
+                        <x-icon name="phosphor.broadcast" class="h-3 w-3 text-success animate-pulse" />
+                        <span>Live tracking setiap 5 detik</span>
+                    </div>
+                @else
+                    <div class="flex items-center justify-center gap-1">
+                        <x-icon name="phosphor.map-pin" class="h-3 w-3 text-base-content/40" />
+                        <span>GPS tracking nonaktif</span>
+                    </div>
+                @endif
+                <div class="text-base-content/40 mt-1">
+                    Powered by BMKG API
                 </div>
             </div>
         </div>
     </x-dropdown>
 
-    <!-- Simplified Alpine.js Handler -->
+    <!-- Optimized Alpine.js Handler -->
     <script>
         function geolocationHandler() {
             return {
+                isRequestingLocation: false,
+
                 init() {
                     // Listen for geolocation requests
                     this.$wire.on('request-geolocation', () => {
-                        this.getCurrentPosition();
+                        this.getCurrentPosition(true); // with loading
+                    });
+
+                    // Listen for silent geolocation requests (for real-time polling)
+                    this.$wire.on('request-geolocation-silent', () => {
+                        this.getCurrentPosition(false); // no loading
                     });
                 },
 
-                getCurrentPosition() {
+                getCurrentPosition(showLoading = true) {
+                    // Prevent multiple simultaneous requests
+                    if (this.isRequestingLocation) {
+                        return;
+                    }
+
                     if (!navigator.geolocation) {
                         this.$wire.handleLocationError('Browser tidak mendukung geolocation');
                         return;
                     }
 
+                    this.isRequestingLocation = true;
+
                     const options = {
                         enableHighAccuracy: true,
-                        timeout: 15000,
-                        maximumAge: 60000 // 1 minute cache
+                        timeout: 10000, // Reduced for real-time
+                        maximumAge: 0 // Always get fresh location for real-time
                     };
 
                     navigator.geolocation.getCurrentPosition(
                         (position) => {
                             const { latitude, longitude, accuracy } = position.coords;
                             this.$wire.handleLocationSuccess(latitude, longitude, accuracy);
+                            this.isRequestingLocation = false;
                         },
                         (error) => {
                             const errorMessages = {
-                                1: "Akses lokasi ditolak. Silakan aktifkan di pengaturan browser.",
-                                2: "Informasi lokasi tidak tersedia. Periksa GPS/layanan lokasi.",
-                                3: "Permintaan lokasi timeout. Silakan coba lagi."
+                                1: "Akses lokasi ditolak",
+                                2: "Lokasi tidak tersedia",
+                                3: "Request timeout"
                             };
 
-                            const message = errorMessages[error.code] || "Terjadi kesalahan saat mengambil lokasi.";
-                            this.$wire.handleLocationError(message);
+                            const message = errorMessages[error.code] || "Error mengambil lokasi";
+
+                            // Only show error for manual requests
+                            if (showLoading) {
+                                this.$wire.handleLocationError(message);
+                            }
+
+                            this.isRequestingLocation = false;
                         },
                         options
                     );
