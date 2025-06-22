@@ -1,4 +1,4 @@
-<div x-data="geolocationHandler()" wire:poll.15000ms="updateLocation" class="relative">
+<div x-data="geolocationHandler()" wire:poll.1500ms="updateLocation" class="relative">
     <!-- Geolocation Dropdown - MaryUI Pattern -->
     <x-dropdown class="z-50" no-x-anchor>
         <x-slot:trigger>
