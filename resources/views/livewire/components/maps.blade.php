@@ -196,7 +196,7 @@
 
                     // Create custom user location icon
                     const userLocationIcon = L.icon({
-                        iconUrl: '/images/map-pin/user-location.png',
+                        iconUrl: '/images/map-pin/location-user.png',
                         iconSize: [32, 32],
                         iconAnchor: [16, 32],
                         popupAnchor: [0, -32]
