@@ -1,8 +1,13 @@
 // resources/js/app.js
 import '../css/app.css';
 import './bootstrap';
+
 // Import Leaflet from node_modules
 import L from 'leaflet';
+
+// Import Leaflet Routing Machine - untuk route functionality
+import 'leaflet-routing-machine';
+import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
 
 // Fix Leaflet default markers icons with Vite
 // This is important because Vite changes asset paths
