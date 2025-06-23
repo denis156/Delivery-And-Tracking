@@ -8,7 +8,7 @@
 <div class="relative" @if ($isUserTracking) wire:poll.visible.1500ms="updateMapLocation" @endif>
 
     <!-- Offline Indicator -->
-    <div wire:offline class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[9999]">
+    <div wire:offline class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-15">
         <x-card class="text-center p-6 bg-base-100/95 backdrop-blur-sm border-2 border-error/20">
             <div class="flex flex-col items-center gap-3">
                 <x-icon name="phosphor.cell-signal-slash-duotone" class="w-12 h-12 text-error animate-pulse" />
@@ -46,7 +46,7 @@
     @endif
 
     <!-- Custom Zoom Controls - Top Left -->
-    <div class="absolute top-4 left-4 z-[1000] flex flex-col gap-1">
+    <div class="absolute top-4 left-4 z-10 flex flex-col gap-1">
         <button id="zoom-in-{{ $mapId }}" class="btn btn-sm btn-circle btn-primary btn-soft">
             <x-icon name="phosphor.magnifying-glass-plus-duotone" class="w-4 h-4" />
         </button>
