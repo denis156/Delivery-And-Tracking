@@ -1,5 +1,12 @@
 {{-- resources/views/livewire/components/maps.blade.php --}}
-<div class="relative" wire:poll.visible.15000ms="updateMapLocation">
+@php
+    // Cek apakah user sedang tracking untuk conditional polling
+    $trackingCacheKey = 'user_tracking_state_' . auth()->id();
+    $isUserTracking = \Illuminate\Support\Facades\Cache::get($trackingCacheKey, false);
+@endphp
+
+<div class="relative" @if ($isUserTracking) wire:poll.visible.1500ms="updateMapLocation" @endif>
+
     <!-- Offline Indicator -->
     <div wire:offline class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[9999]">
         <x-card class="text-center p-6 bg-base-100/95 backdrop-blur-sm border-2 border-error/20">
@@ -18,17 +25,22 @@
 
     <!-- Corner Divs - Positioned Absolutely -->
 
-    <!-- Top Right - Informasi Cuaca & Waktu -->
-    @if ($badgeTopLeft || $badgeTopRight)
-        <div class="absolute top-4 right-4 z-10 flex flex-col gap-2 items-center">
-            <!-- Badge Kiri -->
-            @if ($badgeTopLeft)
-                <x-badge value="{{ $badgeTopLeft }}" class="badge-success badge-soft badge-xs" />
+    <!-- Top Right - Informasi Cuaca & Waktu (Dynamic dari Geolocation) -->
+    @if ($currentTime || $weatherData)
+        <div class="absolute top-4 right-4 z-10 flex flex-col gap-2 items-end">
+            <!-- Badge Cuaca -->
+            @if ($weatherData)
+                @php
+                    $weatherCondition = $weatherData['condition'] ?? ($weatherData['description'] ?? 'Cuaca');
+                    $weatherTemp = round($weatherData['temperature'] ?? 0);
+                    $weatherText = $weatherCondition . ' ' . $weatherTemp . '°C';
+                @endphp
+                <x-badge value="Cuaca: {{ $weatherText }}" class="badge-info badge-soft badge-xs" />
             @endif
 
-            <!-- Badge Kanan -->
-            @if ($badgeTopRight)
-                <x-badge value="{{ $badgeTopRight }}" class="badge-info badge-soft badge-xs" />
+            <!-- Badge Waktu Update -->
+            @if ($currentTime)
+                <x-badge value="Waktu: {{ $currentTime }}" class="badge-success badge-soft badge-xs" />
             @endif
         </div>
     @endif
@@ -41,6 +53,22 @@
         <button id="zoom-out-{{ $mapId }}" class="btn btn-sm btn-circle btn-primary btn-soft">
             <x-icon name="phosphor.magnifying-glass-minus-duotone" class="w-4 h-4" />
         </button>
+
+        <!-- Go to My Location Button - Hanya muncul jika ada lokasi aktual -->
+        @if ($isActualLocation)
+            <button id="go-to-location-{{ $mapId }}" wire:click="goToMyLocation"
+                class="btn btn-sm btn-circle btn-success btn-soft" title="Ke Lokasi Saya (Zoom Max)">
+                <x-icon name="phosphor.crosshair-duotone" class="w-4 h-4" />
+            </button>
+        @endif
+
+        <!-- Debug Weather Button - HAPUS di production -->
+        @if (config('app.debug'))
+            <button wire:click="debugWeatherData" class="btn btn-sm btn-circle btn-warning btn-soft"
+                title="Debug Weather">
+                <x-icon name="phosphor.bug-duotone" class="w-4 h-4" />
+            </button>
+        @endif
     </div>
 
     <!-- Badge Bottom Left - No Surat Jalan -->
@@ -68,6 +96,97 @@
         // Global object untuk menyimpan map instances dan markers
         window.mapInstances = window.mapInstances || {};
 
+        // Debug mode dari Laravel config
+        const isDebugMode = @json(config('app.debug'));
+
+        // Debug logger yang hanya aktif saat APP_DEBUG=true
+        function debugLog(...args) {
+            if (isDebugMode) {
+                console.log(...args);
+            }
+        }
+
+        /**
+         * Center map to specific location with max zoom
+         */
+        function centerMapToLocation(eventData) {
+            debugLog('Center map event received:', eventData);
+
+            // Extract data dari eventData
+            let mapId, lat, lng, zoom;
+
+            if (Array.isArray(eventData) && eventData.length > 0) {
+                const data = eventData[0];
+                mapId = data.mapId;
+                lat = data.lat;
+                lng = data.lng;
+                zoom = data.zoom;
+            } else if (typeof eventData === 'object') {
+                mapId = eventData.mapId;
+                lat = eventData.lat;
+                lng = eventData.lng;
+                zoom = eventData.zoom;
+            } else {
+                debugError('Invalid center map event data:', eventData);
+                return;
+            }
+
+            // Ambil map instance
+            const mapInstance = window.mapInstances[mapId];
+            if (!mapInstance) {
+                debugWarn('Map instance not found for center operation:', mapId);
+                return;
+            }
+
+            const {
+                map
+            } = mapInstance;
+
+            try {
+                // Animate to location dengan zoom maksimal
+                map.flyTo([lat, lng], zoom, {
+                    duration: 1.5,
+                    easeLinearity: 0.25
+                });
+
+                debugLog(`🎯 Map centered to location for ${mapId}:`, {
+                    lat,
+                    lng,
+                    zoom
+                });
+            } catch (error) {
+                debugError('Error centering map:', error);
+            }
+        }
+
+        /**
+         * Global function untuk center to max zoom dari popup button
+         */
+        window.centerToMaxZoom = function(lat, lng) {
+            // Find map yang paling dekat dengan koordinat ini
+            Object.keys(window.mapInstances).forEach(mapId => {
+                const mapInstance = window.mapInstances[mapId];
+                if (mapInstance && mapInstance.map) {
+                    mapInstance.map.flyTo([parseFloat(lat), parseFloat(lng)], 20, {
+                        duration: 1.5,
+                        easeLinearity: 0.25
+                    });
+                }
+            });
+        }
+
+        function debugWarn(...args) {
+            if (isDebugMode) {
+                console.warn(...args);
+            }
+        }
+
+        function debugError(...args) {
+            if (isDebugMode) {
+                console.error(...args);
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             initializeMaps();
         });
@@ -80,8 +199,14 @@
         // Listen untuk update marker position events
         document.addEventListener('livewire:init', function() {
             Livewire.on('update-marker-position', (event) => {
-                console.log('Event received:', event); // Debug log
+                debugLog('Event received:', event);
                 updateMarkerPosition(event);
+            });
+
+            // Listen untuk center map events
+            Livewire.on('center-map-to-location', (event) => {
+                debugLog('Center map event received:', event);
+                centerMapToLocation(event);
             });
         });
 
@@ -103,7 +228,7 @@
 
                 // Validate data
                 if (isNaN(lat) || isNaN(lng) || isNaN(zoom)) {
-                    console.error('Invalid map data for:', mapId);
+                    debugError('Invalid map data for:', mapId);
                     return;
                 }
 
@@ -130,10 +255,13 @@
                     });
 
                     // Add marker dengan custom icon
-                    const marker = L.marker([lat, lng], { icon: userLocationIcon }).addTo(map);
+                    const marker = L.marker([lat, lng], {
+                        icon: userLocationIcon
+                    }).addTo(map);
 
                     // Create initial popup
-                    updateMarkerPopup(marker, lat, lng, address, isActual, statusText, statusClass, textClass);
+                    updateMarkerPopup(marker, lat, lng, address, isActual, statusText, statusClass, textClass, null,
+                        null);
 
                     // Setup zoom controls
                     setupZoomControls(map, mapId);
@@ -147,10 +275,10 @@
 
                     // Mark as initialized
                     container.setAttribute('data-initialized', 'true');
-                    console.log(`✅ Map initialized: ${mapId} (${isActual ? 'Actual' : 'Default'} Location)`);
+                    debugLog(`✅ Map initialized: ${mapId} (${isActual ? 'Actual' : 'Default'} Location)`);
 
                 } catch (error) {
-                    console.error('Map initialization error:', error);
+                    debugError('Map initialization error:', error);
                 }
             });
         }
@@ -184,7 +312,13 @@
                 return;
             }
 
-            console.log('Extracted data:', { mapId, lat, lng, address, isActual }); // Debug log
+            console.log('Extracted data:', {
+                mapId,
+                lat,
+                lng,
+                address,
+                isActual
+            }); // Debug log
 
             // Ambil map instance dari global object
             const mapInstance = window.mapInstances[mapId];
@@ -195,7 +329,10 @@
                 return;
             }
 
-            const { map, marker } = mapInstance;
+            const {
+                map,
+                marker
+            } = mapInstance;
 
             try {
                 // Update marker position menggunakan setLatLng
@@ -217,7 +354,11 @@
                 // Optional: Center map pada lokasi baru (hanya jika perlu)
                 // map.setView(newLatLng, map.getZoom());
 
-                console.log(`📍 Marker updated for ${mapId}:`, { lat, lng, isActual });
+                console.log(`📍 Marker updated for ${mapId}:`, {
+                    lat,
+                    lng,
+                    isActual
+                });
 
             } catch (error) {
                 console.error('Error updating marker position:', error);
@@ -262,7 +403,7 @@
             const zoomOutBtn = document.getElementById(`zoom-out-${mapId}`);
 
             if (!zoomInBtn || !zoomOutBtn) {
-                console.warn('Zoom buttons not found for:', mapId);
+                debugWarn('Zoom buttons not found for:', mapId);
                 return;
             }
 

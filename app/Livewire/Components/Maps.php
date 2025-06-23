@@ -4,6 +4,9 @@ namespace App\Livewire\Components;
 
 use Livewire\Component;
 use Livewire\Attributes\On;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
+use Carbon\Carbon;
 
 class Maps extends Component
 {
@@ -27,6 +30,10 @@ class Maps extends Component
     public $badgeTopRight = null;
     public $badgeBottomLeft = null;
     public $badgeBottomRight = null;
+
+    // Weather and time data from geolocation service
+    public $weatherData = null;
+    public $currentTime = null;
 
     // Real-time tracking properties
     public $isTracking = false;
@@ -66,16 +73,61 @@ class Maps extends Component
         $this->badgeTopRight = $badgeTopRight;
         $this->badgeBottomLeft = $badgeBottomLeft;
         $this->badgeBottomRight = $badgeBottomRight;
+
+        // Initialize dengan data geolocation yang ada
+        $this->initializeLocationData();
+    }
+
+    /**
+     * Initialize location data dari geolocation service
+     */
+    protected function initializeLocationData(): void
+    {
+        if (!Auth::id()) return;
+
+        $location = app('geolocation')->getUserLocation(Auth::id());
+
+        if ($location['latitude'] && $location['longitude']) {
+            $this->lat = $location['latitude'];
+            $this->lng = $location['longitude'];
+            $this->address = $location['city'] ?? null;
+            $this->isActualLocation = true;
+
+            // Set weather and time data - FIX WITA timezone
+            $this->weatherData = $location['weather_data'] ?? $location['weather'] ?? null;
+            $this->currentTime = $this->formatWitaTime($location['last_updated']);
+
+            // Log untuk debugging (Laravel Log, bukan console)
+            \Illuminate\Support\Facades\Log::info('Maps component initialized', [
+                'user_id' => Auth::id(),
+                'has_weather' => !is_null($this->weatherData),
+                'weather_keys' => $this->weatherData ? array_keys($this->weatherData) : [],
+                'current_time' => $this->currentTime,
+                'wita_time' => Carbon::now('Asia/Makassar')->format('H:i:s')
+            ]);
+        }
     }
 
     /**
      * Method untuk update lokasi real-time
      * Dipanggil oleh wire:poll.visible ketika tracking aktif
+     * HANYA jalan jika live tracking aktif
      */
     public function updateMapLocation(): void
     {
+        if (!Auth::id()) return;
+
+        // Cek dulu apakah user sedang tracking atau tidak
+        $trackingCacheKey = "user_tracking_state_" . Auth::id();
+        $isUserTracking = Cache::get($trackingCacheKey, false);
+
+        // Jika tidak tracking, STOP polling - jangan lakukan apa-apa
+        if (!$isUserTracking) {
+            return;
+        }
+
         // Ambil data lokasi fresh dari geolocation service
-        $location = app('geolocation')->getUserLocation(\Illuminate\Support\Facades\Auth::id());
+        $location = app('geolocation')->getUserLocation(Auth::id());
 
         // Cek apakah ada lokasi aktual
         $hasLocation = $location['latitude'] && $location['longitude'] && $location['last_updated'];
@@ -87,29 +139,39 @@ class Maps extends Component
             $this->address = $location['city'] ?? null;
             $this->isActualLocation = true;
 
+            // Update weather and time data untuk badges - FIX key mapping
+            $this->weatherData = $location['weather_data'] ?? $location['weather'] ?? null;
+
+            // FIX: Gunakan helper method untuk WITA time
+            $this->currentTime = $this->formatWitaTime($location['last_updated']);
+
+            // Set dynamic badges dari data geolocation - FIX struktur data
+            $this->badgeTopLeft = $this->currentTime; // Waktu update terakhir
+            $this->badgeTopRight = $this->weatherData ?
+                ($this->weatherData['condition'] ?? $this->weatherData['description'] ?? 'Tidak ada data') . ' ' . round($this->weatherData['temperature'] ?? 0) . '°C' : null;
+
+            // Log untuk debugging weather data
+            \Illuminate\Support\Facades\Log::info('Maps location updated', [
+                'user_id' => Auth::id(),
+                'has_weather' => !is_null($this->weatherData),
+                'weather_data' => $this->weatherData,
+                'badge_top_right' => $this->badgeTopRight,
+                'wita_time' => Carbon::now('Asia/Makassar')->format('H:i:s')
+            ]);
+
             // Dispatch browser event untuk update marker position dengan mapId yang valid
             $this->dispatch('update-marker-position',
                 mapId: $this->mapId,
                 lat: $this->lat,
                 lng: $this->lng,
                 address: $this->address,
-                isActual: $this->isActualLocation
-            );
-        } else {
-            // Fallback ke lokasi default jika tidak ada data
-            $this->lat = $this->latDefult;
-            $this->lng = $this->lngDefult;
-            $this->isActualLocation = false;
-
-            // Dispatch event untuk update ke default location dengan mapId yang valid
-            $this->dispatch('update-marker-position',
-                mapId: $this->mapId,
-                lat: $this->lat,
-                lng: $this->lng,
-                address: 'Lokasi Default - Kendari',
-                isActual: $this->isActualLocation
+                isActual: $this->isActualLocation,
+                weatherData: $this->weatherData,
+                currentTime: $this->currentTime
             );
         }
+        // Note: Tidak ada fallback ke default saat tracking aktif
+        // Jika tracking aktif tapi tidak ada data, biarkan marker di posisi terakhir
     }
 
     /**
@@ -123,6 +185,21 @@ class Maps extends Component
     }
 
     /**
+     * Method untuk center map ke lokasi user dengan zoom maksimal
+     */
+    public function goToMyLocation(): void
+    {
+        if ($this->isActualLocation && $this->lat && $this->lng) {
+            $this->dispatch('center-map-to-location',
+                mapId: $this->mapId,
+                lat: $this->lat,
+                lng: $this->lng,
+                zoom: 20 // Max zoom
+            );
+        }
+    }
+
+    /**
      * Listen untuk location-cleared event
      */
     #[On('location-cleared')]
@@ -133,6 +210,12 @@ class Maps extends Component
         $this->lng = $this->lngDefult;
         $this->isActualLocation = false;
         $this->address = null;
+        $this->weatherData = null;
+        $this->currentTime = null;
+
+        // Reset badges
+        $this->badgeTopLeft = null;
+        $this->badgeTopRight = null;
 
         // Update marker ke posisi default dengan mapId yang valid
         $this->dispatch('update-marker-position',
@@ -140,40 +223,245 @@ class Maps extends Component
             lat: $this->lat,
             lng: $this->lng,
             address: 'Lokasi Default - Kendari',
-            isActual: $this->isActualLocation
+            isActual: $this->isActualLocation,
+            weatherData: null,
+            currentTime: null
         );
     }
 
+    /**
+     * Refresh location data manually
+     */
+    public function refreshLocationData(): void
+    {
+        $this->initializeLocationData();
+
+        if ($this->isActualLocation) {
+            $this->dispatch('update-marker-position',
+                mapId: $this->mapId,
+                lat: $this->lat,
+                lng: $this->lng,
+                address: $this->address,
+                isActual: $this->isActualLocation,
+                weatherData: $this->weatherData,
+                currentTime: $this->currentTime
+            );
+        }
+    }
+
+    /**
+     * Set custom weather data (untuk testing atau data manual)
+     */
+    public function setWeatherData($weatherData): void
+    {
+        $this->weatherData = $weatherData;
+    }
+
+    /**
+     * Update time badge manually
+     */
+    public function updateTimeBadge(): void
+    {
+        $this->currentTime = $this->getCurrentWitaTime();
+    }
+
+    /**
+     * Map initialization callback
+     */
     public function mapInitialized()
     {
         $this->mapReady = true;
         $this->dispatch('map-ready', ['mapId' => $this->mapId]);
     }
 
-    // Method untuk mendapatkan status lokasi
-    public function getLocationStatus()
+    // ========== UTILITY METHODS ==========
+
+    /**
+     * Format timestamp to WITA time
+     */
+    private function formatWitaTime(?string $timestamp = null): ?string
+    {
+        if (!$timestamp) return null;
+
+        return Carbon::parse($timestamp)->setTimezone('Asia/Makassar')->format('H:i') . ' WITA';
+    }
+
+    /**
+     * Get current WITA time
+     */
+    private function getCurrentWitaTime(): string
+    {
+        return Carbon::now('Asia/Makassar')->format('H:i') . ' WITA';
+    }
+
+    /**
+     * Get location status
+     */
+    public function getLocationStatus(): string
     {
         return $this->isActualLocation ? 'actual' : 'default';
     }
 
-    // Method untuk mendapatkan text status
-    public function getLocationStatusText()
+    /**
+     * Get location status text
+     */
+    public function getLocationStatusText(): string
     {
         return $this->isActualLocation ? 'Lokasi Aktual' : 'Lokasi Default';
     }
 
-    // Method untuk mendapatkan CSS class status
-    public function getLocationStatusClass()
+    /**
+     * Get location status CSS class
+     */
+    public function getLocationStatusClass(): string
     {
         return $this->isActualLocation ? 'status-success' : 'status-warning';
     }
 
-    // Method untuk mendapatkan text color class
-    public function getLocationTextClass()
+    /**
+     * Get location text color class
+     */
+    public function getLocationTextClass(): string
     {
         return $this->isActualLocation ? 'text-success' : 'text-warning';
     }
 
+    /**
+     * Check if location is recent (within last 5 minutes)
+     */
+    public function isLocationRecent(): bool
+    {
+        if (!$this->currentTime || !$this->isActualLocation) {
+            return false;
+        }
+
+        if (!Auth::id()) return false;
+
+        $location = app('geolocation')->getUserLocation(Auth::id());
+
+        if (!$location['last_updated']) {
+            return false;
+        }
+
+        $lastUpdate = Carbon::parse($location['last_updated']);
+        return $lastUpdate->diffInMinutes(Carbon::now()) <= 5;
+    }
+
+    /**
+     * Get formatted coordinate string
+     */
+    public function getCoordinateString(): string
+    {
+        if (!$this->lat || !$this->lng) {
+            return 'Koordinat tidak tersedia';
+        }
+
+        return number_format($this->lat, 6) . ', ' . number_format($this->lng, 6);
+    }
+
+    /**
+     * Get weather description for badge
+     */
+    public function getWeatherBadgeText(): ?string
+    {
+        if (!$this->weatherData) {
+            return null;
+        }
+
+        $description = $this->weatherData['description'] ?? '';
+        $temperature = round($this->weatherData['temperature'] ?? 0);
+
+        return $description . ' ' . $temperature . '°C';
+    }
+
+    /**
+     * Check if tracking is active
+     */
+    public function isTrackingActive(): bool
+    {
+        if (!Auth::id()) return false;
+
+        $trackingCacheKey = "user_tracking_state_" . Auth::id();
+        return Cache::get($trackingCacheKey, false);
+    }
+
+    /**
+     * Get user location data
+     */
+    public function getUserLocationData(): array
+    {
+        if (!Auth::id()) return [];
+
+        return app('geolocation')->getUserLocation(Auth::id());
+    }
+
+    /**
+     * Get map center coordinates as array
+     */
+    public function getMapCenter(): array
+    {
+        return [
+            'lat' => (float) $this->lat,
+            'lng' => (float) $this->lng,
+            'zoom' => (int) $this->zoom
+        ];
+    }
+
+    /**
+     * Set map center programmatically
+     */
+    public function setMapCenter($lat, $lng, $zoom = null): void
+    {
+        $this->lat = $lat;
+        $this->lng = $lng;
+
+        if ($zoom !== null) {
+            $this->zoom = $zoom;
+        }
+
+        // Dispatch event untuk update map view
+        $this->dispatch('center-map-to-location',
+            mapId: $this->mapId,
+            lat: $this->lat,
+            lng: $this->lng,
+            zoom: $this->zoom
+        );
+    }
+
+    /**
+     * Debug method untuk cek weather data
+     * Hanya untuk development - bisa dipanggil via wire:click
+     */
+    public function debugWeatherData(): void
+    {
+        if (!Auth::id()) return;
+
+        $location = app('geolocation')->getUserLocation(Auth::id());
+
+        \Illuminate\Support\Facades\Log::info('DEBUG: Weather data check', [
+            'user_id' => Auth::id(),
+            'full_location_data' => $location,
+            'weather_key_exists' => array_key_exists('weather', $location),
+            'weather_data_key_exists' => array_key_exists('weather_data', $location),
+            'weather_value' => $location['weather'] ?? 'NOT_SET',
+            'weather_data_value' => $location['weather_data'] ?? 'NOT_SET',
+            'current_weather_data_property' => $this->weatherData,
+            'current_time_property' => $this->currentTime,
+            'wita_time' => Carbon::now('Asia/Makassar')->format('H:i:s')
+        ]);
+
+        // Force refresh weather data
+        $weatherInfo = app('geolocation')->getWeatherInfo(Auth::id());
+
+        \Illuminate\Support\Facades\Log::info('DEBUG: Fresh weather info', [
+            'weather_info' => $weatherInfo,
+            'wita_time' => Carbon::now('Asia/Makassar')->format('H:i:s')
+        ]);
+    }
+
+    /**
+     * Render the component
+     */
     public function render()
     {
         return view('livewire.components.maps');
