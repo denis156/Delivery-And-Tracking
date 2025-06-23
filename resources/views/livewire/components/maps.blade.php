@@ -125,40 +125,17 @@
                     easeLinearity: 0.25
                 });
             } catch (error) {
-                // Log error to server (if logging endpoint available)
-                if (window.fetch) {
-                    fetch('/api/log-error', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-                        },
-                        body: JSON.stringify({
-                            component: 'Maps',
-                            function: 'centerMapToLocation',
-                            error: error.message,
-                            mapId: mapId,
-                            user_agent: navigator.userAgent
-                        })
-                    }).catch(() => {}); // Silent fail jika logging gagal
-                }
-            }
-        }
-
-        /**
-         * Global function untuk center to max zoom dari popup button
-         */
-        window.centerToMaxZoom = function(lat, lng) {
-            // Find map yang paling dekat dengan koordinat ini
-            Object.keys(window.mapInstances).forEach(mapId => {
-                const mapInstance = window.mapInstances[mapId];
-                if (mapInstance && mapInstance.map) {
-                    mapInstance.map.flyTo([parseFloat(lat), parseFloat(lng)], 20, {
-                        duration: 1.5,
-                        easeLinearity: 0.25
+                // Send error to Laravel via Livewire
+                if (window.Livewire) {
+                    window.Livewire.dispatch('log-js-error', {
+                        component: 'Maps',
+                        function: 'centerMapToLocation',
+                        error: error.message,
+                        mapId: mapId,
+                        user_agent: navigator.userAgent
                     });
                 }
-            });
+            }
         }
 
         document.addEventListener('DOMContentLoaded', function() {
@@ -247,22 +224,15 @@
                     container.setAttribute('data-initialized', 'true');
 
                 } catch (error) {
-                    // Log error to server (if logging endpoint available)
-                    if (window.fetch) {
-                        fetch('/api/log-error', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-                            },
-                            body: JSON.stringify({
-                                component: 'Maps',
-                                function: 'initializeMaps',
-                                error: error.message,
-                                mapId: mapId,
-                                user_agent: navigator.userAgent
-                            })
-                        }).catch(() => {}); // Silent fail jika logging gagal
+                    // Send error to Laravel via Livewire
+                    if (window.Livewire) {
+                        window.Livewire.dispatch('log-js-error', {
+                            component: 'Maps',
+                            function: 'initializeMaps',
+                            error: error.message,
+                            mapId: mapId,
+                            user_agent: navigator.userAgent
+                        });
                     }
                 }
             });
@@ -334,22 +304,15 @@
                 }
 
             } catch (error) {
-                // Log error to server (if logging endpoint available)
-                if (window.fetch) {
-                    fetch('/api/log-error', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-                        },
-                        body: JSON.stringify({
-                            component: 'Maps',
-                            function: 'updateMarkerPosition',
-                            error: error.message,
-                            mapId: mapId,
-                            user_agent: navigator.userAgent
-                        })
-                    }).catch(() => {}); // Silent fail jika logging gagal
+                // Send error to Laravel via Livewire
+                if (window.Livewire) {
+                    window.Livewire.dispatch('log-js-error', {
+                        component: 'Maps',
+                        function: 'updateMarkerPosition',
+                        error: error.message,
+                        mapId: mapId,
+                        user_agent: navigator.userAgent
+                    });
                 }
             }
         }
@@ -389,55 +352,72 @@
             const zoomInBtn = document.getElementById(`zoom-in-${mapId}`);
             const zoomOutBtn = document.getElementById(`zoom-out-${mapId}`);
 
-            if (!zoomInBtn || !zoomOutBtn) {
-                return;
-            }
-
-            function updateButtonStates() {
-                const currentZoom = map.getZoom();
-                const maxZoom = map.getMaxZoom();
-                const minZoom = map.getMinZoom();
-
-                // Update zoom in button
-                if (currentZoom >= maxZoom) {
-                    zoomInBtn.disabled = true;
-                    zoomInBtn.classList.add('btn-disabled');
-                } else {
-                    zoomInBtn.disabled = false;
-                    zoomInBtn.classList.remove('btn-disabled');
-                }
-
-                // Update zoom out button
-                if (currentZoom <= minZoom) {
-                    zoomOutBtn.disabled = true;
-                    zoomOutBtn.classList.add('btn-disabled');
-                } else {
-                    zoomOutBtn.disabled = false;
-                    zoomOutBtn.classList.remove('btn-disabled');
-                }
-            }
-
-            // Event listeners
+            // Event listeners dengan validasi
             zoomInBtn.addEventListener('click', function(e) {
                 e.preventDefault();
-                if (!zoomInBtn.disabled) {
-                    map.zoomIn();
+                const currentZoom = map.getZoom();
+                const maxZoom = map.getMaxZoom();
+
+                if (!zoomInBtn.disabled && currentZoom < maxZoom) {
+                    try {
+                        map.zoomIn();
+                    } catch (error) {
+                        // Send error to Laravel via Livewire
+                        if (window.Livewire) {
+                            window.Livewire.dispatch('log-js-error', {
+                                component: 'Maps',
+                                function: 'zoomIn',
+                                error: error.message,
+                                mapId: mapId,
+                                user_agent: navigator.userAgent
+                            });
+                        }
+                    }
                 }
             });
 
             zoomOutBtn.addEventListener('click', function(e) {
                 e.preventDefault();
-                if (!zoomOutBtn.disabled) {
-                    map.zoomOut();
+                const currentZoom = map.getZoom();
+                const minZoom = map.getMinZoom();
+
+                if (!zoomOutBtn.disabled && currentZoom > minZoom) {
+                    try {
+                        map.zoomOut();
+                    } catch (error) {
+                        // Send error to Laravel via Livewire
+                        if (window.Livewire) {
+                            window.Livewire.dispatch('log-js-error', {
+                                component: 'Maps',
+                                function: 'zoomOut',
+                                error: error.message,
+                                mapId: mapId,
+                                user_agent: navigator.userAgent
+                            });
+                        }
+                    }
                 }
             });
 
-            // Listen to zoom events
-            map.on('zoom', updateButtonStates);
-            map.on('zoomend', updateButtonStates);
+            // Listen to zoom events dengan error handling
+            try {
+                map.on('zoom', updateButtonStates);
+                map.on('zoomend', updateButtonStates);
 
-            // Initial state
-            updateButtonStates();
+                // Initial state
+                updateButtonStates();
+            } catch (error) {
+                // Send error to Laravel via Livewire
+                if (window.Livewire) {
+                    window.Livewire.dispatch('log-js-error', {
+                        component: 'Maps',
+                        function: 'setupZoomControls',
+                        error: error.message,
+                        mapId: mapId,
+                        user_agent: navigator.userAgent
+                    });
+                }
+            }
         }
     </script>
 @endassets

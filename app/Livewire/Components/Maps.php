@@ -6,6 +6,7 @@ use Livewire\Component;
 use Livewire\Attributes\On;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
 class Maps extends Component
@@ -100,11 +101,12 @@ class Maps extends Component
             }
 
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Maps: Error initializing location data', [
+            Log::error('Maps Component: Error initializing location data', [
                 'user_id' => Auth::id(),
                 'error' => $e->getMessage(),
                 'file' => $e->getFile(),
-                'line' => $e->getLine()
+                'line' => $e->getLine(),
+                'method' => 'initializeLocationData'
             ]);
         }
     }
@@ -167,11 +169,12 @@ class Maps extends Component
             // Jika tracking aktif tapi tidak ada data, biarkan marker di posisi terakhir
 
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Maps: Error updating location', [
+            Log::error('Maps Component: Error updating location', [
                 'user_id' => Auth::id(),
                 'error' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
+                'method' => 'updateMapLocation',
                 'trace' => $e->getTraceAsString()
             ]);
         }
@@ -188,11 +191,12 @@ class Maps extends Component
             $this->updateMapLocation();
 
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Maps: Error handling location update event', [
+            Log::error('Maps Component: Error handling location update event', [
                 'user_id' => Auth::id(),
                 'error' => $e->getMessage(),
                 'file' => $e->getFile(),
-                'line' => $e->getLine()
+                'line' => $e->getLine(),
+                'method' => 'handleLocationUpdate'
             ]);
         }
     }
@@ -202,13 +206,23 @@ class Maps extends Component
      */
     public function goToMyLocation(): void
     {
-        if ($this->isActualLocation && $this->lat && $this->lng) {
-            $this->dispatch('center-map-to-location',
-                mapId: $this->mapId,
-                lat: $this->lat,
-                lng: $this->lng,
-                zoom: 20 // Max zoom
-            );
+        try {
+            if ($this->isActualLocation && $this->lat && $this->lng) {
+                $this->dispatch('center-map-to-location',
+                    mapId: $this->mapId,
+                    lat: $this->lat,
+                    lng: $this->lng,
+                    zoom: 15 // Max zoom
+                );
+            }
+        } catch (\Exception $e) {
+            Log::error('Maps Component: Error going to my location', [
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'method' => 'goToMyLocation'
+            ]);
         }
     }
 
@@ -218,28 +232,39 @@ class Maps extends Component
     #[On('location-cleared')]
     public function handleLocationCleared(): void
     {
-        // Reset ke lokasi default
-        $this->lat = $this->latDefult;
-        $this->lng = $this->lngDefult;
-        $this->isActualLocation = false;
-        $this->address = null;
-        $this->weatherData = null;
-        $this->currentTime = null;
+        try {
+            // Reset ke lokasi default
+            $this->lat = $this->latDefult;
+            $this->lng = $this->lngDefult;
+            $this->isActualLocation = false;
+            $this->address = null;
+            $this->weatherData = null;
+            $this->currentTime = null;
 
-        // Reset badges
-        $this->badgeTopLeft = null;
-        $this->badgeTopRight = null;
+            // Reset badges
+            $this->badgeTopLeft = null;
+            $this->badgeTopRight = null;
 
-        // Update marker ke posisi default dengan mapId yang valid
-        $this->dispatch('update-marker-position',
-            mapId: $this->mapId,
-            lat: $this->lat,
-            lng: $this->lng,
-            address: 'Lokasi Default - Kendari',
-            isActual: $this->isActualLocation,
-            weatherData: null,
-            currentTime: null
-        );
+            // Update marker ke posisi default dengan mapId yang valid
+            $this->dispatch('update-marker-position',
+                mapId: $this->mapId,
+                lat: $this->lat,
+                lng: $this->lng,
+                address: 'Lokasi Default - Kendari',
+                isActual: $this->isActualLocation,
+                weatherData: null,
+                currentTime: null
+            );
+
+        } catch (\Exception $e) {
+            Log::error('Maps Component: Error handling location cleared', [
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'method' => 'handleLocationCleared'
+            ]);
+        }
     }
 
     /**
@@ -263,11 +288,41 @@ class Maps extends Component
             }
 
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Maps: Error refreshing location data', [
+            Log::error('Maps Component: Error refreshing location data', [
                 'user_id' => Auth::id(),
                 'error' => $e->getMessage(),
                 'file' => $e->getFile(),
-                'line' => $e->getLine()
+                'line' => $e->getLine(),
+                'method' => 'refreshLocationData'
+            ]);
+        }
+    }
+
+    /**
+     * Handle JavaScript errors dari frontend (via Livewire event)
+     */
+    #[On('log-js-error')]
+    public function logJavaScriptError($data)
+    {
+        try {
+            Log::error('Maps Component: JavaScript Error', [
+                'user_id' => Auth::id(),
+                'component' => $data['component'] ?? 'Maps',
+                'function' => $data['function'] ?? 'Unknown',
+                'error' => $data['error'] ?? 'No error message',
+                'mapId' => $data['mapId'] ?? null,
+                'user_agent' => $data['user_agent'] ?? request()->userAgent(),
+                'ip_address' => request()->ip(),
+                'url' => request()->fullUrl(),
+                'timestamp' => now(),
+                'source' => 'javascript'
+            ]);
+
+        } catch (\Exception $e) {
+            // Fallback jika logging gagal
+            Log::critical('Maps Component: Failed to log JavaScript error', [
+                'original_error' => $data ?? 'No data',
+                'logging_error' => $e->getMessage()
             ]);
         }
     }
