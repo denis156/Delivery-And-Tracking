@@ -27,10 +27,10 @@
     @if ($badgeTopLeft || $badgeTopRight)
         <div class="absolute top-4 right-4 z-10 flex flex-col gap-2 items-end">
             @if ($badgeTopRight)
-                <x-badge value="{{ $badgeTopRight }}" class="badge-info badge-soft badge-xs" />
+                <x-badge value="{{ $badgeTopRight }}" class="badge-success badge-soft badge-xs" />
             @endif
             @if ($badgeTopLeft)
-                <x-badge value="{{ $badgeTopLeft }}" class="badge-success badge-soft badge-xs" />
+                <x-badge value="{{ $badgeTopLeft }}" class="badge-info badge-soft badge-xs" />
             @endif
         </div>
     @endif
@@ -76,7 +76,7 @@
     <!-- Distance Info - Top Center -->
     @if($this->getDistanceText())
         <div class="absolute top-4 left-1/2 transform -translate-x-1/2 z-10 flex flex-col gap-2 items-center">
-            <x-badge value="{{ $this->getDistanceText() }}" class="badge-primary badge-soft badge-sm" />
+            <x-badge value="Jarak Ke Tujuan: {{ $this->getDistanceText() }}" class="badge-primary badge-soft badge-sm" />
             @if($this->getDistanceFromStartText())
                 <x-badge value="{{ $this->getDistanceFromStartText() }}" class="badge-info badge-soft badge-xs" />
             @endif

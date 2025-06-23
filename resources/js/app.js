@@ -2,54 +2,26 @@
 import '../css/app.css';
 import './bootstrap';
 
-// Lazy load Leaflet only when needed
-async function loadLeaflet() {
-    const [L, routing] = await Promise.all([
-        import('leaflet'),
-        import('leaflet-routing-machine')
-    ]);
+// Import Leaflet from node_modules
+import L from 'leaflet';
 
-    // Import Leaflet CSS dynamically
-    await import('leaflet/dist/leaflet.css');
-    await import('leaflet-routing-machine/dist/leaflet-routing-machine.css');
+// Import Leaflet Routing Machine - untuk route functionality
+import 'leaflet-routing-machine';
+import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
 
-    // Fix Leaflet default markers icons with Vite
-    const [markerIcon, markerIcon2x, markerShadow] = await Promise.all([
-        import('leaflet/dist/images/marker-icon.png'),
-        import('leaflet/dist/images/marker-icon-2x.png'),
-        import('leaflet/dist/images/marker-shadow.png')
-    ]);
+// Fix Leaflet default markers icons with Vite
+// This is important because Vite changes asset paths
+import markerIcon from 'leaflet/dist/images/marker-icon.png';
+import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
+import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 
-    // Fix the default icon paths
-    delete L.default.Icon.Default.prototype._getIconUrl;
-    L.default.Icon.Default.mergeOptions({
-        iconRetinaUrl: markerIcon2x.default,
-        iconUrl: markerIcon.default,
-        shadowUrl: markerShadow.default,
-    });
-
-    return L.default;
-}
-
-// Initialize Leaflet only when maps are present
-function initializeLeafletOnDemand() {
-    const mapContainers = document.querySelectorAll('[id^="map-"]');
-
-    if (mapContainers.length > 0) {
-        loadLeaflet().then(L => {
-            window.L = L;
-            window.dispatchEvent(new CustomEvent('leaflet-loaded'));
-            console.log('✅ Leaflet loaded dynamically');
-        }).catch(error => {
-            console.error('❌ Failed to load Leaflet:', error);
-        });
-    }
-}
-
-// Initialize on DOM ready
-document.addEventListener('DOMContentLoaded', initializeLeafletOnDemand);
-
-// Also initialize on Livewire navigation
-document.addEventListener('livewire:navigated', () => {
-    setTimeout(initializeLeafletOnDemand, 100);
+// Fix the default icon paths
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: markerIcon2x,
+  iconUrl: markerIcon,
+  shadowUrl: markerShadow,
 });
+
+// Make Leaflet globally available for Alpine components
+window.L = L;
