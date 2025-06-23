@@ -17,8 +17,12 @@
             <nav class="navbar bg-gradient-to-tr from-base-200 to-primary/20 shadow-xl border-b-4 border-primary/80">
                 <div class="navbar-start ml-2">
                     {{-- Real-Time Geolocation Button --}}
-                    <livewire:components.geolocation-button button-class="btn-circle btn-md border-primary border-2"
-                        icon-name="phosphor.broadcast" :show-toast="true" :show-badge="true" :real-time-mode="true" />
+                    <livewire:components.geolocation-button
+                        button-class="btn-circle btn-md border-primary border-2"
+                        icon-name="phosphor.broadcast"
+                        :show-toast="true"
+                        :show-badge="true"
+                    />
                 </div>
                 <div class="navbar-center flex flex-col justify-center items-center">
                     <span

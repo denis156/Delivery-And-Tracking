@@ -1,3 +1,4 @@
+{{-- Single root element untuk Livewire component --}}
 <div x-data="geolocationHandler()" @if($isTracking) wire:poll.1500ms="updateLocation" @endif class="relative">
     <!-- Geolocation Dropdown - MaryUI Pattern -->
     <x-dropdown class="z-50" no-x-anchor>
@@ -26,12 +27,75 @@
             @php
                 $trackingStatusColor = $this->getTrackingStatusColor();
                 $trackingStatusText = $this->getTrackingStatusText();
+                $startLocationStatus = $this->getStartLocationStatus();
             @endphp
             <div class="flex items-center gap-2 mt-1">
                 <div class="w-2 h-2 rounded-full {{ $isTracking ? 'bg-success animate-pulse' : 'bg-base-300' }}"></div>
                 <span class="text-xs {{ $trackingStatusColor }}">{{ $trackingStatusText }}</span>
             </div>
+            <!-- Start Location Status -->
+            <div class="flex items-center gap-2 mt-2">
+                <x-icon name="{{ $startLocationStatus['icon'] }}" class="h-3 w-3 {{ $startLocationStatus['color'] }}" />
+                <span class="text-xs {{ $startLocationStatus['color'] }}">{{ $startLocationStatus['text'] }}</span>
+            </div>
         </div>
+
+        <!-- Tracking Session Info (jika tracking aktif) -->
+        @if ($isTracking)
+            @php
+                $sessionInfo = $this->getTrackingSessionInfo();
+                $distanceFromStart = $this->getDistanceFromStart();
+            @endphp
+
+            @if ($sessionInfo['has_start_location'])
+                <!-- Ada Start Location - Session Aktif -->
+                <div class="px-4 py-2 bg-success/5 border-b border-success/20">
+                    <div class="text-xs space-y-1">
+                        <div class="flex items-center gap-2 text-success font-medium">
+                            <x-icon name="phosphor.flag" class="h-3 w-3" />
+                            <span>Start Point Terkunci</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-base-content/70">Session ID:</span>
+                            <span class="font-mono text-xs">{{ Str::limit($sessionInfo['session_id'], 8, '') }}</span>
+                        </div>
+                        @if ($distanceFromStart)
+                            <div class="flex justify-between">
+                                <span class="text-base-content/70">Jarak:</span>
+                                <span class="font-medium text-success">{{ $distanceFromStart }}</span>
+                            </div>
+                        @endif
+                        <div class="flex justify-between">
+                            <span class="text-base-content/70">Start:</span>
+                            <span class="font-mono text-xs">{{ $sessionInfo['start_location']['timestamp_wita'] ?? '-' }} WITA</span>
+                        </div>
+                    </div>
+                </div>
+            @else
+                <!-- Belum Ada Start Location - Waiting for GPS -->
+                <div class="px-4 py-2 bg-warning/5 border-b border-warning/20">
+                    <div class="text-xs space-y-1">
+                        <div class="flex items-center gap-2 text-warning font-medium">
+                            <x-icon name="{{ $startLocationStatus['icon'] }}" class="h-3 w-3 {{ $startLocationStatus['status'] === 'waiting' ? 'animate-spin' : '' }}" />
+                            <span>{{ $startLocationStatus['text'] }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-base-content/70">Status:</span>
+                            <span class="font-medium text-warning">Menunggu koordinat pertama</span>
+                        </div>
+                        @if ($sessionInfo['tracking_start_time'])
+                            <div class="flex justify-between">
+                                <span class="text-base-content/70">Tracking mulai:</span>
+                                <span class="font-mono text-xs">{{ \Carbon\Carbon::parse($sessionInfo['tracking_start_time'])->setTimezone('Asia/Makassar')->format('H:i:s') }} WITA</span>
+                            </div>
+                        @endif
+                        <div class="text-warning/70 text-[10px] mt-1">
+                            💡 Start point akan otomatis di-set saat GPS pertama kali didapat
+                        </div>
+                    </div>
+                </div>
+            @endif
+        @endif
 
         <!-- Status Info (jika ada lokasi) -->
         @if ($status === 'success' && $latitude && $longitude)
@@ -39,13 +103,11 @@
                 <div class="text-xs space-y-1">
                     <div class="flex justify-between">
                         <span class="text-base-content/70">Lokasi:</span>
-                        <span
-                            class="font-medium truncate">{{ Str::words($address ?: 'Tidak diketahui', 3, '...') }}</span>
+                        <span class="font-medium truncate">{{ Str::words($address ?: 'Tidak diketahui', 3, '...') }}</span>
                     </div>
                     <div class="flex justify-between">
                         <span class="text-base-content/70">Koordinat:</span>
-                        <span class="font-mono text-xs">{{ number_format($latitude, 6) }},
-                            {{ number_format($longitude, 6) }}</span>
+                        <span class="font-mono text-xs">{{ number_format($latitude, 6) }}, {{ number_format($longitude, 6) }}</span>
                     </div>
                     <div class="flex justify-between">
                         <span class="text-base-content/70">Update:</span>
@@ -83,24 +145,52 @@
                 onclick="navigator.clipboard.writeText('{{ $latitude }}, {{ $longitude }}'); $dispatch('notify', {type: 'success', message: 'Koordinat disalin'})" />
             <x-menu-item title="Buka Google Maps" icon="phosphor.map-pin-area"
                 onclick="window.open('https://www.google.com/maps?q={{ $latitude }},{{ $longitude }}', '_blank')" />
+
+            {{-- Menu untuk copy start location jika ada --}}
+            @if ($isTracking && isset($sessionInfo) && $sessionInfo['has_start_location'])
+                @php
+                    $startLat = $sessionInfo['start_location']['latitude'];
+                    $startLng = $sessionInfo['start_location']['longitude'];
+                @endphp
+                <x-menu-item title="Salin Start Point" icon="phosphor.flag"
+                    onclick="navigator.clipboard.writeText('{{ $startLat }}, {{ $startLng }}'); $dispatch('notify', {type: 'success', message: 'Start point disalin'})" />
+            @endif
+
             <hr class="border-base-300">
             <x-menu-item title="Hapus Data Lokasi" icon="phosphor.trash" wire:click="clearLocation"
                 wire:loading.attr="disabled" wire:target="clearLocation" class="text-error"
-                onclick="confirm('Yakin ingin menghapus data lokasi?') || event.stopImmediatePropagation()" />
+                onclick="confirm('Yakin ingin menghapus data lokasi dan tracking session?') || event.stopImmediatePropagation()" />
         @endif
 
         <!-- Info Footer -->
         <div class="px-4 py-2 border-t border-base-300 bg-base-100">
             <div class="text-[10px] text-base-content/50 text-center">
                 @if ($isTracking)
+                    @php
+                        $sessionInfo = $this->getTrackingSessionInfo();
+                    @endphp
                     <div class="flex items-center justify-center gap-1">
                         <x-icon name="phosphor.broadcast" class="h-3 w-3 text-success animate-pulse" />
-                        <span>Live tracking setiap 5 detik</span>
+                        <span>Live tracking setiap 1.5 detik</span>
                     </div>
+                    @if ($sessionInfo['has_start_location'])
+                        <div class="flex items-center justify-center gap-1 mt-1">
+                            <x-icon name="phosphor.flag" class="h-3 w-3 text-success" />
+                            <span>Route dari start point terkunci</span>
+                        </div>
+                    @else
+                        <div class="flex items-center justify-center gap-1 mt-1 text-warning">
+                            <x-icon name="phosphor.crosshair" class="h-3 w-3 animate-pulse" />
+                            <span>Siap set start point...</span>
+                        </div>
+                    @endif
                 @else
                     <div class="flex items-center justify-center gap-1">
                         <x-icon name="phosphor.map-pin" class="h-3 w-3 text-base-content/40" />
                         <span>GPS tracking nonaktif</span>
+                    </div>
+                    <div class="text-base-content/40 mt-1">
+                        Klik "Mulai Live Tracking" untuk set start point
                     </div>
                 @endif
                 <div class="text-base-content/40 mt-1">
@@ -112,7 +202,6 @@
 </div>
 
 @assets
-<!-- Optimized Alpine.js Handler -->
 <script>
     function geolocationHandler() {
         return {

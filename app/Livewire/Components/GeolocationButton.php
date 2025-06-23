@@ -106,26 +106,33 @@ class GeolocationButton extends Component
 
     /**
      * Start tracking - dipanggil dari menu item
+     * ENHANCED: Proper start location initialization
      */
     public function startTracking(): void
     {
         try {
+            // STEP 1: Clear semua data lokasi dan tracking session lama
+            app('geolocation')->clearUserLocation(Auth::id());
+
+            // STEP 2: Set tracking state dengan timestamp
+            app('geolocation')->setUserTrackingState(Auth::id(), true);
+
+            // STEP 3: Update component state
             $this->isTracking = true;
             $this->status = 'getting';
 
-            // Save state dulu
-            $this->saveTrackingState();
-
-            // Trigger immediate location request
+            // STEP 4: Trigger immediate location request untuk set start location
             $this->dispatch('request-geolocation');
 
             if ($this->showToast) {
-                $this->success('Live tracking dimulai');
+                $this->success('Live tracking dimulai - menentukan titik start...');
             }
 
-            Log::info('GeolocationButton: Location tracking started', [
+            Log::info('GeolocationButton: Location tracking started - ready for start location', [
                 'user_id' => Auth::id(),
-                'wita_time' => $this->formatWitaTime()
+                'wita_time' => $this->formatWitaTime(),
+                'tracking_state_set' => true,
+                'cache_cleared' => true
             ]);
 
             // Force component refresh untuk memulai polling
@@ -148,23 +155,29 @@ class GeolocationButton extends Component
 
     /**
      * Stop tracking - dipanggil dari menu item
+     * ENHANCED: Proper cleanup tracking session
      */
     public function stopTracking(): void
     {
         try {
+            // STEP 1: Set tracking state off
+            app('geolocation')->setUserTrackingState(Auth::id(), false);
+
+            // STEP 2: Clear start location dan tracking session
+            app('geolocation')->clearStartLocation(Auth::id());
+
+            // STEP 3: Update component state
             $this->isTracking = false;
             $this->status = 'waiting';
-
-            // Save state dulu sebelum toast
-            $this->saveTrackingState();
 
             if ($this->showToast) {
                 $this->info('Live tracking dihentikan');
             }
 
-            Log::info('GeolocationButton: Location tracking stopped', [
+            Log::info('GeolocationButton: Location tracking stopped and session cleared', [
                 'user_id' => Auth::id(),
-                'wita_time' => $this->formatWitaTime()
+                'wita_time' => $this->formatWitaTime(),
+                'tracking_state_cleared' => true
             ]);
 
             // Force component refresh untuk menghentikan polling
@@ -219,20 +232,34 @@ class GeolocationButton extends Component
 
     /**
      * Handle successful location from browser
+     * ENHANCED: Better start location detection dan feedback
      */
     public function handleLocationSuccess(float $lat, float $lng, ?string $accuracy = null): void
     {
         try {
+            // Update component properties
             $this->latitude = $lat;
             $this->longitude = $lng;
             $this->status = 'success';
             $this->lastUpdated = $this->formatWitaTime(); // Use WITA time
 
+            // Get session info before update untuk comparison
+            $sessionInfoBefore = app('geolocation')->getTrackingSessionInfo(Auth::id());
+            $hadStartLocationBefore = $sessionInfoBefore['has_start_location'];
+
             // Update location in cache with immediate processing
             app('geolocation')->updateUserLocationImmediate(Auth::id(), $lat, $lng);
+
+            // Get session info after update untuk check perubahan
+            $sessionInfoAfter = app('geolocation')->getTrackingSessionInfo(Auth::id());
+            $hasStartLocationAfter = $sessionInfoAfter['has_start_location'];
+
+            // Detect if this was the first location update yang set start location
+            $justSetStartLocation = !$hadStartLocationBefore && $hasStartLocationAfter && $this->isTracking;
+
             $this->updateAddress();
 
-            // Dispatch global event untuk real-time updates
+            // Dispatch global event untuk real-time updates dengan info start location
             $this->dispatch('location-updated', [
                 'latitude' => $lat,
                 'longitude' => $lng,
@@ -241,20 +268,30 @@ class GeolocationButton extends Component
                 'timestamp' => $this->getWitaTime()->toISOString(),
                 'wita_time' => $this->formatWitaTime(),
                 'user_id' => Auth::id(),
-                'timezone' => 'WITA'
+                'timezone' => 'WITA',
+                'is_start_location' => $justSetStartLocation,
+                'tracking_session' => $sessionInfoAfter
             ]);
 
-            // Show toast untuk manual requests atau start tracking
-            if ($this->showToast && $this->status === 'getting') {
-                $this->success('Lokasi berhasil diperbarui');
+            // Show appropriate toast based on context
+            if ($this->showToast) {
+                if ($justSetStartLocation) {
+                    $this->success('🎯 Titik start berhasil ditetapkan! Route akan dibuat dari lokasi ini.');
+                } elseif ($this->status === 'getting') {
+                    $this->success('Lokasi berhasil diperbarui');
+                }
             }
 
-            Log::info('GeolocationButton: Real-time location updated', [
+            Log::info('GeolocationButton: Location updated with start location context', [
                 'user_id' => Auth::id(),
                 'latitude' => $lat,
                 'longitude' => $lng,
                 'accuracy' => $accuracy,
                 'tracking_mode' => $this->isTracking ? 'active' : 'inactive',
+                'just_set_start_location' => $justSetStartLocation,
+                'had_start_before' => $hadStartLocationBefore,
+                'has_start_after' => $hasStartLocationAfter,
+                'session_id' => $sessionInfoAfter['session_id'],
                 'wita_time' => $this->formatWitaTime()
             ]);
 
@@ -311,30 +348,40 @@ class GeolocationButton extends Component
 
     /**
      * Clear all location data - dipanggil dari menu item
+     * ENHANCED: Proper cleanup dengan tracking session reset
      */
     public function clearLocation(): void
     {
         try {
+            // STEP 1: Stop tracking jika sedang aktif
+            if ($this->isTracking) {
+                app('geolocation')->setUserTrackingState(Auth::id(), false);
+            }
+
+            // STEP 2: Clear all location data dan tracking session
+            app('geolocation')->clearUserLocation(Auth::id());
+
+            // STEP 3: Reset component state
             $this->status = 'waiting';
             $this->latitude = 0;
             $this->longitude = 0;
             $this->address = '';
             $this->lastUpdated = null;
-            $this->isTracking = false; // PENTING: Stop tracking juga
+            $this->isTracking = false;
 
-            app('geolocation')->clearUserLocation(Auth::id());
+            // STEP 4: Dispatch clear event
             $this->dispatch('location-cleared');
 
-            // Save tracking state (off)
-            $this->saveTrackingState();
-
             if ($this->showToast) {
-                $this->info('Data lokasi dihapus');
+                $this->info('Data lokasi dan tracking session dihapus');
             }
 
-            Log::info('GeolocationButton: User location cleared', [
+            Log::info('GeolocationButton: Complete location and tracking reset', [
                 'user_id' => Auth::id(),
-                'wita_time' => $this->formatWitaTime()
+                'wita_time' => $this->formatWitaTime(),
+                'tracking_stopped' => true,
+                'location_cleared' => true,
+                'component_reset' => true
             ]);
 
             // Force component refresh untuk menghentikan polling
@@ -406,27 +453,6 @@ class GeolocationButton extends Component
 
             // Fallback to false if error
             $this->isTracking = false;
-        }
-    }
-
-    /**
-     * Save tracking state to cache
-     */
-    protected function saveTrackingState(): void
-    {
-        try {
-            $cacheKey = "user_tracking_state_" . Auth::id();
-            Cache::put($cacheKey, $this->isTracking, now()->addHours(24));
-
-        } catch (\Exception $e) {
-            Log::error('GeolocationButton: Error saving tracking state', [
-                'user_id' => Auth::id(),
-                'tracking_state' => $this->isTracking,
-                'error' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-                'wita_time' => $this->formatWitaTime()
-            ]);
         }
     }
 
@@ -537,6 +563,7 @@ class GeolocationButton extends Component
 
     /**
      * Get tracking status text
+     * ENHANCED: Include start location context
      */
     public function getTrackingStatusText(): string
     {
@@ -544,11 +571,28 @@ class GeolocationButton extends Component
             return 'Tracking nonaktif';
         }
 
-        if ($this->status === 'success' && $this->isLocationRecent()) {
-            return 'Live tracking aktif';
-        }
+        try {
+            $trackingSession = app('geolocation')->getTrackingSessionInfo(Auth::id());
 
-        return 'Tracking aktif';
+            if ($trackingSession['has_start_location']) {
+                if ($this->status === 'success' && $this->isLocationRecent()) {
+                    return 'Live tracking aktif (start point terkunci)';
+                }
+                return 'Tracking aktif (start point terkunci)';
+            } else {
+                if ($this->status === 'getting') {
+                    return 'Menunggu lokasi untuk set start point...';
+                }
+                return 'Tracking aktif (belum ada start point)';
+            }
+        } catch (\Exception $e) {
+            Log::warning('GeolocationButton: Error getting tracking session info', [
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+                'wita_time' => $this->formatWitaTime()
+            ]);
+            return 'Tracking aktif';
+        }
     }
 
     /**
@@ -558,7 +602,17 @@ class GeolocationButton extends Component
     {
         if (!$this->isTracking) return 'text-base-content/60';
 
-        return $this->isLocationRecent() ? 'text-success' : 'text-warning';
+        try {
+            $trackingSession = app('geolocation')->getTrackingSessionInfo(Auth::id());
+
+            if ($trackingSession['has_start_location']) {
+                return $this->isLocationRecent() ? 'text-success' : 'text-warning';
+            } else {
+                return 'text-warning'; // Kuning jika belum ada start point
+            }
+        } catch (\Exception $e) {
+            return $this->isLocationRecent() ? 'text-success' : 'text-warning';
+        }
     }
 
     /**
@@ -567,6 +621,108 @@ class GeolocationButton extends Component
     public function getCurrentWitaTime(): string
     {
         return $this->formatWitaTime();
+    }
+
+    /**
+     * Get tracking session information for display
+     */
+    public function getTrackingSessionInfo(): array
+    {
+        try {
+            return app('geolocation')->getTrackingSessionInfo(Auth::id());
+        } catch (\Exception $e) {
+            Log::error('GeolocationButton: Error getting tracking session info', [
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+                'wita_time' => $this->formatWitaTime()
+            ]);
+
+            return [
+                'is_tracking' => $this->isTracking,
+                'session_id' => null,
+                'has_start_location' => false,
+                'start_location' => null,
+                'current_location' => [],
+                'distance_from_start' => null,
+                'tracking_start_time' => null,
+                'timezone' => 'WITA'
+            ];
+        }
+    }
+
+    /**
+     * Get distance from start point for display
+     */
+    public function getDistanceFromStart(): ?string
+    {
+        try {
+            $distance = app('geolocation')->calculateDistanceFromStart(Auth::id());
+
+            if (!$distance) return null;
+
+            if ($distance < 1) {
+                return round($distance * 1000) . ' m dari start';
+            }
+
+            return round($distance, 1) . ' km dari start';
+        } catch (\Exception $e) {
+            Log::warning('GeolocationButton: Error calculating distance from start', [
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+                'wita_time' => $this->formatWitaTime()
+            ]);
+            return null;
+        }
+    }
+
+    /**
+     * Check if ready for start location
+     */
+    public function isReadyForStartLocation(): bool
+    {
+        return $this->isTracking && !$this->getTrackingSessionInfo()['has_start_location'];
+    }
+
+    /**
+     * Get start location readiness status for UI
+     */
+    public function getStartLocationStatus(): array
+    {
+        $sessionInfo = $this->getTrackingSessionInfo();
+
+        if (!$this->isTracking) {
+            return [
+                'status' => 'inactive',
+                'text' => 'Tracking nonaktif',
+                'color' => 'text-base-content/60',
+                'icon' => 'phosphor.map-pin'
+            ];
+        }
+
+        if ($sessionInfo['has_start_location']) {
+            return [
+                'status' => 'ready',
+                'text' => 'Start point terkunci',
+                'color' => 'text-success',
+                'icon' => 'phosphor.flag'
+            ];
+        }
+
+        if ($this->status === 'getting') {
+            return [
+                'status' => 'waiting',
+                'text' => 'Menunggu GPS...',
+                'color' => 'text-warning',
+                'icon' => 'phosphor.spinner'
+            ];
+        }
+
+        return [
+            'status' => 'pending',
+            'text' => 'Siap set start point',
+            'color' => 'text-info',
+            'icon' => 'phosphor.crosshair'
+        ];
     }
 
     public function render()
