@@ -55,8 +55,8 @@ class Index extends Component
             'hasLocation' => $hasLocation,
             'lastUpdated' => $hasLocation ? \Carbon\Carbon::parse($location['last_updated'])->format('H:i') : null,
             'weatherInfo' => $hasLocation ? $weatherInfo : [],
-            'badgeTopLeft' => $hasLocation ? sprintf("Cuaca: %s %d°C", $weatherInfo['condition'] ?? 'Cerah', $weatherInfo['temperature'] ?? 28) : null,
-            'badgeTopRight' => "Waktu: " . now()->format('H:i') . " WITA",
+            'badgeBottomLeft' => "No: SJ-2024-001",
+            'badgeBottomRight' => "Sopir: " . Auth::user()->name,
         ];
 
         return view('livewire.driver.pages.navigate.index', $data);

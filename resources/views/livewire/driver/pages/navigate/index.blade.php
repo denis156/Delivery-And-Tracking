@@ -4,13 +4,8 @@
         <!-- Maps Component - akan handle sendiri jika lat/lng null -->
         <livewire:components.maps
             class="h-[50dvh] w-full z-5 rounded-b-3xl"
-            :lat="$latitude"
-            :lng="$longitude"
-            :badge-top-left="$badgeTopLeft"
-            :badge-top-right="$badgeTopRight"
-            badge-bottom-left="SJ-2024-001"
-            badge-bottom-right="Makassar → Jakarta"
-            :address="$address"
+            badge-bottom-left="{{ $badgeBottomLeft }}"
+            badge-bottom-right="{{ Str::words($badgeBottomRight, 2, '') }}"
             zoom="15"
         />
 
