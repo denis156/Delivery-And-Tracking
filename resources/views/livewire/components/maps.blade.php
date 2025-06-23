@@ -352,6 +352,42 @@
             const zoomInBtn = document.getElementById(`zoom-in-${mapId}`);
             const zoomOutBtn = document.getElementById(`zoom-out-${mapId}`);
 
+            if (!zoomInBtn || !zoomOutBtn) {
+                return;
+            }
+
+            function updateButtonStates() {
+                const currentZoom = map.getZoom();
+                const maxZoom = map.getMaxZoom();
+                const minZoom = map.getMinZoom();
+
+                // Update zoom in button - menggunakan style inline untuk stabilitas
+                if (currentZoom >= maxZoom) {
+                    zoomInBtn.disabled = true;
+                    zoomInBtn.style.opacity = '0.5';
+                    zoomInBtn.style.cursor = 'not-allowed';
+                    zoomInBtn.style.pointerEvents = 'none';
+                } else {
+                    zoomInBtn.disabled = false;
+                    zoomInBtn.style.opacity = '';
+                    zoomInBtn.style.cursor = '';
+                    zoomInBtn.style.pointerEvents = '';
+                }
+
+                // Update zoom out button - menggunakan style inline untuk stabilitas
+                if (currentZoom <= minZoom) {
+                    zoomOutBtn.disabled = true;
+                    zoomOutBtn.style.opacity = '0.5';
+                    zoomOutBtn.style.cursor = 'not-allowed';
+                    zoomOutBtn.style.pointerEvents = 'none';
+                } else {
+                    zoomOutBtn.disabled = false;
+                    zoomOutBtn.style.opacity = '';
+                    zoomOutBtn.style.cursor = '';
+                    zoomOutBtn.style.pointerEvents = '';
+                }
+            }
+
             // Event listeners dengan validasi
             zoomInBtn.addEventListener('click', function(e) {
                 e.preventDefault();
