@@ -1,4 +1,4 @@
-<div x-data="geolocationHandler()" wire:poll.1500ms="updateLocation" class="relative">
+<div x-data="geolocationHandler()" @if($isTracking) wire:poll.1500ms="updateLocation" @endif class="relative">
     <!-- Geolocation Dropdown - MaryUI Pattern -->
     <x-dropdown class="z-50" no-x-anchor>
         <x-slot:trigger>
@@ -151,29 +151,66 @@
 
                 navigator.geolocation.getCurrentPosition(
                     (position) => {
-                        const {
-                            latitude,
-                            longitude,
-                            accuracy
-                        } = position.coords;
-                        this.$wire.handleLocationSuccess(latitude, longitude, accuracy);
-                        this.isRequestingLocation = false;
+                        try {
+                            const { latitude, longitude, accuracy } = position.coords;
+                            this.$wire.handleLocationSuccess(latitude, longitude, accuracy);
+                            this.isRequestingLocation = false;
+                        } catch (error) {
+                            // Log error to server (if logging endpoint available)
+                            if (window.fetch) {
+                                fetch('/api/log-error', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                                    },
+                                    body: JSON.stringify({
+                                        component: 'GeolocationButton',
+                                        function: 'getCurrentPosition_success',
+                                        error: error.message,
+                                        user_agent: navigator.userAgent
+                                    })
+                                }).catch(() => {}); // Silent fail jika logging gagal
+                            }
+                            this.isRequestingLocation = false;
+                        }
                     },
                     (error) => {
-                        const errorMessages = {
-                            1: "Akses lokasi ditolak",
-                            2: "Lokasi tidak tersedia",
-                            3: "Request timeout"
-                        };
+                        try {
+                            const errorMessages = {
+                                1: "Akses lokasi ditolak",
+                                2: "Lokasi tidak tersedia",
+                                3: "Request timeout"
+                            };
 
-                        const message = errorMessages[error.code] || "Error mengambil lokasi";
+                            const message = errorMessages[error.code] || "Error mengambil lokasi";
 
-                        // Only show error for manual requests
-                        if (showLoading) {
-                            this.$wire.handleLocationError(message);
+                            // Only show error for manual requests
+                            if (showLoading) {
+                                this.$wire.handleLocationError(message);
+                            }
+
+                            this.isRequestingLocation = false;
+                        } catch (handlingError) {
+                            // Log error to server (if logging endpoint available)
+                            if (window.fetch) {
+                                fetch('/api/log-error', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                                    },
+                                    body: JSON.stringify({
+                                        component: 'GeolocationButton',
+                                        function: 'getCurrentPosition_error',
+                                        error: handlingError.message,
+                                        original_error: error.message,
+                                        user_agent: navigator.userAgent
+                                    })
+                                }).catch(() => {}); // Silent fail jika logging gagal
+                            }
+                            this.isRequestingLocation = false;
                         }
-
-                        this.isRequestingLocation = false;
                     },
                     options
                 );

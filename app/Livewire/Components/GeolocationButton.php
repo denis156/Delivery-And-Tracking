@@ -57,18 +57,51 @@ class GeolocationButton extends Component
     }
 
     /**
-     * Method yang dipanggil oleh wire:poll.5000ms untuk real-time tracking
-     * Hanya berjalan ketika tracking aktif
+     * Method yang dipanggil oleh wire:poll.1500ms untuk real-time tracking
+     * Hanya berjalan ketika tracking aktif dan polling diaktifkan
      */
     public function updateLocation(): void
     {
-        // Hanya update jika tracking aktif
-        if (!$this->isTracking) {
-            return;
-        }
+        try {
+            // PENTING: Double check - hanya update jika tracking benar-benar aktif
+            if (!$this->isTracking) {
+                // Log jika polling masih berjalan padahal tracking off
+                Log::warning('GeolocationButton: Polling called but tracking is inactive', [
+                    'user_id' => Auth::id(),
+                    'tracking_state' => $this->isTracking,
+                    'wita_time' => $this->formatWitaTime()
+                ]);
+                return;
+            }
 
-        // Trigger browser geolocation tanpa loading state
-        $this->dispatch('request-geolocation-silent');
+            // Verifikasi tracking state dari cache juga
+            $cacheKey = "user_tracking_state_" . Auth::id();
+            $cachedTrackingState = Cache::get($cacheKey, false);
+
+            if (!$cachedTrackingState) {
+                // Sync component state dengan cache state
+                $this->isTracking = false;
+                Log::info('GeolocationButton: Tracking state synced from cache (disabled)', [
+                    'user_id' => Auth::id(),
+                    'component_state' => $this->isTracking,
+                    'cache_state' => $cachedTrackingState,
+                    'wita_time' => $this->formatWitaTime()
+                ]);
+                return;
+            }
+
+            // Trigger browser geolocation tanpa loading state
+            $this->dispatch('request-geolocation-silent');
+
+        } catch (\Exception $e) {
+            Log::error('GeolocationButton: Error in updateLocation', [
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'wita_time' => $this->formatWitaTime()
+            ]);
+        }
     }
 
     /**
@@ -76,22 +109,41 @@ class GeolocationButton extends Component
      */
     public function startTracking(): void
     {
-        $this->isTracking = true;
-        $this->status = 'getting';
+        try {
+            $this->isTracking = true;
+            $this->status = 'getting';
 
-        // Trigger immediate location request
-        $this->dispatch('request-geolocation');
+            // Save state dulu
+            $this->saveTrackingState();
 
-        if ($this->showToast) {
-            $this->success('Live tracking dimulai');
+            // Trigger immediate location request
+            $this->dispatch('request-geolocation');
+
+            if ($this->showToast) {
+                $this->success('Live tracking dimulai');
+            }
+
+            Log::info('GeolocationButton: Location tracking started', [
+                'user_id' => Auth::id(),
+                'wita_time' => $this->formatWitaTime()
+            ]);
+
+            // Force component refresh untuk memulai polling
+            $this->dispatch('$refresh');
+
+        } catch (\Exception $e) {
+            Log::error('GeolocationButton: Error starting tracking', [
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'wita_time' => $this->formatWitaTime()
+            ]);
+
+            if ($this->showToast) {
+                $this->error('Gagal memulai tracking');
+            }
         }
-
-        $this->saveTrackingState();
-
-        Log::info('Location tracking started', [
-            'user_id' => Auth::id(),
-            'wita_time' => $this->formatWitaTime()
-        ]);
     }
 
     /**
@@ -99,19 +151,34 @@ class GeolocationButton extends Component
      */
     public function stopTracking(): void
     {
-        $this->isTracking = false;
-        $this->status = 'waiting';
+        try {
+            $this->isTracking = false;
+            $this->status = 'waiting';
 
-        if ($this->showToast) {
-            $this->info('Live tracking dihentikan');
+            // Save state dulu sebelum toast
+            $this->saveTrackingState();
+
+            if ($this->showToast) {
+                $this->info('Live tracking dihentikan');
+            }
+
+            Log::info('GeolocationButton: Location tracking stopped', [
+                'user_id' => Auth::id(),
+                'wita_time' => $this->formatWitaTime()
+            ]);
+
+            // Force component refresh untuk menghentikan polling
+            $this->dispatch('$refresh');
+
+        } catch (\Exception $e) {
+            Log::error('GeolocationButton: Error stopping tracking', [
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'wita_time' => $this->formatWitaTime()
+            ]);
         }
-
-        $this->saveTrackingState();
-
-        Log::info('Location tracking stopped', [
-            'user_id' => Auth::id(),
-            'wita_time' => $this->formatWitaTime()
-        ]);
     }
 
     /**
@@ -119,11 +186,26 @@ class GeolocationButton extends Component
      */
     public function requestLocation(): void
     {
-        $this->status = 'getting';
-        $this->dispatch('request-geolocation');
+        try {
+            $this->status = 'getting';
+            $this->dispatch('request-geolocation');
 
-        if ($this->showToast) {
-            $this->info('Mengambil lokasi...');
+            if ($this->showToast) {
+                $this->info('Mengambil lokasi...');
+            }
+
+        } catch (\Exception $e) {
+            Log::error('GeolocationButton: Error requesting location', [
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'wita_time' => $this->formatWitaTime()
+            ]);
+
+            if ($this->showToast) {
+                $this->error('Gagal mengambil lokasi');
+            }
         }
     }
 
@@ -140,40 +222,57 @@ class GeolocationButton extends Component
      */
     public function handleLocationSuccess(float $lat, float $lng, ?string $accuracy = null): void
     {
-        $this->latitude = $lat;
-        $this->longitude = $lng;
-        $this->status = 'success';
-        $this->lastUpdated = $this->formatWitaTime(); // Use WITA time
+        try {
+            $this->latitude = $lat;
+            $this->longitude = $lng;
+            $this->status = 'success';
+            $this->lastUpdated = $this->formatWitaTime(); // Use WITA time
 
-        // Update location in cache with immediate processing
-        app('geolocation')->updateUserLocationImmediate(Auth::id(), $lat, $lng);
-        $this->updateAddress();
+            // Update location in cache with immediate processing
+            app('geolocation')->updateUserLocationImmediate(Auth::id(), $lat, $lng);
+            $this->updateAddress();
 
-        // Dispatch global event untuk real-time updates
-        $this->dispatch('location-updated', [
-            'latitude' => $lat,
-            'longitude' => $lng,
-            'address' => $this->address,
-            'accuracy' => $accuracy,
-            'timestamp' => $this->getWitaTime()->toISOString(),
-            'wita_time' => $this->formatWitaTime(),
-            'user_id' => Auth::id(),
-            'timezone' => 'WITA'
-        ]);
+            // Dispatch global event untuk real-time updates
+            $this->dispatch('location-updated', [
+                'latitude' => $lat,
+                'longitude' => $lng,
+                'address' => $this->address,
+                'accuracy' => $accuracy,
+                'timestamp' => $this->getWitaTime()->toISOString(),
+                'wita_time' => $this->formatWitaTime(),
+                'user_id' => Auth::id(),
+                'timezone' => 'WITA'
+            ]);
 
-        // Show toast untuk manual requests atau start tracking
-        if ($this->showToast && $this->status === 'getting') {
-            $this->success('Lokasi berhasil diperbarui');
+            // Show toast untuk manual requests atau start tracking
+            if ($this->showToast && $this->status === 'getting') {
+                $this->success('Lokasi berhasil diperbarui');
+            }
+
+            Log::info('GeolocationButton: Real-time location updated', [
+                'user_id' => Auth::id(),
+                'latitude' => $lat,
+                'longitude' => $lng,
+                'accuracy' => $accuracy,
+                'tracking_mode' => $this->isTracking ? 'active' : 'inactive',
+                'wita_time' => $this->formatWitaTime()
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('GeolocationButton: Error handling location success', [
+                'user_id' => Auth::id(),
+                'latitude' => $lat,
+                'longitude' => $lng,
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'wita_time' => $this->formatWitaTime()
+            ]);
+
+            if ($this->showToast) {
+                $this->error('Gagal memproses lokasi');
+            }
         }
-
-        Log::info('Real-time location updated', [
-            'user_id' => Auth::id(),
-            'latitude' => $lat,
-            'longitude' => $lng,
-            'accuracy' => $accuracy,
-            'tracking_mode' => $this->isTracking ? 'active' : 'inactive',
-            'wita_time' => $this->formatWitaTime()
-        ]);
     }
 
     /**
@@ -181,21 +280,33 @@ class GeolocationButton extends Component
      */
     public function handleLocationError(string $errorMessage): void
     {
-        // Update status untuk manual requests
-        if ($this->status === 'getting') {
-            $this->status = 'error';
+        try {
+            // Update status untuk manual requests
+            if ($this->status === 'getting') {
+                $this->status = 'error';
 
-            if ($this->showToast) {
-                $this->warning('Gagal mengambil lokasi: ' . $errorMessage);
+                if ($this->showToast) {
+                    $this->warning('Gagal mengambil lokasi: ' . $errorMessage);
+                }
             }
-        }
 
-        Log::warning('Geolocation error', [
-            'user_id' => Auth::id(),
-            'error' => $errorMessage,
-            'tracking_active' => $this->isTracking,
-            'wita_time' => $this->formatWitaTime()
-        ]);
+            Log::warning('GeolocationButton: Geolocation error', [
+                'user_id' => Auth::id(),
+                'error' => $errorMessage,
+                'tracking_active' => $this->isTracking,
+                'wita_time' => $this->formatWitaTime()
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('GeolocationButton: Error handling location error', [
+                'user_id' => Auth::id(),
+                'original_error' => $errorMessage,
+                'handling_error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'wita_time' => $this->formatWitaTime()
+            ]);
+        }
     }
 
     /**
@@ -203,26 +314,45 @@ class GeolocationButton extends Component
      */
     public function clearLocation(): void
     {
-        $this->status = 'waiting';
-        $this->latitude = 0;
-        $this->longitude = 0;
-        $this->address = '';
-        $this->lastUpdated = null;
-        $this->isTracking = false;
+        try {
+            $this->status = 'waiting';
+            $this->latitude = 0;
+            $this->longitude = 0;
+            $this->address = '';
+            $this->lastUpdated = null;
+            $this->isTracking = false; // PENTING: Stop tracking juga
 
-        app('geolocation')->clearUserLocation(Auth::id());
-        $this->dispatch('location-cleared');
+            app('geolocation')->clearUserLocation(Auth::id());
+            $this->dispatch('location-cleared');
 
-        if ($this->showToast) {
-            $this->info('Data lokasi dihapus');
+            // Save tracking state (off)
+            $this->saveTrackingState();
+
+            if ($this->showToast) {
+                $this->info('Data lokasi dihapus');
+            }
+
+            Log::info('GeolocationButton: User location cleared', [
+                'user_id' => Auth::id(),
+                'wita_time' => $this->formatWitaTime()
+            ]);
+
+            // Force component refresh untuk menghentikan polling
+            $this->dispatch('$refresh');
+
+        } catch (\Exception $e) {
+            Log::error('GeolocationButton: Error clearing location', [
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'wita_time' => $this->formatWitaTime()
+            ]);
+
+            if ($this->showToast) {
+                $this->error('Gagal menghapus data lokasi');
+            }
         }
-
-        $this->saveTrackingState();
-
-        Log::info('User location cleared', [
-            'user_id' => Auth::id(),
-            'wita_time' => $this->formatWitaTime()
-        ]);
     }
 
     /**
@@ -230,18 +360,29 @@ class GeolocationButton extends Component
      */
     protected function loadCachedLocation(): void
     {
-        $location = app('geolocation')->getUserLocation(Auth::id());
+        try {
+            $location = app('geolocation')->getUserLocation(Auth::id());
 
-        if ($location['latitude'] && $location['longitude']) {
-            $this->latitude = $location['latitude'];
-            $this->longitude = $location['longitude'];
-            $this->address = $location['city'] ?? '';
+            if ($location['latitude'] && $location['longitude']) {
+                $this->latitude = $location['latitude'];
+                $this->longitude = $location['longitude'];
+                $this->address = $location['city'] ?? '';
 
-            if ($location['last_updated']) {
-                $this->status = 'success';
-                // Convert to WITA time for display
-                $this->lastUpdated = app('geolocation')->getFormattedWitaTime($location['last_updated']);
+                if ($location['last_updated']) {
+                    $this->status = 'success';
+                    // Convert to WITA time for display
+                    $this->lastUpdated = app('geolocation')->getFormattedWitaTime($location['last_updated']);
+                }
             }
+
+        } catch (\Exception $e) {
+            Log::error('GeolocationButton: Error loading cached location', [
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'wita_time' => $this->formatWitaTime()
+            ]);
         }
     }
 
@@ -250,8 +391,22 @@ class GeolocationButton extends Component
      */
     protected function loadTrackingState(): void
     {
-        $cacheKey = "user_tracking_state_" . Auth::id();
-        $this->isTracking = Cache::get($cacheKey, false);
+        try {
+            $cacheKey = "user_tracking_state_" . Auth::id();
+            $this->isTracking = Cache::get($cacheKey, false);
+
+        } catch (\Exception $e) {
+            Log::error('GeolocationButton: Error loading tracking state', [
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'wita_time' => $this->formatWitaTime()
+            ]);
+
+            // Fallback to false if error
+            $this->isTracking = false;
+        }
     }
 
     /**
@@ -259,8 +414,20 @@ class GeolocationButton extends Component
      */
     protected function saveTrackingState(): void
     {
-        $cacheKey = "user_tracking_state_" . Auth::id();
-        Cache::put($cacheKey, $this->isTracking, now()->addHours(24));
+        try {
+            $cacheKey = "user_tracking_state_" . Auth::id();
+            Cache::put($cacheKey, $this->isTracking, now()->addHours(24));
+
+        } catch (\Exception $e) {
+            Log::error('GeolocationButton: Error saving tracking state', [
+                'user_id' => Auth::id(),
+                'tracking_state' => $this->isTracking,
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'wita_time' => $this->formatWitaTime()
+            ]);
+        }
     }
 
     /**
@@ -268,18 +435,32 @@ class GeolocationButton extends Component
      */
     protected function updateAddress(): void
     {
-        $location = app('geolocation')->getUserLocation(Auth::id());
+        try {
+            $location = app('geolocation')->getUserLocation(Auth::id());
 
-        // Gunakan alamat dari API atau fallback
-        $this->address = $location['city'] ?? 'Mengambil alamat...';
+            // Gunakan alamat dari API atau fallback
+            $this->address = $location['city'] ?? 'Mengambil alamat...';
 
-        // Jika alamat masih default, coba ambil dari cache yang lebih lama
-        if ($this->address === 'Mengambil alamat...' || $this->address === 'Alamat tidak tersedia') {
-            // Coba ambil dari default location
-            $defaultLocation = app('geolocation')->getUserLocation(1);
-            if (isset($defaultLocation['city']) && !in_array($defaultLocation['city'], ['Mengambil alamat...', 'Alamat tidak tersedia'])) {
-                $this->address = $defaultLocation['city'];
+            // Jika alamat masih default, coba ambil dari cache yang lebih lama
+            if ($this->address === 'Mengambil alamat...' || $this->address === 'Alamat tidak tersedia') {
+                // Coba ambil dari default location
+                $defaultLocation = app('geolocation')->getUserLocation(1);
+                if (isset($defaultLocation['city']) && !in_array($defaultLocation['city'], ['Mengambil alamat...', 'Alamat tidak tersedia'])) {
+                    $this->address = $defaultLocation['city'];
+                }
             }
+
+        } catch (\Exception $e) {
+            Log::error('GeolocationButton: Error updating address', [
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'wita_time' => $this->formatWitaTime()
+            ]);
+
+            // Fallback address on error
+            $this->address = 'Alamat tidak tersedia';
         }
     }
 
@@ -344,7 +525,8 @@ class GeolocationButton extends Component
 
             return $updated->diffInSeconds($this->getWitaTime()) < 30; // 30 detik untuk real-time
         } catch (\Exception $e) {
-            Log::warning('Failed to parse location time', [
+            Log::warning('GeolocationButton: Failed to parse location time', [
+                'user_id' => Auth::id(),
                 'last_updated' => $this->lastUpdated,
                 'error' => $e->getMessage(),
                 'wita_time' => $this->formatWitaTime()
