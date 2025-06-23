@@ -1,6 +1,6 @@
 {{-- resources/views/livewire/components/maps-route.blade.php --}}
 @php
-    // Cek apakah user sedang tracking untuk conditional polling - SAMA seperti Maps component
+    // Cek apakah user sedang tracking untuk conditional polling
     $trackingCacheKey = 'user_tracking_state_' . auth()->id();
     $isUserTracking = \Illuminate\Support\Facades\Cache::get($trackingCacheKey, false);
 @endphp
@@ -23,14 +23,14 @@
         </x-card>
     </div>
 
-    <!-- Corner Badges - Top -->
+    <!-- Corner Badges - Top Right -->
     @if ($badgeTopLeft || $badgeTopRight)
         <div class="absolute top-4 right-4 z-10 flex flex-col gap-2 items-end">
-            @if ($badgeTopLeft)
-                <x-badge value="{{ $badgeTopLeft }}" class="badge-success badge-soft badge-xs" />
-            @endif
             @if ($badgeTopRight)
                 <x-badge value="{{ $badgeTopRight }}" class="badge-info badge-soft badge-xs" />
+            @endif
+            @if ($badgeTopLeft)
+                <x-badge value="{{ $badgeTopLeft }}" class="badge-success badge-soft badge-xs" />
             @endif
         </div>
     @endif
@@ -38,10 +38,10 @@
     <!-- Custom Controls - Top Left -->
     <div class="absolute top-4 left-4 z-10 flex flex-col gap-1">
         <!-- Zoom Controls -->
-        <button id="zoom-in-{{ $mapId }}" class="btn btn-sm btn-circle btn-primary btn-soft">
+        <button id="zoom-in-{{ $mapId }}" class="btn btn-sm btn-circle btn-primary btn-soft" title="Zoom In">
             <x-icon name="phosphor.magnifying-glass-plus-duotone" class="w-4 h-4" />
         </button>
-        <button id="zoom-out-{{ $mapId }}" class="btn btn-sm btn-circle btn-primary btn-soft">
+        <button id="zoom-out-{{ $mapId }}" class="btn btn-sm btn-circle btn-primary btn-soft" title="Zoom Out">
             <x-icon name="phosphor.magnifying-glass-minus-duotone" class="w-4 h-4" />
         </button>
 
@@ -50,6 +50,14 @@
             <button id="go-to-location-{{ $mapId }}" wire:click="goToMyLocation"
                 class="btn btn-sm btn-circle btn-success btn-soft" title="Ke Lokasi Saya">
                 <x-icon name="phosphor.crosshair-duotone" class="w-4 h-4" />
+            </button>
+        @endif
+
+        <!-- Start Location Button -->
+        @if ($hasStartLocation)
+            <button id="go-to-start-{{ $mapId }}" wire:click="goToStartLocation"
+                class="btn btn-sm btn-circle btn-info btn-soft" title="Ke Start Point">
+                <x-icon name="phosphor.flag-duotone" class="w-4 h-4" />
             </button>
         @endif
 
@@ -67,16 +75,11 @@
 
     <!-- Distance Info - Top Center -->
     @if($this->getDistanceText())
-        <div class="absolute top-4 left-1/2 transform -translate-x-1/2 z-10">
-            <div class="bg-base-100/90 backdrop-blur-sm rounded-lg px-3 py-1 border border-primary/20">
-                <div class="flex items-center gap-2 text-sm">
-                    <x-icon name="phosphor.ruler" class="w-4 h-4 text-primary" />
-                    <span class="font-medium">{{ $this->getDistanceText() }}</span>
-                    @if($this->isNearDestination())
-                        <div class="w-2 h-2 rounded-full bg-success animate-pulse"></div>
-                    @endif
-                </div>
-            </div>
+        <div class="absolute top-4 left-1/2 transform -translate-x-1/2 z-10 flex flex-col gap-2 items-center">
+            <x-badge value="{{ $this->getDistanceText() }}" class="badge-primary badge-soft badge-sm" />
+            @if($this->getDistanceFromStartText())
+                <x-badge value="{{ $this->getDistanceFromStartText() }}" class="badge-info badge-soft badge-xs" />
+            @endif
         </div>
     @endif
 
@@ -90,8 +93,11 @@
 
     <!-- Map Container -->
     <div id="{{ $mapId }}" wire:ignore class="{{ $class ?? '' }}" style="{{ $style }}"
-        data-lat="{{ $lat }}" data-lng="{{ $lng }}" data-zoom="{{ $zoom }}"
-        data-address="{{ $address }}" data-is-actual="{{ $isActualLocation ? 'true' : 'false' }}"
+        data-lat="{{ $lat }}"
+        data-lng="{{ $lng }}"
+        data-zoom="{{ $zoom }}"
+        data-address="{{ $address }}"
+        data-is-actual="{{ $isActualLocation ? 'true' : 'false' }}"
         data-status-text="{{ $this->getLocationStatusText() }}"
         data-status-class="{{ $this->getLocationStatusClass() }}"
         data-text-class="{{ $this->getLocationTextClass() }}"
@@ -100,13 +106,21 @@
         data-destination-address="{{ $destinationAddress }}"
         data-show-route="{{ $showRoute ? 'true' : 'false' }}"
         data-route-color="{{ $routeColor }}"
-        data-route-weight="{{ $routeWeight }}">
+        data-route-weight="{{ $routeWeight }}"
+        data-is-tracking="{{ $isTracking ? 'true' : 'false' }}"
+        data-has-start-location="{{ $hasStartLocation ? 'true' : 'false' }}"
+        @if($hasStartLocation && $startLocationData)
+        data-start-lat="{{ $startLocationData['latitude'] ?? '' }}"
+        data-start-lng="{{ $startLocationData['longitude'] ?? '' }}"
+        data-start-session-id="{{ $trackingSessionId ?? '' }}"
+        @endif
+        >
     </div>
 </div>
 
 @assets
     <script>
-        // Global object untuk menyimpan map instances dan markers dengan route support
+        // Global object untuk menyimpan map instances dengan route tracking
         window.mapRouteInstances = window.mapRouteInstances || {};
 
         /**
@@ -115,28 +129,26 @@
         function centerRouteView(mapId) {
             const mapInstance = window.mapRouteInstances[mapId];
             if (!mapInstance) {
+                console.warn('Map instance not found:', mapId);
                 return;
             }
 
             try {
-                const { map, originMarker, destinationMarker, routePolyline } = mapInstance;
+                const { map, originMarker, destinationMarker, startLocationMarker } = mapInstance;
 
-                // Jika menggunakan routing control
-                if (routePolyline && routePolyline.getWaypoints) {
-                    const waypoints = routePolyline.getWaypoints();
-                    if (waypoints.length >= 2) {
-                        const group = new L.featureGroup([
-                            L.marker(waypoints[0].latLng),
-                            L.marker(waypoints[waypoints.length - 1].latLng)
-                        ]);
-                        map.fitBounds(group.getBounds().pad(0.1));
-                        return;
-                    }
+                // Fit bounds ke start point (jika ada), current location, dan destination
+                const markersToInclude = [destinationMarker];
+
+                if (startLocationMarker) {
+                    markersToInclude.push(startLocationMarker);
+                } else {
+                    markersToInclude.push(originMarker);
                 }
 
-                // Fallback untuk simple polyline atau markers
-                const group = new L.featureGroup([originMarker, destinationMarker]);
+                const group = L.featureGroup(markersToInclude);
                 map.fitBounds(group.getBounds().pad(0.1));
+
+                console.log('✅ Route view centered for map:', mapId);
             } catch (error) {
                 console.error('Error centering route view:', error);
             }
@@ -160,11 +172,13 @@
                 lng = eventData.lng;
                 zoom = eventData.zoom;
             } else {
+                console.warn('Invalid event data for centerMapToLocation');
                 return;
             }
 
             const mapInstance = window.mapRouteInstances[mapId];
             if (!mapInstance) {
+                console.warn('Map instance not found for centerMapToLocation:', mapId);
                 return;
             }
 
@@ -175,7 +189,10 @@
                     duration: 1.5,
                     easeLinearity: 0.25
                 });
+
+                console.log(`📍 Map centered to: ${lat.toFixed(3)}, ${lng.toFixed(3)}`);
             } catch (error) {
+                console.error('Error centering map:', error);
                 if (window.Livewire) {
                     window.Livewire.dispatch('log-js-error', {
                         component: 'MapsRoute',
@@ -217,14 +234,16 @@
                 try {
                     const map = createRouteMap(container, mapData);
                     const { originMarker, destinationMarker } = createRouteMarkers(map, mapData);
-                    const routePolyline = createSimpleRoute(map, mapData);
 
                     // Store map dan markers dalam global object untuk real-time updates
                     window.mapRouteInstances[mapData.mapId] = {
                         map: map,
                         originMarker: originMarker,
                         destinationMarker: destinationMarker,
-                        routePolyline: routePolyline,
+                        startLocationMarker: null, // Akan diset saat tracking dimulai
+                        staticRoute: null, // Route yang statis
+                        routeInitialized: false,
+                        startLocation: null, // Koordinat start point
                         container: container
                     };
 
@@ -265,7 +284,13 @@
                 destinationAddress: container.dataset.destinationAddress || 'Tujuan',
                 showRoute: container.dataset.showRoute === 'true',
                 routeColor: container.dataset.routeColor || '#DC2626',
-                routeWeight: parseInt(container.dataset.routeWeight) || 6
+                routeWeight: parseInt(container.dataset.routeWeight) || 6,
+                // Start location data
+                isTracking: container.dataset.isTracking === 'true',
+                hasStartLocation: container.dataset.hasStartLocation === 'true',
+                startLat: parseFloat(container.dataset.startLat) || null,
+                startLng: parseFloat(container.dataset.startLng) || null,
+                startSessionId: container.dataset.startSessionId || null
             };
         }
 
@@ -293,7 +318,7 @@
         }
 
         function createRouteMarkers(map, mapData) {
-            // Origin marker (User location) - menggunakan icon yang sama seperti Maps component
+            // Origin marker (User location) - marker yang akan bergerak
             const userLocationIcon = L.icon({
                 iconUrl: '/images/map-pin/location-driver.png',
                 iconSize: [32, 32],
@@ -305,7 +330,7 @@
                 icon: userLocationIcon
             }).addTo(map);
 
-            // Destination marker - menggunakan custom destination icon
+            // Destination marker - marker statis
             const destinationIcon = L.icon({
                 iconUrl: '/images/map-pin/location-destination.png',
                 iconSize: [32, 32],
@@ -324,71 +349,123 @@
             return { originMarker, destinationMarker };
         }
 
-        function createSimpleRoute(map, mapData) {
-            if (!mapData.showRoute) return null;
+        /**
+         * Initialize static route SEKALI SAJA ketika tracking dimulai
+         */
+        function initializeStaticRoute(mapInstance, mapData, startLat, startLng) {
+            const { map } = mapInstance;
+
+            // Jika route sudah diinisialisasi, jangan buat lagi
+            if (mapInstance.routeInitialized) {
+                console.log('Route already initialized, skipping...');
+                return;
+            }
 
             try {
-                // Create routing control using OSRM untuk route yang mengikuti jalan
-                const routeControl = L.Routing.control({
-                    waypoints: [
-                        L.latLng(mapData.lat, mapData.lng),
-                        L.latLng(mapData.destinationLat, mapData.destinationLng)
-                    ],
-                    routeWhileDragging: false,
-                    addWaypoints: false,
-                    createMarker: function() { return null; }, // Don't create default markers
-                    lineOptions: {
-                        styles: [{
-                            color: mapData.routeColor,
-                            weight: mapData.routeWeight,
-                            opacity: 0.8
-                        }]
-                    },
-                    router: L.Routing.osrmv1({
-                        serviceUrl: 'https://router.project-osrm.org/route/v1',
-                        profile: 'driving',
-                        timeout: 5000 // 5 second timeout
-                    }),
-                    show: false, // Hide direction panel
-                    collapsible: false
+                // Set start location (titik awal yang tetap)
+                mapInstance.startLocation = { lat: startLat, lng: startLng };
+
+                // Buat start location marker (titik hijau untuk start)
+                const startIcon = L.icon({
+                    iconUrl: '/images/map-pin/location-start.png',
+                    iconSize: [24, 24],
+                    iconAnchor: [12, 24],
+                    popupAnchor: [0, -24]
+                });
+
+                const startLocationMarker = L.marker([startLat, startLng], {
+                    icon: startIcon
                 }).addTo(map);
 
-                // Hide the routing control interface
-                const routingContainer = routeControl.getContainer();
-                if (routingContainer) {
-                    routingContainer.style.display = 'none';
+                startLocationMarker.bindPopup(`
+                <div class="min-w-32 max-w-44 text-xs">
+                    <div class="flex items-center gap-1 mb-2">
+                        <div aria-label="success" class="status status-md status-success"></div>
+                        <span class="text-success font-medium text-xs">Titik Start</span>
+                        <span class="badge badge-xs badge-success">START</span>
+                    </div>
+                    <div class="text-xs text-gray-600 font-medium mb-2">
+                        Lokasi awal perjalanan
+                    </div>
+                    <div class="flex gap-1">
+                        <span class="badge badge-xs badge-soft badge-success">Lat: ${startLat.toFixed(3)}°</span>
+                        <span class="badge badge-xs badge-soft badge-success">Lng: ${startLng.toFixed(3)}°</span>
+                    </div>
+                </div>
+            `);
+
+                mapInstance.startLocationMarker = startLocationMarker;
+
+                // Buat route statis SEKALI SAJA dari start ke destination
+                if (mapData.showRoute) {
+                    const routeControl = L.Routing.control({
+                        waypoints: [
+                            L.latLng(startLat, startLng), // Start point (TETAP)
+                            L.latLng(mapData.destinationLat, mapData.destinationLng) // Destination (TETAP)
+                        ],
+                        routeWhileDragging: false,
+                        addWaypoints: false,
+                        createMarker: function() { return null; }, // Jangan buat marker default
+                        lineOptions: {
+                            styles: [{
+                                color: mapData.routeColor,
+                                weight: mapData.routeWeight,
+                                opacity: 0.8
+                            }]
+                        },
+                        router: L.Routing.osrmv1({
+                            serviceUrl: 'https://router.project-osrm.org/route/v1',
+                            profile: 'driving',
+                            timeout: 10000
+                        }),
+                        show: false, // Hide direction panel
+                        collapsible: false
+                    }).addTo(map);
+
+                    // Hide routing control interface
+                    const routingContainer = routeControl.getContainer();
+                    if (routingContainer) {
+                        routingContainer.style.display = 'none';
+                    }
+
+                    mapInstance.staticRoute = routeControl;
                 }
 
-                // Suppress console warning (opsional)
-                const originalConsoleWarn = console.warn;
-                console.warn = function(msg) {
-                    if (msg && msg.includes && msg.includes('OSRM')) {
-                        return; // Skip OSRM warnings
-                    }
-                    originalConsoleWarn.apply(console, arguments);
-                };
+                // Mark route sebagai sudah diinisialisasi
+                mapInstance.routeInitialized = true;
 
-                return routeControl;
+                console.log(`🛣️ Static route initialized from start point (${startLat.toFixed(3)}, ${startLng.toFixed(3)})`);
+
             } catch (error) {
-                console.error('Error creating route control:', error);
+                console.error('Error initializing static route:', error);
+
                 // Fallback ke simple polyline jika routing gagal
-                const routePolyline = L.polyline([
-                    [mapData.lat, mapData.lng],
-                    [mapData.destinationLat, mapData.destinationLng]
-                ], {
-                    color: mapData.routeColor,
-                    weight: mapData.routeWeight,
-                    opacity: 0.8
-                }).addTo(map);
-                return routePolyline;
+                try {
+                    const routePolyline = L.polyline([
+                        [startLat, startLng],
+                        [mapData.destinationLat, mapData.destinationLng]
+                    ], {
+                        color: mapData.routeColor,
+                        weight: mapData.routeWeight,
+                        opacity: 0.8
+                    }).addTo(map);
+
+                    mapInstance.staticRoute = routePolyline;
+                    mapInstance.routeInitialized = true;
+
+                    console.log('🛣️ Fallback route created with simple polyline');
+                } catch (fallbackError) {
+                    console.error('Fallback route creation failed:', fallbackError);
+                }
             }
         }
 
         /**
-         * Update route marker position - Core functionality untuk real-time updates
+         * Update route marker position dengan start location support
          */
         function updateRouteMarkerPosition(eventData) {
             let mapId, lat, lng, address, isActual, destinationLat, destinationLng, destinationAddress;
+            let hasStartLocation, startLocationData, trackingSessionId;
 
             if (Array.isArray(eventData) && eventData.length > 0) {
                 const data = eventData[0];
@@ -400,6 +477,9 @@
                 destinationLat = parseFloat(data.destinationLat);
                 destinationLng = parseFloat(data.destinationLng);
                 destinationAddress = data.destinationAddress;
+                hasStartLocation = data.hasStartLocation;
+                startLocationData = data.startLocationData;
+                trackingSessionId = data.trackingSessionId;
             } else if (typeof eventData === 'object') {
                 mapId = eventData.mapId;
                 lat = parseFloat(eventData.lat);
@@ -409,24 +489,39 @@
                 destinationLat = parseFloat(eventData.destinationLat);
                 destinationLng = parseFloat(eventData.destinationLng);
                 destinationAddress = eventData.destinationAddress;
+                hasStartLocation = eventData.hasStartLocation;
+                startLocationData = eventData.startLocationData;
+                trackingSessionId = eventData.trackingSessionId;
             } else {
+                console.warn('Invalid event data for updateRouteMarkerPosition');
                 return;
             }
 
             // Validate coordinates
             if (isNaN(lat) || isNaN(lng)) {
+                console.warn('Invalid coordinates received:', { lat, lng });
                 return;
             }
 
             const mapInstance = window.mapRouteInstances[mapId];
             if (!mapInstance) {
+                console.warn('Map instance not found for marker update:', mapId);
                 return;
             }
 
-            const { map, originMarker, destinationMarker, routePolyline } = mapInstance;
+            const { map, originMarker } = mapInstance;
 
             try {
-                // Update origin marker position (smooth movement)
+                // Inisialisasi route SEKALI SAJA dengan start location data
+                if (isActual && !mapInstance.routeInitialized && hasStartLocation && startLocationData) {
+                    const mapData = extractRouteMapDataFromMarker(mapInstance.container);
+                    if (mapData) {
+                        // Gunakan start location dari session sebagai start point
+                        initializeStaticRoute(mapInstance, mapData, startLocationData.latitude, startLocationData.longitude);
+                    }
+                }
+
+                // Update HANYA posisi driver marker (smooth movement)
                 const newLatLng = L.latLng(lat, lng);
                 originMarker.setLatLng(newLatLng);
 
@@ -442,27 +537,11 @@
                 };
                 updateOriginMarkerPopup(originMarker, mapData);
 
-                // Update route jika ada
-                if (routePolyline) {
-                    // Jika menggunakan routing control
-                    if (routePolyline.setWaypoints) {
-                        routePolyline.setWaypoints([
-                            L.latLng(lat, lng),
-                            L.latLng(destinationLat, destinationLng)
-                        ]);
-                    }
-                    // Jika menggunakan simple polyline
-                    else if (routePolyline.setLatLngs) {
-                        routePolyline.setLatLngs([
-                            [lat, lng],
-                            [destinationLat, destinationLng]
-                        ]);
-                    }
-                }
-
-                console.log(`📍 Route marker updated: ${mapId} (${lat.toFixed(6)}, ${lng.toFixed(6)})`);
+                // Route tetap statis dari start point ke destination
+                console.log(`📍 Driver marker updated: ${mapId} (${lat.toFixed(3)}, ${lng.toFixed(3)}) - Route stays static`);
 
             } catch (error) {
+                console.error('Error updating route marker position:', error);
                 if (window.Livewire) {
                     window.Livewire.dispatch('log-js-error', {
                         component: 'MapsRoute',
@@ -476,26 +555,48 @@
         }
 
         /**
+         * Extract map data dari container untuk route initialization
+         */
+        function extractRouteMapDataFromMarker(container) {
+            const destinationLat = parseFloat(container.dataset.destinationLat);
+            const destinationLng = parseFloat(container.dataset.destinationLng);
+
+            if (isNaN(destinationLat) || isNaN(destinationLng)) {
+                console.error('Invalid destination coordinates in container');
+                return null;
+            }
+
+            return {
+                destinationLat: destinationLat,
+                destinationLng: destinationLng,
+                destinationAddress: container.dataset.destinationAddress || 'Tujuan',
+                showRoute: container.dataset.showRoute === 'true',
+                routeColor: container.dataset.routeColor || '#DC2626',
+                routeWeight: parseInt(container.dataset.routeWeight) || 6
+            };
+        }
+
+        /**
          * Update origin marker popup content
          */
         function updateOriginMarkerPopup(marker, mapData) {
             const popupContent = `
-                <div class="min-w-32 max-w-44 text-xs">
-                    <div class="flex items-center gap-1 mb-2">
-                        <div aria-label="${mapData.isActual ? 'success' : 'warning'}"
-                             class="status status-md ${mapData.statusClass} ${mapData.isActual ? '' : 'animate-pulse'}"></div>
-                        <span class="${mapData.textClass} font-medium text-xs">${mapData.statusText}</span>
-                        <span class="badge badge-xs badge-info">ORIGIN</span>
-                    </div>
-                    <div class="text-xs text-gray-600 font-medium mb-2 line-clamp-2 leading-tight">
-                        ${mapData.address ? mapData.address.replace(/"/g, '&quot;').replace(/'/g, '&#39;') : 'Lokasi tidak diketahui'}
-                    </div>
-                    <div class="flex gap-1">
-                        <span class="badge badge-xs badge-soft badge-success">Lat: ${mapData.lat.toFixed(3)}°</span>
-                        <span class="badge badge-xs badge-soft badge-success">Lng: ${mapData.lng.toFixed(3)}°</span>
-                    </div>
+            <div class="min-w-32 max-w-44 text-xs">
+                <div class="flex items-center gap-1 mb-2">
+                    <div aria-label="${mapData.isActual ? 'success' : 'warning'}"
+                         class="status status-md ${mapData.statusClass} ${mapData.isActual ? '' : 'animate-pulse'}"></div>
+                    <span class="${mapData.textClass} font-medium text-xs">${mapData.statusText}</span>
+                    <span class="badge badge-xs badge-info">DRIVER</span>
                 </div>
-            `;
+                <div class="text-xs text-gray-600 font-medium mb-2 line-clamp-2 leading-tight">
+                    ${mapData.address ? mapData.address.replace(/"/g, '&quot;').replace(/'/g, '&#39;') : 'Lokasi tidak diketahui'}
+                </div>
+                <div class="flex gap-1">
+                    <span class="badge badge-xs badge-soft badge-info">Lat: ${mapData.lat.toFixed(3)}°</span>
+                    <span class="badge badge-xs badge-soft badge-info">Lng: ${mapData.lng.toFixed(3)}°</span>
+                </div>
+            </div>
+        `;
             marker.bindPopup(popupContent);
         }
 
@@ -527,6 +628,7 @@
             const zoomOutBtn = document.getElementById(`zoom-out-${mapId}`);
 
             if (!zoomInBtn || !zoomOutBtn) {
+                console.warn('Zoom control buttons not found for map:', mapId);
                 return;
             }
 
@@ -557,12 +659,16 @@
             // Event listeners
             zoomInBtn.addEventListener('click', function(e) {
                 e.preventDefault();
-                if (!zoomInBtn.disabled) map.zoomIn();
+                if (!zoomInBtn.disabled) {
+                    map.zoomIn();
+                }
             });
 
             zoomOutBtn.addEventListener('click', function(e) {
                 e.preventDefault();
-                if (!zoomOutBtn.disabled) map.zoomOut();
+                if (!zoomOutBtn.disabled) {
+                    map.zoomOut();
+                }
             });
 
             // Listen to zoom events
@@ -575,18 +681,41 @@
             Object.keys(window.mapRouteInstances).forEach(mapId => {
                 const instance = window.mapRouteInstances[mapId];
                 if (instance && instance.map) {
-                    // Clean up routing control jika ada
-                    if (instance.routePolyline && instance.routePolyline.remove) {
-                        try {
-                            instance.map.removeControl(instance.routePolyline);
-                        } catch (e) {
-                            // Ignore cleanup errors
+                    try {
+                        // Clean up routing control jika ada
+                        if (instance.staticRoute && instance.staticRoute.remove) {
+                            instance.map.removeControl(instance.staticRoute);
                         }
+
+                        // Remove all markers
+                        if (instance.originMarker) {
+                            instance.map.removeLayer(instance.originMarker);
+                        }
+                        if (instance.destinationMarker) {
+                            instance.map.removeLayer(instance.destinationMarker);
+                        }
+                        if (instance.startLocationMarker) {
+                            instance.map.removeLayer(instance.startLocationMarker);
+                        }
+
+                        // Remove map
+                        instance.map.remove();
+
+                        console.log('✅ Map cleaned up:', mapId);
+                    } catch (error) {
+                        console.warn('Error cleaning up map:', mapId, error);
                     }
-                    instance.map.remove();
                 }
                 delete window.mapRouteInstances[mapId];
             });
         });
+
+        // Debug helper functions
+        window.debugMapsRoute = {
+            instances: () => window.mapRouteInstances,
+            instance: (mapId) => window.mapRouteInstances[mapId],
+            centerRoute: (mapId) => centerRouteView(mapId),
+            logs: true
+        };
     </script>
 @endassets

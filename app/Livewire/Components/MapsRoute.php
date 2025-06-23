@@ -47,6 +47,11 @@ class MapsRoute extends Component
     // Real-time tracking properties
     public $isTracking = false;
 
+    // ENHANCED: Start location tracking
+    public $hasStartLocation = false;
+    public $startLocationData = null;
+    public $trackingSessionId = null;
+
     public function mount(
         $lat = null,
         $lng = null,
@@ -98,7 +103,7 @@ class MapsRoute extends Component
 
     /**
      * Initialize location data dari geolocation service
-     * SAMA PERSIS seperti di Maps component
+     * ENHANCED: Include start location data
      */
     protected function initializeLocationData(): void
     {
@@ -106,7 +111,9 @@ class MapsRoute extends Component
 
         try {
             $location = app('geolocation')->getUserLocation(Auth::id());
+            $trackingSession = app('geolocation')->getTrackingSessionInfo(Auth::id());
 
+            // Set current location
             if ($location['latitude'] && $location['longitude']) {
                 $this->lat = $location['latitude'];
                 $this->lng = $location['longitude'];
@@ -116,7 +123,27 @@ class MapsRoute extends Component
                 // Set weather and time data - FIX WITA timezone
                 $this->weatherData = $location['weather_data'] ?? $location['weather'] ?? null;
                 $this->currentTime = $this->formatWitaTime($location['last_updated']);
+            } else {
+                // Use default location
+                $this->lat = $this->latDefult;
+                $this->lng = $this->lngDefult;
+                $this->address = 'Lokasi Default - Kendari';
+                $this->isActualLocation = false;
             }
+
+            // ENHANCED: Set start location data
+            $this->isTracking = $trackingSession['is_tracking'];
+            $this->hasStartLocation = $trackingSession['has_start_location'];
+            $this->startLocationData = $trackingSession['start_location'];
+            $this->trackingSessionId = $trackingSession['session_id'];
+
+            Log::info('MapsRoute: Location data initialized', [
+                'user_id' => Auth::id(),
+                'has_actual_location' => $this->isActualLocation,
+                'is_tracking' => $this->isTracking,
+                'has_start_location' => $this->hasStartLocation,
+                'session_id' => $this->trackingSessionId
+            ]);
 
         } catch (\Exception $e) {
             Log::error('MapsRoute Component: Error initializing location data', [
@@ -131,8 +158,7 @@ class MapsRoute extends Component
 
     /**
      * Method untuk update lokasi real-time
-     * Dipanggil oleh wire:poll.visible ketika tracking aktif
-     * SAMA PERSIS seperti di Maps component
+     * ENHANCED: Include start location handling
      */
     public function updateMapLocation(): void
     {
@@ -145,11 +171,13 @@ class MapsRoute extends Component
 
             // Jika tidak tracking, STOP polling - jangan lakukan apa-apa
             if (!$isUserTracking) {
+                $this->isTracking = false;
                 return;
             }
 
             // Ambil data lokasi fresh dari geolocation service
             $location = app('geolocation')->getUserLocation(Auth::id());
+            $trackingSession = app('geolocation')->getTrackingSessionInfo(Auth::id());
 
             // Cek apakah ada lokasi aktual
             $hasLocation = $location['latitude'] && $location['longitude'] && $location['last_updated'];
@@ -165,12 +193,18 @@ class MapsRoute extends Component
                 $this->weatherData = $location['weather_data'] ?? $location['weather'] ?? null;
                 $this->currentTime = $this->formatWitaTime($location['last_updated']);
 
+                // ENHANCED: Update start location tracking state
+                $this->isTracking = $trackingSession['is_tracking'];
+                $this->hasStartLocation = $trackingSession['has_start_location'];
+                $this->startLocationData = $trackingSession['start_location'];
+                $this->trackingSessionId = $trackingSession['session_id'];
+
                 // Set dynamic badges dari data geolocation
                 $this->badgeTopLeft = $this->currentTime; // Waktu update terakhir
                 $this->badgeTopRight = $this->weatherData ?
                     ($this->weatherData['condition'] ?? $this->weatherData['description'] ?? 'Tidak ada data') . ' ' . round($this->weatherData['temperature'] ?? 0) . '°C' : null;
 
-                // Dispatch browser event untuk update marker position dan route dengan mapId yang valid
+                // ENHANCED: Dispatch dengan start location info
                 $this->dispatch('update-route-marker-position',
                     mapId: $this->mapId,
                     lat: $this->lat,
@@ -181,7 +215,11 @@ class MapsRoute extends Component
                     currentTime: $this->currentTime,
                     destinationLat: $this->destinationLat,
                     destinationLng: $this->destinationLng,
-                    destinationAddress: $this->destinationAddress
+                    destinationAddress: $this->destinationAddress,
+                    // Start location data
+                    hasStartLocation: $this->hasStartLocation,
+                    startLocationData: $this->startLocationData,
+                    trackingSessionId: $this->trackingSessionId
                 );
             }
 
@@ -199,11 +237,24 @@ class MapsRoute extends Component
 
     /**
      * Listen untuk location-updated event dari GeolocationButton
+     * ENHANCED: Handle start location events
      */
     #[On('location-updated')]
-    public function handleLocationUpdate(): void
+    public function handleLocationUpdate($eventData = null): void
     {
         try {
+            // Check if this is start location event
+            $isStartLocation = $eventData['is_start_location'] ?? false;
+            $trackingSession = $eventData['tracking_session'] ?? null;
+
+            if ($isStartLocation && $trackingSession) {
+                Log::info('MapsRoute: Start location event received', [
+                    'user_id' => Auth::id(),
+                    'session_id' => $trackingSession['session_id'],
+                    'has_start_location' => $trackingSession['has_start_location']
+                ]);
+            }
+
             // Trigger update map location
             $this->updateMapLocation();
 
@@ -220,6 +271,7 @@ class MapsRoute extends Component
 
     /**
      * Listen untuk location-cleared event
+     * ENHANCED: Clear start location data
      */
     #[On('location-cleared')]
     public function handleLocationCleared(): void
@@ -232,6 +284,12 @@ class MapsRoute extends Component
             $this->address = null;
             $this->weatherData = null;
             $this->currentTime = null;
+
+            // ENHANCED: Clear start location data
+            $this->isTracking = false;
+            $this->hasStartLocation = false;
+            $this->startLocationData = null;
+            $this->trackingSessionId = null;
 
             // Reset badges
             $this->badgeTopLeft = null;
@@ -248,8 +306,16 @@ class MapsRoute extends Component
                 currentTime: null,
                 destinationLat: $this->destinationLat,
                 destinationLng: $this->destinationLng,
-                destinationAddress: $this->destinationAddress
+                destinationAddress: $this->destinationAddress,
+                // Clear start location data
+                hasStartLocation: false,
+                startLocationData: null,
+                trackingSessionId: null
             );
+
+            Log::info('MapsRoute: Location and start location cleared', [
+                'user_id' => Auth::id()
+            ]);
 
         } catch (\Exception $e) {
             Log::error('MapsRoute Component: Error handling location cleared', [
@@ -288,6 +354,31 @@ class MapsRoute extends Component
     }
 
     /**
+     * ENHANCED: Method untuk center map ke start location
+     */
+    public function goToStartLocation(): void
+    {
+        try {
+            if ($this->hasStartLocation && $this->startLocationData) {
+                $this->dispatch('center-map-to-location',
+                    mapId: $this->mapId,
+                    lat: $this->startLocationData['latitude'],
+                    lng: $this->startLocationData['longitude'],
+                    zoom: 15
+                );
+            }
+        } catch (\Exception $e) {
+            Log::error('MapsRoute Component: Error going to start location', [
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'method' => 'goToStartLocation'
+            ]);
+        }
+    }
+
+    /**
      * Method untuk center map ke tujuan
      */
     public function goToDestination(): void
@@ -312,6 +403,7 @@ class MapsRoute extends Component
 
     /**
      * Refresh location data manually
+     * ENHANCED: Refresh start location data
      */
     public function refreshLocationData(): void
     {
@@ -329,7 +421,11 @@ class MapsRoute extends Component
                     currentTime: $this->currentTime,
                     destinationLat: $this->destinationLat,
                     destinationLng: $this->destinationLng,
-                    destinationAddress: $this->destinationAddress
+                    destinationAddress: $this->destinationAddress,
+                    // Include start location data
+                    hasStartLocation: $this->hasStartLocation,
+                    startLocationData: $this->startLocationData,
+                    trackingSessionId: $this->trackingSessionId
                 );
             }
 
@@ -362,6 +458,40 @@ class MapsRoute extends Component
     }
 
     /**
+     * ENHANCED: Calculate distance from start location to destination
+     */
+    public function calculateDistanceFromStart(): ?float
+    {
+        if (!$this->hasStartLocation || !$this->startLocationData) {
+            return null;
+        }
+
+        return app('geolocation')->calculateDistance(
+            $this->startLocationData['latitude'],
+            $this->startLocationData['longitude'],
+            $this->destinationLat,
+            $this->destinationLng
+        );
+    }
+
+    /**
+     * ENHANCED: Calculate distance from start to current location
+     */
+    public function calculateDistanceFromStartToCurrent(): ?float
+    {
+        if (!$this->hasStartLocation || !$this->startLocationData || !$this->lat || !$this->lng) {
+            return null;
+        }
+
+        return app('geolocation')->calculateDistance(
+            $this->startLocationData['latitude'],
+            $this->startLocationData['longitude'],
+            $this->lat,
+            $this->lng
+        );
+    }
+
+    /**
      * Get distance text for display
      */
     public function getDistanceText(): ?string
@@ -374,6 +504,21 @@ class MapsRoute extends Component
         }
 
         return round($distance, 1) . ' km';
+    }
+
+    /**
+     * ENHANCED: Get distance from start text
+     */
+    public function getDistanceFromStartText(): ?string
+    {
+        $distance = $this->calculateDistanceFromStartToCurrent();
+        if (!$distance) return null;
+
+        if ($distance < 1) {
+            return round($distance * 1000) . ' m dari start';
+        }
+
+        return round($distance, 1) . ' km dari start';
     }
 
     /**
@@ -507,7 +652,7 @@ class MapsRoute extends Component
     }
 
     /**
-     * Get route information
+     * ENHANCED: Get route information with start location
      */
     public function getRouteInfo(): array
     {
@@ -522,10 +667,22 @@ class MapsRoute extends Component
                 'lng' => $this->destinationLng,
                 'address' => $this->destinationAddress
             ],
+            'start_location' => $this->hasStartLocation ? [
+                'lat' => $this->startLocationData['latitude'],
+                'lng' => $this->startLocationData['longitude'],
+                'timestamp' => $this->startLocationData['timestamp'] ?? null,
+                'session_id' => $this->trackingSessionId
+            ] : null,
             'distance' => $this->getDistanceText(),
+            'distance_from_start' => $this->getDistanceFromStartText(),
             'isNearDestination' => $this->isNearDestination(),
             'routeColor' => $this->routeColor,
-            'routeWeight' => $this->routeWeight
+            'routeWeight' => $this->routeWeight,
+            'tracking_info' => [
+                'is_tracking' => $this->isTracking,
+                'has_start_location' => $this->hasStartLocation,
+                'session_id' => $this->trackingSessionId
+            ]
         ];
     }
 
