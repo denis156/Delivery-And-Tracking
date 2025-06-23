@@ -85,25 +85,26 @@ class Maps extends Component
     {
         if (!Auth::id()) return;
 
-        $location = app('geolocation')->getUserLocation(Auth::id());
+        try {
+            $location = app('geolocation')->getUserLocation(Auth::id());
 
-        if ($location['latitude'] && $location['longitude']) {
-            $this->lat = $location['latitude'];
-            $this->lng = $location['longitude'];
-            $this->address = $location['city'] ?? null;
-            $this->isActualLocation = true;
+            if ($location['latitude'] && $location['longitude']) {
+                $this->lat = $location['latitude'];
+                $this->lng = $location['longitude'];
+                $this->address = $location['city'] ?? null;
+                $this->isActualLocation = true;
 
-            // Set weather and time data - FIX WITA timezone
-            $this->weatherData = $location['weather_data'] ?? $location['weather'] ?? null;
-            $this->currentTime = $this->formatWitaTime($location['last_updated']);
+                // Set weather and time data - FIX WITA timezone
+                $this->weatherData = $location['weather_data'] ?? $location['weather'] ?? null;
+                $this->currentTime = $this->formatWitaTime($location['last_updated']);
+            }
 
-            // Log untuk debugging (Laravel Log, bukan console)
-            \Illuminate\Support\Facades\Log::info('Maps component initialized', [
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Maps: Error initializing location data', [
                 'user_id' => Auth::id(),
-                'has_weather' => !is_null($this->weatherData),
-                'weather_keys' => $this->weatherData ? array_keys($this->weatherData) : [],
-                'current_time' => $this->currentTime,
-                'wita_time' => Carbon::now('Asia/Makassar')->format('H:i:s')
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
             ]);
         }
     }
@@ -117,61 +118,63 @@ class Maps extends Component
     {
         if (!Auth::id()) return;
 
-        // Cek dulu apakah user sedang tracking atau tidak
-        $trackingCacheKey = "user_tracking_state_" . Auth::id();
-        $isUserTracking = Cache::get($trackingCacheKey, false);
+        try {
+            // Cek dulu apakah user sedang tracking atau tidak
+            $trackingCacheKey = "user_tracking_state_" . Auth::id();
+            $isUserTracking = Cache::get($trackingCacheKey, false);
 
-        // Jika tidak tracking, STOP polling - jangan lakukan apa-apa
-        if (!$isUserTracking) {
-            return;
-        }
+            // Jika tidak tracking, STOP polling - jangan lakukan apa-apa
+            if (!$isUserTracking) {
+                return;
+            }
 
-        // Ambil data lokasi fresh dari geolocation service
-        $location = app('geolocation')->getUserLocation(Auth::id());
+            // Ambil data lokasi fresh dari geolocation service
+            $location = app('geolocation')->getUserLocation(Auth::id());
 
-        // Cek apakah ada lokasi aktual
-        $hasLocation = $location['latitude'] && $location['longitude'] && $location['last_updated'];
+            // Cek apakah ada lokasi aktual
+            $hasLocation = $location['latitude'] && $location['longitude'] && $location['last_updated'];
 
-        if ($hasLocation) {
-            // Update coordinate properties
-            $this->lat = $location['latitude'];
-            $this->lng = $location['longitude'];
-            $this->address = $location['city'] ?? null;
-            $this->isActualLocation = true;
+            if ($hasLocation) {
+                // Update coordinate properties
+                $this->lat = $location['latitude'];
+                $this->lng = $location['longitude'];
+                $this->address = $location['city'] ?? null;
+                $this->isActualLocation = true;
 
-            // Update weather and time data untuk badges - FIX key mapping
-            $this->weatherData = $location['weather_data'] ?? $location['weather'] ?? null;
+                // Update weather and time data untuk badges - FIX key mapping
+                $this->weatherData = $location['weather_data'] ?? $location['weather'] ?? null;
 
-            // FIX: Gunakan helper method untuk WITA time
-            $this->currentTime = $this->formatWitaTime($location['last_updated']);
+                // FIX: Gunakan helper method untuk WITA time
+                $this->currentTime = $this->formatWitaTime($location['last_updated']);
 
-            // Set dynamic badges dari data geolocation - FIX struktur data
-            $this->badgeTopLeft = $this->currentTime; // Waktu update terakhir
-            $this->badgeTopRight = $this->weatherData ?
-                ($this->weatherData['condition'] ?? $this->weatherData['description'] ?? 'Tidak ada data') . ' ' . round($this->weatherData['temperature'] ?? 0) . '°C' : null;
+                // Set dynamic badges dari data geolocation - FIX struktur data
+                $this->badgeTopLeft = $this->currentTime; // Waktu update terakhir
+                $this->badgeTopRight = $this->weatherData ?
+                    ($this->weatherData['condition'] ?? $this->weatherData['description'] ?? 'Tidak ada data') . ' ' . round($this->weatherData['temperature'] ?? 0) . '°C' : null;
 
-            // Log untuk debugging weather data
-            \Illuminate\Support\Facades\Log::info('Maps location updated', [
+                // Dispatch browser event untuk update marker position dengan mapId yang valid
+                $this->dispatch('update-marker-position',
+                    mapId: $this->mapId,
+                    lat: $this->lat,
+                    lng: $this->lng,
+                    address: $this->address,
+                    isActual: $this->isActualLocation,
+                    weatherData: $this->weatherData,
+                    currentTime: $this->currentTime
+                );
+            }
+            // Note: Tidak ada fallback ke default saat tracking aktif
+            // Jika tracking aktif tapi tidak ada data, biarkan marker di posisi terakhir
+
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Maps: Error updating location', [
                 'user_id' => Auth::id(),
-                'has_weather' => !is_null($this->weatherData),
-                'weather_data' => $this->weatherData,
-                'badge_top_right' => $this->badgeTopRight,
-                'wita_time' => Carbon::now('Asia/Makassar')->format('H:i:s')
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
             ]);
-
-            // Dispatch browser event untuk update marker position dengan mapId yang valid
-            $this->dispatch('update-marker-position',
-                mapId: $this->mapId,
-                lat: $this->lat,
-                lng: $this->lng,
-                address: $this->address,
-                isActual: $this->isActualLocation,
-                weatherData: $this->weatherData,
-                currentTime: $this->currentTime
-            );
         }
-        // Note: Tidak ada fallback ke default saat tracking aktif
-        // Jika tracking aktif tapi tidak ada data, biarkan marker di posisi terakhir
     }
 
     /**
@@ -180,8 +183,18 @@ class Maps extends Component
     #[On('location-updated')]
     public function handleLocationUpdate(): void
     {
-        // Trigger update map location
-        $this->updateMapLocation();
+        try {
+            // Trigger update map location
+            $this->updateMapLocation();
+
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Maps: Error handling location update event', [
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ]);
+        }
     }
 
     /**
@@ -234,18 +247,28 @@ class Maps extends Component
      */
     public function refreshLocationData(): void
     {
-        $this->initializeLocationData();
+        try {
+            $this->initializeLocationData();
 
-        if ($this->isActualLocation) {
-            $this->dispatch('update-marker-position',
-                mapId: $this->mapId,
-                lat: $this->lat,
-                lng: $this->lng,
-                address: $this->address,
-                isActual: $this->isActualLocation,
-                weatherData: $this->weatherData,
-                currentTime: $this->currentTime
-            );
+            if ($this->isActualLocation) {
+                $this->dispatch('update-marker-position',
+                    mapId: $this->mapId,
+                    lat: $this->lat,
+                    lng: $this->lng,
+                    address: $this->address,
+                    isActual: $this->isActualLocation,
+                    weatherData: $this->weatherData,
+                    currentTime: $this->currentTime
+                );
+            }
+
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Maps: Error refreshing location data', [
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ]);
         }
     }
 
@@ -426,37 +449,6 @@ class Maps extends Component
             lng: $this->lng,
             zoom: $this->zoom
         );
-    }
-
-    /**
-     * Debug method untuk cek weather data
-     * Hanya untuk development - bisa dipanggil via wire:click
-     */
-    public function debugWeatherData(): void
-    {
-        if (!Auth::id()) return;
-
-        $location = app('geolocation')->getUserLocation(Auth::id());
-
-        \Illuminate\Support\Facades\Log::info('DEBUG: Weather data check', [
-            'user_id' => Auth::id(),
-            'full_location_data' => $location,
-            'weather_key_exists' => array_key_exists('weather', $location),
-            'weather_data_key_exists' => array_key_exists('weather_data', $location),
-            'weather_value' => $location['weather'] ?? 'NOT_SET',
-            'weather_data_value' => $location['weather_data'] ?? 'NOT_SET',
-            'current_weather_data_property' => $this->weatherData,
-            'current_time_property' => $this->currentTime,
-            'wita_time' => Carbon::now('Asia/Makassar')->format('H:i:s')
-        ]);
-
-        // Force refresh weather data
-        $weatherInfo = app('geolocation')->getWeatherInfo(Auth::id());
-
-        \Illuminate\Support\Facades\Log::info('DEBUG: Fresh weather info', [
-            'weather_info' => $weatherInfo,
-            'wita_time' => Carbon::now('Asia/Makassar')->format('H:i:s')
-        ]);
     }
 
     /**

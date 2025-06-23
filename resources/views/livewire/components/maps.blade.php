@@ -61,14 +61,6 @@
                 <x-icon name="phosphor.crosshair-duotone" class="w-4 h-4" />
             </button>
         @endif
-
-        <!-- Debug Weather Button - HAPUS di production -->
-        @if (config('app.debug'))
-            <button wire:click="debugWeatherData" class="btn btn-sm btn-circle btn-warning btn-soft"
-                title="Debug Weather">
-                <x-icon name="phosphor.bug-duotone" class="w-4 h-4" />
-            </button>
-        @endif
     </div>
 
     <!-- Badge Bottom Left - No Surat Jalan -->
@@ -96,22 +88,10 @@
         // Global object untuk menyimpan map instances dan markers
         window.mapInstances = window.mapInstances || {};
 
-        // Debug mode dari Laravel config
-        const isDebugMode = @json(config('app.debug'));
-
-        // Debug logger yang hanya aktif saat APP_DEBUG=true
-        function debugLog(...args) {
-            if (isDebugMode) {
-                console.log(...args);
-            }
-        }
-
         /**
          * Center map to specific location with max zoom
          */
         function centerMapToLocation(eventData) {
-            debugLog('Center map event received:', eventData);
-
             // Extract data dari eventData
             let mapId, lat, lng, zoom;
 
@@ -127,20 +107,16 @@
                 lng = eventData.lng;
                 zoom = eventData.zoom;
             } else {
-                debugError('Invalid center map event data:', eventData);
                 return;
             }
 
             // Ambil map instance
             const mapInstance = window.mapInstances[mapId];
             if (!mapInstance) {
-                debugWarn('Map instance not found for center operation:', mapId);
                 return;
             }
 
-            const {
-                map
-            } = mapInstance;
+            const { map } = mapInstance;
 
             try {
                 // Animate to location dengan zoom maksimal
@@ -148,14 +124,24 @@
                     duration: 1.5,
                     easeLinearity: 0.25
                 });
-
-                debugLog(`🎯 Map centered to location for ${mapId}:`, {
-                    lat,
-                    lng,
-                    zoom
-                });
             } catch (error) {
-                debugError('Error centering map:', error);
+                // Log error to server (if logging endpoint available)
+                if (window.fetch) {
+                    fetch('/api/log-error', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                        },
+                        body: JSON.stringify({
+                            component: 'Maps',
+                            function: 'centerMapToLocation',
+                            error: error.message,
+                            mapId: mapId,
+                            user_agent: navigator.userAgent
+                        })
+                    }).catch(() => {}); // Silent fail jika logging gagal
+                }
             }
         }
 
@@ -175,18 +161,6 @@
             });
         }
 
-        function debugWarn(...args) {
-            if (isDebugMode) {
-                console.warn(...args);
-            }
-        }
-
-        function debugError(...args) {
-            if (isDebugMode) {
-                console.error(...args);
-            }
-        }
-
         document.addEventListener('DOMContentLoaded', function() {
             initializeMaps();
         });
@@ -199,13 +173,11 @@
         // Listen untuk update marker position events
         document.addEventListener('livewire:init', function() {
             Livewire.on('update-marker-position', (event) => {
-                debugLog('Event received:', event);
                 updateMarkerPosition(event);
             });
 
             // Listen untuk center map events
             Livewire.on('center-map-to-location', (event) => {
-                debugLog('Center map event received:', event);
                 centerMapToLocation(event);
             });
         });
@@ -228,7 +200,6 @@
 
                 // Validate data
                 if (isNaN(lat) || isNaN(lng) || isNaN(zoom)) {
-                    debugError('Invalid map data for:', mapId);
                     return;
                 }
 
@@ -260,8 +231,7 @@
                     }).addTo(map);
 
                     // Create initial popup
-                    updateMarkerPopup(marker, lat, lng, address, isActual, statusText, statusClass, textClass, null,
-                        null);
+                    updateMarkerPopup(marker, lat, lng, address, isActual, statusText, statusClass, textClass);
 
                     // Setup zoom controls
                     setupZoomControls(map, mapId);
@@ -275,10 +245,25 @@
 
                     // Mark as initialized
                     container.setAttribute('data-initialized', 'true');
-                    debugLog(`✅ Map initialized: ${mapId} (${isActual ? 'Actual' : 'Default'} Location)`);
 
                 } catch (error) {
-                    debugError('Map initialization error:', error);
+                    // Log error to server (if logging endpoint available)
+                    if (window.fetch) {
+                        fetch('/api/log-error', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                            },
+                            body: JSON.stringify({
+                                component: 'Maps',
+                                function: 'initializeMaps',
+                                error: error.message,
+                                mapId: mapId,
+                                user_agent: navigator.userAgent
+                            })
+                        }).catch(() => {}); // Silent fail jika logging gagal
+                    }
                 }
             });
         }
@@ -287,8 +272,6 @@
          * Update marker position - Core functionality untuk real-time updates
          */
         function updateMarkerPosition(eventData) {
-            console.log('Received event data:', eventData); // Debug log
-
             // Extract data dari eventData (bisa berupa array atau object)
             let mapId, lat, lng, address, isActual;
 
@@ -296,54 +279,48 @@
                 // Jika data dalam format array (Livewire v3)
                 const data = eventData[0];
                 mapId = data.mapId;
-                lat = data.lat;
-                lng = data.lng;
+                lat = parseFloat(data.lat); // PENTING: Pastikan lat adalah number
+                lng = parseFloat(data.lng); // PENTING: Pastikan lng adalah number
                 address = data.address;
                 isActual = data.isActual;
             } else if (typeof eventData === 'object') {
                 // Jika data dalam format object langsung
                 mapId = eventData.mapId;
-                lat = eventData.lat;
-                lng = eventData.lng;
+                lat = parseFloat(eventData.lat); // PENTING: Pastikan lat adalah number
+                lng = parseFloat(eventData.lng); // PENTING: Pastikan lng adalah number
                 address = eventData.address;
                 isActual = eventData.isActual;
             } else {
-                console.error('Invalid event data format:', eventData);
                 return;
             }
 
-            console.log('Extracted data:', {
-                mapId,
-                lat,
-                lng,
-                address,
-                isActual
-            }); // Debug log
+            // Validate coordinates
+            if (isNaN(lat) || isNaN(lng)) {
+                return;
+            }
 
             // Ambil map instance dari global object
             const mapInstance = window.mapInstances[mapId];
 
             if (!mapInstance) {
-                console.warn('Map instance not found for:', mapId);
-                console.log('Available map instances:', Object.keys(window.mapInstances));
                 return;
             }
 
-            const {
-                map,
-                marker
-            } = mapInstance;
+            const { map, marker } = mapInstance;
 
             try {
+                // Cek apakah popup sedang terbuka
+                const wasPopupOpen = marker.isPopupOpen();
+
                 // Update marker position menggunakan setLatLng
                 const newLatLng = L.latLng(lat, lng);
                 marker.setLatLng(newLatLng);
 
-                // Update popup content
+                // Update popup content dengan koordinat yang fresh
                 updateMarkerPopup(
                     marker,
-                    lat,
-                    lng,
+                    lat, // Koordinat fresh dari server
+                    lng, // Koordinat fresh dari server
                     address,
                     isActual,
                     isActual ? 'Lokasi Aktual' : 'Lokasi Default',
@@ -351,17 +328,29 @@
                     isActual ? 'text-success' : 'text-warning'
                 );
 
-                // Optional: Center map pada lokasi baru (hanya jika perlu)
-                // map.setView(newLatLng, map.getZoom());
-
-                console.log(`📍 Marker updated for ${mapId}:`, {
-                    lat,
-                    lng,
-                    isActual
-                });
+                // HANYA buka popup jika sebelumnya sudah terbuka (preserve user choice)
+                if (wasPopupOpen) {
+                    marker.openPopup();
+                }
 
             } catch (error) {
-                console.error('Error updating marker position:', error);
+                // Log error to server (if logging endpoint available)
+                if (window.fetch) {
+                    fetch('/api/log-error', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                        },
+                        body: JSON.stringify({
+                            component: 'Maps',
+                            function: 'updateMarkerPosition',
+                            error: error.message,
+                            mapId: mapId,
+                            user_agent: navigator.userAgent
+                        })
+                    }).catch(() => {}); // Silent fail jika logging gagal
+                }
             }
         }
 
@@ -392,10 +381,8 @@
 
             marker.bindPopup(popupContent);
 
-            // Auto open popup jika marker baru dibuat atau posisi berubah signifikan
-            if (isActual) {
-                marker.openPopup();
-            }
+            // PENTING: Jangan auto-open popup setiap update
+            // Biarkan user yang kontrol kapan popup terbuka/tertutup
         }
 
         function setupZoomControls(map, mapId) {
@@ -403,7 +390,6 @@
             const zoomOutBtn = document.getElementById(`zoom-out-${mapId}`);
 
             if (!zoomInBtn || !zoomOutBtn) {
-                debugWarn('Zoom buttons not found for:', mapId);
                 return;
             }
 
