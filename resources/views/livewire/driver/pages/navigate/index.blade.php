@@ -24,7 +24,7 @@
             <x-card title="Rute Anda" subtitle="Lihat informasi rute aktif disini" class="bg-base-300">
                 <x-alert title="tidak ada rute aktif" icon="phosphor.map-pin" class="alert-info alert-soft text-xs" />
                 <x-slot:actions separator>
-                    <x-button label="Lihat Rute" icon="phosphor.map-pin-area" link="{{ route('driver.navigate.route') }}"
+                    <x-button label="Lihat Rute" icon="phosphor.map-pin-area" no-wire-navigate link="{{ route('driver.navigate.route') }}"
                         class="btn-primary btn-dash btn-block btn-sm bg-primary/20 text-primary" />
                 </x-slot:actions>
             </x-card>
