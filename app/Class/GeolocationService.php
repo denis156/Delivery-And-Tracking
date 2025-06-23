@@ -38,20 +38,57 @@ class GeolocationService
             'longitude' => 122.5040029,
             'city' => 'Bonggoeya, Wua-Wua, Kota Kendari',
             'province' => 'Sulawesi Tenggara',
-            'last_updated' => null
+            'last_updated' => null,
+            'start_location' => null, // Tambahan untuk start location
+            'tracking_session_id' => null, // ID session tracking
+            'tracking_start_time' => null // Waktu mulai tracking session
         ]);
     }
 
     /**
      * Update user location IMMEDIATELY for real-time tracking
-     * No complex API calls, just update coordinates and basic info
+     * FIXED: Improved start location detection logic
      */
     public function updateUserLocationImmediate(int $userId, float $lat, float $lng): void
     {
         $cacheKey = "user_location_{$userId}";
 
-        // Get existing data to preserve address if available
+        // Get existing data to preserve address and start location
         $existing = Cache::get($cacheKey, []);
+
+        // PENTING: Check apakah ini benar-benar first location untuk tracking session baru
+        $shouldSetStartLocation = $this->shouldSetAsStartLocation($userId, $existing, $lat, $lng);
+
+        // Jika harus set start location, buat session baru
+        $startLocation = $existing['start_location'] ?? null;
+        $trackingSessionId = $existing['tracking_session_id'] ?? null;
+        $trackingStartTime = $existing['tracking_start_time'] ?? null;
+
+        if ($shouldSetStartLocation) {
+            // Generate new tracking session ID
+            $trackingSessionId = uniqid('track_', true);
+            $trackingStartTime = $this->getWitaTime()->toISOString();
+
+            // Set start location dengan koordinat PERTAMA
+            $startLocation = [
+                'latitude' => $lat,
+                'longitude' => $lng,
+                'timestamp' => $trackingStartTime,
+                'timestamp_wita' => $this->formatWitaTime(),
+                'session_id' => $trackingSessionId,
+                'address' => $existing['city'] ?? 'Mengambil alamat...'
+            ];
+
+            Log::info('START LOCATION SET - New tracking session started', [
+                'user_id' => $userId,
+                'start_lat' => $lat,
+                'start_lng' => $lng,
+                'session_id' => $trackingSessionId,
+                'start_time' => $trackingStartTime,
+                'wita_time' => $this->formatWitaTime(),
+                'reason' => 'First location after tracking enabled'
+            ]);
+        }
 
         // Update with new coordinates immediately (WITA timezone)
         $locationData = [
@@ -65,6 +102,12 @@ class GeolocationService
             'last_updated_wita' => $this->formatWitaTime(),
             'real_time_mode' => true,
             'timezone' => 'WITA',
+
+            // Start location data (tetap dari tracking session atau baru)
+            'start_location' => $startLocation,
+            'tracking_session_id' => $trackingSessionId,
+            'tracking_start_time' => $trackingStartTime,
+
             // Preserve existing weather data atau ambil fresh weather
             'weather_data' => $existing['weather_data'] ?? $this->getFreshWeatherData($lat, $lng),
             'weather' => $existing['weather_data'] ?? $this->getFreshWeatherData($lat, $lng) // Backward compatibility
@@ -76,14 +119,207 @@ class GeolocationService
         // Dispatch proper job class for background address lookup
         \App\Jobs\AddressLookupJob::dispatch($userId, $lat, $lng)->afterResponse();
 
-        Log::info('Real-time location updated immediately', [
+        Log::info('Real-time location updated', [
             'user_id' => $userId,
             'latitude' => $lat,
             'longitude' => $lng,
-            'has_weather' => !is_null($locationData['weather_data']),
+            'has_start_location' => !is_null($startLocation),
+            'is_new_start' => $shouldSetStartLocation,
+            'session_id' => $trackingSessionId,
             'wita_time' => $this->formatWitaTime(),
             'mode' => 'immediate'
         ]);
+    }
+
+    /**
+     * IMPROVED: Determine if current location should be set as start location
+     */
+    private function shouldSetAsStartLocation(int $userId, array $existingData, float $lat, float $lng): bool
+    {
+        // Check 1: Apakah user sedang dalam mode tracking?
+        if (!$this->isUserCurrentlyTracking($userId)) {
+            return false;
+        }
+
+        // Check 2: Apakah sudah ada start location untuk session yang aktif?
+        if (isset($existingData['start_location']) &&
+            isset($existingData['tracking_session_id']) &&
+            !empty($existingData['start_location'])) {
+
+            // Jika ada start location, cek apakah tracking session masih aktif
+            $trackingStateKey = "user_tracking_state_{$userId}";
+            $isStillTracking = Cache::get($trackingStateKey, false);
+
+            if ($isStillTracking) {
+                // Session masih aktif dan sudah ada start location
+                Log::debug('Start location already exists for active session', [
+                    'user_id' => $userId,
+                    'existing_session' => $existingData['tracking_session_id'],
+                    'existing_start' => $existingData['start_location']
+                ]);
+                return false;
+            }
+        }
+
+        // Check 3: Apakah ini koordinat yang valid?
+        if ($lat == 0 || $lng == 0 ||
+            abs($lat) > 90 || abs($lng) > 180) {
+            return false;
+        }
+
+        // Check 4: Apakah ini benar-benar lokasi baru (bukan default)?
+        $defaultLat = -4.0011471;
+        $defaultLng = 122.5040029;
+        $tolerance = 0.0001; // ~10 meter
+
+        if (abs($lat - $defaultLat) < $tolerance && abs($lng - $defaultLng) < $tolerance) {
+            Log::debug('Coordinates too close to default location, skipping start location set', [
+                'user_id' => $userId,
+                'lat' => $lat,
+                'lng' => $lng
+            ]);
+            return false;
+        }
+
+        // Check 5: Cek timestamp tracking state - harus baru saja dimulai
+        $trackingStateTimestamp = Cache::get("user_tracking_start_time_{$userId}");
+        if ($trackingStateTimestamp) {
+            $timeDiff = Carbon::now()->diffInSeconds(Carbon::parse($trackingStateTimestamp));
+            if ($timeDiff > 60) { // Lebih dari 1 menit
+                Log::debug('Tracking started too long ago, not setting as start location', [
+                    'user_id' => $userId,
+                    'time_diff' => $timeDiff,
+                    'tracking_start' => $trackingStateTimestamp
+                ]);
+                return false;
+            }
+        }
+
+        // Semua check passed - set sebagai start location
+        Log::info('All checks passed - setting as start location', [
+            'user_id' => $userId,
+            'lat' => $lat,
+            'lng' => $lng,
+            'tracking_active' => true,
+            'no_existing_start' => !isset($existingData['start_location']),
+            'valid_coordinates' => true,
+            'not_default_location' => true
+        ]);
+
+        return true;
+    }
+
+    /**
+     * Check if user is currently in tracking mode
+     */
+    private function isUserCurrentlyTracking(int $userId): bool
+    {
+        $trackingCacheKey = "user_tracking_state_{$userId}";
+        return Cache::get($trackingCacheKey, false);
+    }
+
+    /**
+     * ENHANCED: Set tracking state dengan timestamp
+     */
+    public function setUserTrackingState(int $userId, bool $isTracking): void
+    {
+        $trackingCacheKey = "user_tracking_state_{$userId}";
+        $trackingStartTimeKey = "user_tracking_start_time_{$userId}";
+
+        if ($isTracking) {
+            // Set tracking active dengan timestamp
+            Cache::put($trackingCacheKey, true, now()->addHours(24));
+            Cache::put($trackingStartTimeKey, $this->getWitaTime()->toISOString(), now()->addHours(24));
+
+            Log::info('User tracking state enabled with timestamp', [
+                'user_id' => $userId,
+                'start_time' => $this->getWitaTime()->toISOString(),
+                'wita_time' => $this->formatWitaTime()
+            ]);
+        } else {
+            // Clear tracking state dan timestamp
+            Cache::forget($trackingCacheKey);
+            Cache::forget($trackingStartTimeKey);
+
+            Log::info('User tracking state disabled', [
+                'user_id' => $userId,
+                'wita_time' => $this->formatWitaTime()
+            ]);
+        }
+    }
+
+    /**
+     * Get start location for current tracking session
+     */
+    public function getStartLocation(int $userId): ?array
+    {
+        $location = $this->getUserLocation($userId);
+        return $location['start_location'] ?? null;
+    }
+
+    /**
+     * ENHANCED: Clear start location dan tracking session
+     */
+    public function clearStartLocation(int $userId): void
+    {
+        $cacheKey = "user_location_{$userId}";
+        $existing = Cache::get($cacheKey, []);
+
+        if ($existing) {
+            // Clear start location dan session ID
+            $existing['start_location'] = null;
+            $existing['tracking_session_id'] = null;
+            $existing['tracking_start_time'] = null;
+
+            Cache::put($cacheKey, $existing, now()->addHours(1));
+
+            // Juga clear tracking state timestamp
+            Cache::forget("user_tracking_start_time_{$userId}");
+
+            Log::info('Start location and tracking session cleared completely', [
+                'user_id' => $userId,
+                'wita_time' => $this->formatWitaTime()
+            ]);
+        }
+    }
+
+    /**
+     * ENHANCED: Clear user location dengan force reset tracking session
+     */
+    public function clearUserLocation(int $userId): bool
+    {
+        try {
+            $cacheKeys = [
+                "user_location_{$userId}",
+                "user_tracking_state_{$userId}",
+                "user_tracking_start_time_{$userId}" // NEW: Clear timestamp juga
+            ];
+
+            foreach ($cacheKeys as $key) {
+                Cache::forget($key);
+            }
+
+            // Clear weather cache
+            $location = $this->getUserLocation($userId);
+            if ($location['latitude'] && $location['longitude']) {
+                $weatherCacheKey = "weather_info_{$location['latitude']}_{$location['longitude']}";
+                Cache::forget($weatherCacheKey);
+            }
+
+            Log::info('User location, tracking session, and timestamps cleared completely', [
+                'user_id' => $userId,
+                'cleared_keys' => $cacheKeys,
+                'wita_time' => $this->formatWitaTime()
+            ]);
+            return true;
+        } catch (\Exception $e) {
+            Log::error('Failed to clear user location', [
+                'user_id' => $userId,
+                'error' => $e->getMessage(),
+                'wita_time' => $this->formatWitaTime()
+            ]);
+            return false;
+        }
     }
 
     /**
@@ -297,43 +533,6 @@ class GeolocationService
     }
 
     /**
-     * Clear user location with immediate effect
-     */
-    public function clearUserLocation(int $userId): bool
-    {
-        try {
-            $cacheKeys = [
-                "user_location_{$userId}",
-                "user_tracking_state_{$userId}"
-            ];
-
-            foreach ($cacheKeys as $key) {
-                Cache::forget($key);
-            }
-
-            // Clear weather cache
-            $location = $this->getUserLocation($userId);
-            if ($location['latitude'] && $location['longitude']) {
-                $weatherCacheKey = "weather_info_{$location['latitude']}_{$location['longitude']}";
-                Cache::forget($weatherCacheKey);
-            }
-
-            Log::info('User location cleared immediately', [
-                'user_id' => $userId,
-                'wita_time' => $this->formatWitaTime()
-            ]);
-            return true;
-        } catch (\Exception $e) {
-            Log::error('Failed to clear user location', [
-                'user_id' => $userId,
-                'error' => $e->getMessage(),
-                'wita_time' => $this->formatWitaTime()
-            ]);
-            return false;
-        }
-    }
-
-    /**
      * Calculate distance between coordinates (Haversine formula)
      */
     public function calculateDistance(float $lat1, float $lng1, float $lat2, float $lng2): float
@@ -350,6 +549,26 @@ class GeolocationService
         $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
 
         return $earthRadius * $c;
+    }
+
+    /**
+     * Calculate distance from start location to current location
+     */
+    public function calculateDistanceFromStart(int $userId): ?float
+    {
+        $currentLocation = $this->getUserLocation($userId);
+        $startLocation = $this->getStartLocation($userId);
+
+        if (!$startLocation || !$currentLocation['latitude'] || !$currentLocation['longitude']) {
+            return null;
+        }
+
+        return $this->calculateDistance(
+            $startLocation['latitude'],
+            $startLocation['longitude'],
+            $currentLocation['latitude'],
+            $currentLocation['longitude']
+        );
     }
 
     /**
@@ -555,5 +774,38 @@ class GeolocationService
             'timezone' => 'WITA',
             'offset' => '+08:00'
         ];
+    }
+
+    /**
+     * Get tracking session info
+     */
+    public function getTrackingSessionInfo(int $userId): array
+    {
+        $location = $this->getUserLocation($userId);
+        $startLocation = $this->getStartLocation($userId);
+        $isTracking = $this->isUserCurrentlyTracking($userId);
+
+        $info = [
+            'is_tracking' => $isTracking,
+            'session_id' => $location['tracking_session_id'] ?? null,
+            'has_start_location' => !is_null($startLocation),
+            'start_location' => $startLocation,
+            'current_location' => [
+                'latitude' => $location['latitude'],
+                'longitude' => $location['longitude'],
+                'address' => $location['city'] ?? null,
+                'last_updated' => $location['last_updated'] ?? null
+            ],
+            'distance_from_start' => null,
+            'tracking_start_time' => $location['tracking_start_time'] ?? null,
+            'timezone' => 'WITA'
+        ];
+
+        // Calculate distance dari start jika ada
+        if ($startLocation) {
+            $info['distance_from_start'] = $this->calculateDistanceFromStart($userId);
+        }
+
+        return $info;
     }
 }
