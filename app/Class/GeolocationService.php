@@ -64,7 +64,10 @@ class GeolocationService
             'last_updated' => $this->getWitaTime()->toISOString(),
             'last_updated_wita' => $this->formatWitaTime(),
             'real_time_mode' => true,
-            'timezone' => 'WITA'
+            'timezone' => 'WITA',
+            // Preserve existing weather data atau ambil fresh weather
+            'weather_data' => $existing['weather_data'] ?? $this->getFreshWeatherData($lat, $lng),
+            'weather' => $existing['weather_data'] ?? $this->getFreshWeatherData($lat, $lng) // Backward compatibility
         ];
 
         // Cache for shorter time for real-time updates
@@ -77,9 +80,41 @@ class GeolocationService
             'user_id' => $userId,
             'latitude' => $lat,
             'longitude' => $lng,
+            'has_weather' => !is_null($locationData['weather_data']),
             'wita_time' => $this->formatWitaTime(),
             'mode' => 'immediate'
         ]);
+    }
+
+    /**
+     * Get fresh weather data for immediate updates
+     */
+    private function getFreshWeatherData(float $lat, float $lng): ?array
+    {
+        $weatherCacheKey = "weather_quick_{$lat}_{$lng}";
+
+        return Cache::remember($weatherCacheKey, 900, function () use ($lat, $lng) { // 15 menit cache
+            $weatherData = $this->getLocationDataFromDe4aApi($lat, $lng);
+
+            if ($weatherData && isset($weatherData['weather_data'])) {
+                return $weatherData['weather_data'];
+            }
+
+            // Fallback weather data
+            return [
+                'temperature' => rand(26, 32),
+                'condition' => 'Umumnya Berawan',
+                'description' => 'Umumnya Berawan', // Untuk backward compatibility
+                'humidity' => rand(65, 80),
+                'wind_speed' => rand(3, 8),
+                'icon' => 'cloud',
+                'weather_code' => 3,
+                'datetime' => $this->getWitaTime()->toISOString(),
+                'datetime_wita' => $this->formatWitaTime(),
+                'source' => 'fallback',
+                'timezone' => 'WITA'
+            ];
+        });
     }
 
     /**
@@ -309,8 +344,8 @@ class GeolocationService
         $dLng = deg2rad($lng2 - $lng1);
 
         $a = sin($dLat / 2) * sin($dLat / 2) +
-             cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
-             sin($dLng / 2) * sin($dLng / 2);
+            cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
+            sin($dLng / 2) * sin($dLng / 2);
 
         $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
 
