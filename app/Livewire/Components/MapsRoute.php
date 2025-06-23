@@ -2,9 +2,12 @@
 
 namespace App\Livewire\Components;
 
-use Exception;
 use Livewire\Component;
+use Livewire\Attributes\On;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
 
 class MapsRoute extends Component
 {
@@ -13,29 +16,14 @@ class MapsRoute extends Component
     public $lng = '';
     public $latDefult = -4.0011471;
     public $lngDefult = 122.5040029;
-    public $zoom = 20;
+    public $zoom = 12;
     public $mapId;
     public $class = '';
     public $style = '';
 
-    // Current location properties (NOT reactive anymore - controlled by parent)
-    public $currentUserLat;
-    public $currentUserLng;
-    public $currentUserAddress;
-
-    // Route properties
-    public $destinationLat = null;
-    public $destinationLng = null;
-    public $destinationAddress = null;
-    public $showRoute = false;
-    public $routeColor = '#3B82F6'; // Default blue color
-    public $routeWeight = 5;
-
     // Component state
     public $mapReady = false;
     public $isActualLocation = false;
-    public $routeReady = false;
-    public $useRealTimeTracking = false;
 
     // Badge properties
     public $address = null;
@@ -44,15 +32,25 @@ class MapsRoute extends Component
     public $badgeBottomLeft = null;
     public $badgeBottomRight = null;
 
-    // Event listeners for real-time updates from parent only
-    protected $listeners = [
-        'map-refresh-requested' => 'refreshMapData'
-    ];
+    // Weather and time data from geolocation service
+    public $weatherData = null;
+    public $currentTime = null;
+
+    // Route properties - Static destination (nanti bisa dari database)
+    public $destinationLat = -3.943944;
+    public $destinationLng = 122.1837957;
+    public $destinationAddress = 'Wawoone, Kec. Wonggeduku, Kabupaten Konawe';
+    public $showRoute = true;
+    public $routeColor = '#DC2626'; // Red color for delivery route
+    public $routeWeight = 6;
+
+    // Real-time tracking properties
+    public $isTracking = false;
 
     public function mount(
         $lat = null,
         $lng = null,
-        $zoom = 20,
+        $zoom = 12,
         $class = '',
         $style = null,
         $address = null,
@@ -64,27 +62,29 @@ class MapsRoute extends Component
         $destinationLat = null,
         $destinationLng = null,
         $destinationAddress = null,
-        $showRoute = false,
-        $routeColor = '#3B82F6',
-        $routeWeight = 5,
-        $useRealTimeTracking = false
+        $showRoute = true,
+        $routeColor = '#DC2626',
+        $routeWeight = 6
     ) {
-        // Cek apakah lat dan lng diberikan (bukan null dan bukan kosong)
-        if ($lat !== null && $lng !== null && $lat !== '' && $lng !== '') {
-            $this->lat = $lat;
-            $this->lng = $lng;
-            $this->isActualLocation = true; // Lokasi aktual
-        } else {
-            $this->lat = $this->latDefult;
-            $this->lng = $this->lngDefult;
-            $this->isActualLocation = false; // Lokasi default
+        // Override destination jika diberikan parameter
+        if ($destinationLat !== null && $destinationLng !== null) {
+            $this->destinationLat = $destinationLat;
+            $this->destinationLng = $destinationLng;
+        }
+        if ($destinationAddress !== null) {
+            $this->destinationAddress = $destinationAddress;
         }
 
+        $this->showRoute = $showRoute;
+        $this->routeColor = $routeColor;
+        $this->routeWeight = $routeWeight;
+
+        // TIDAK menggunakan parameter lat/lng dari mount
+        // Selalu ambil dari GeolocationService untuk real-time tracking
         $this->zoom = $zoom;
         $this->class = $class;
         $this->style = $style;
-        $this->mapId = 'map-' . uniqid();
-        $this->address = $address;
+        $this->mapId = 'map-route-' . uniqid();
 
         // Set badge properties
         $this->badgeTopLeft = $badgeTopLeft;
@@ -92,124 +92,282 @@ class MapsRoute extends Component
         $this->badgeBottomLeft = $badgeBottomLeft;
         $this->badgeBottomRight = $badgeBottomRight;
 
-        // Set route properties
-        $this->destinationLat = $destinationLat;
-        $this->destinationLng = $destinationLng;
-        $this->destinationAddress = $destinationAddress;
-        $this->showRoute = $showRoute;
-        $this->routeColor = $routeColor;
-        $this->routeWeight = $routeWeight;
-        $this->useRealTimeTracking = $useRealTimeTracking;
-
-        // Auto enable route if destination is provided
-        if ($destinationLat && $destinationLng) {
-            $this->showRoute = true;
-        }
-
-        // Initialize real-time tracking if enabled
-        if ($this->useRealTimeTracking) {
-            $this->initializeRealTimeTracking();
-        }
+        // Initialize dengan data geolocation yang ada
+        $this->initializeLocationData();
     }
 
     /**
-     * Initialize real-time tracking by loading current user location
+     * Initialize location data dari geolocation service
+     * SAMA PERSIS seperti di Maps component
      */
-    protected function initializeRealTimeTracking(): void
+    protected function initializeLocationData(): void
     {
-        if (Auth::check()) {
-            $userLocation = app('geolocation')->getUserLocation(Auth::id());
+        if (!Auth::id()) return;
 
-            if ($userLocation['latitude'] && $userLocation['longitude']) {
-                $this->currentUserLat = $userLocation['latitude'];
-                $this->currentUserLng = $userLocation['longitude'];
-                $this->currentUserAddress = $userLocation['city'] ?? 'Lokasi tidak diketahui';
+        try {
+            $location = app('geolocation')->getUserLocation(Auth::id());
 
-                // Override static coordinates with real-time location
-                $this->lat = $this->currentUserLat;
-                $this->lng = $this->currentUserLng;
+            if ($location['latitude'] && $location['longitude']) {
+                $this->lat = $location['latitude'];
+                $this->lng = $location['longitude'];
+                $this->address = $location['city'] ?? null;
                 $this->isActualLocation = true;
 
-                if ($this->address === null) {
-                    $this->address = $this->currentUserAddress;
-                }
+                // Set weather and time data - FIX WITA timezone
+                $this->weatherData = $location['weather_data'] ?? $location['weather'] ?? null;
+                $this->currentTime = $this->formatWitaTime($location['last_updated']);
             }
+
+        } catch (\Exception $e) {
+            Log::error('MapsRoute Component: Error initializing location data', [
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'method' => 'initializeLocationData'
+            ]);
         }
     }
 
     /**
-     * Refresh map data (called by parent when location updates)
+     * Method untuk update lokasi real-time
+     * Dipanggil oleh wire:poll.visible ketika tracking aktif
+     * SAMA PERSIS seperti di Maps component
      */
-    public function refreshMapData(): void
+    public function updateMapLocation(): void
     {
-        // Simply re-render to get fresh data from parent
-        $this->dispatch('$refresh');
-    }
+        if (!Auth::id()) return;
 
-    // Method untuk mendapatkan status lokasi
-    public function getLocationStatus()
-    {
-        if ($this->useRealTimeTracking && $this->currentUserLat && $this->currentUserLng) {
-            return 'real-time';
+        try {
+            // Cek dulu apakah user sedang tracking atau tidak
+            $trackingCacheKey = "user_tracking_state_" . Auth::id();
+            $isUserTracking = Cache::get($trackingCacheKey, false);
+
+            // Jika tidak tracking, STOP polling - jangan lakukan apa-apa
+            if (!$isUserTracking) {
+                return;
+            }
+
+            // Ambil data lokasi fresh dari geolocation service
+            $location = app('geolocation')->getUserLocation(Auth::id());
+
+            // Cek apakah ada lokasi aktual
+            $hasLocation = $location['latitude'] && $location['longitude'] && $location['last_updated'];
+
+            if ($hasLocation) {
+                // Update coordinate properties
+                $this->lat = $location['latitude'];
+                $this->lng = $location['longitude'];
+                $this->address = $location['city'] ?? null;
+                $this->isActualLocation = true;
+
+                // Update weather and time data untuk badges
+                $this->weatherData = $location['weather_data'] ?? $location['weather'] ?? null;
+                $this->currentTime = $this->formatWitaTime($location['last_updated']);
+
+                // Set dynamic badges dari data geolocation
+                $this->badgeTopLeft = $this->currentTime; // Waktu update terakhir
+                $this->badgeTopRight = $this->weatherData ?
+                    ($this->weatherData['condition'] ?? $this->weatherData['description'] ?? 'Tidak ada data') . ' ' . round($this->weatherData['temperature'] ?? 0) . '°C' : null;
+
+                // Dispatch browser event untuk update marker position dan route dengan mapId yang valid
+                $this->dispatch('update-route-marker-position',
+                    mapId: $this->mapId,
+                    lat: $this->lat,
+                    lng: $this->lng,
+                    address: $this->address,
+                    isActual: $this->isActualLocation,
+                    weatherData: $this->weatherData,
+                    currentTime: $this->currentTime,
+                    destinationLat: $this->destinationLat,
+                    destinationLng: $this->destinationLng,
+                    destinationAddress: $this->destinationAddress
+                );
+            }
+
+        } catch (\Exception $e) {
+            Log::error('MapsRoute Component: Error updating location', [
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'method' => 'updateMapLocation',
+                'trace' => $e->getTraceAsString()
+            ]);
         }
-
-        return $this->isActualLocation ? 'actual' : 'default';
     }
 
-    // Method untuk mendapatkan text status
-    public function getLocationStatusText()
+    /**
+     * Listen untuk location-updated event dari GeolocationButton
+     */
+    #[On('location-updated')]
+    public function handleLocationUpdate(): void
     {
-        return match($this->getLocationStatus()) {
-            'real-time' => 'Tracking Real-time',
-            'actual' => 'Lokasi Aktual',
-            'default' => 'Lokasi Default'
-        };
+        try {
+            // Trigger update map location
+            $this->updateMapLocation();
+
+        } catch (\Exception $e) {
+            Log::error('MapsRoute Component: Error handling location update event', [
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'method' => 'handleLocationUpdate'
+            ]);
+        }
     }
 
-    // Method untuk mendapatkan CSS class status
-    public function getLocationStatusClass()
+    /**
+     * Listen untuk location-cleared event
+     */
+    #[On('location-cleared')]
+    public function handleLocationCleared(): void
     {
-        return match($this->getLocationStatus()) {
-            'real-time' => 'status-info',
-            'actual' => 'status-success',
-            'default' => 'status-warning'
-        };
+        try {
+            // Reset ke lokasi default
+            $this->lat = $this->latDefult;
+            $this->lng = $this->lngDefult;
+            $this->isActualLocation = false;
+            $this->address = null;
+            $this->weatherData = null;
+            $this->currentTime = null;
+
+            // Reset badges
+            $this->badgeTopLeft = null;
+            $this->badgeTopRight = null;
+
+            // Update marker ke posisi default dengan mapId yang valid
+            $this->dispatch('update-route-marker-position',
+                mapId: $this->mapId,
+                lat: $this->lat,
+                lng: $this->lng,
+                address: 'Lokasi Default - Kendari',
+                isActual: $this->isActualLocation,
+                weatherData: null,
+                currentTime: null,
+                destinationLat: $this->destinationLat,
+                destinationLng: $this->destinationLng,
+                destinationAddress: $this->destinationAddress
+            );
+
+        } catch (\Exception $e) {
+            Log::error('MapsRoute Component: Error handling location cleared', [
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'method' => 'handleLocationCleared'
+            ]);
+        }
     }
 
-    // Method untuk mendapatkan text color class
-    public function getLocationTextClass()
+    /**
+     * Method untuk center map ke lokasi user dengan zoom maksimal
+     */
+    public function goToMyLocation(): void
     {
-        return match($this->getLocationStatus()) {
-            'real-time' => 'text-info',
-            'actual' => 'text-success',
-            'default' => 'text-warning'
-        };
+        try {
+            if ($this->isActualLocation && $this->lat && $this->lng) {
+                $this->dispatch('center-map-to-location',
+                    mapId: $this->mapId,
+                    lat: $this->lat,
+                    lng: $this->lng,
+                    zoom: 15 // Max zoom
+                );
+            }
+        } catch (\Exception $e) {
+            Log::error('MapsRoute Component: Error going to my location', [
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'method' => 'goToMyLocation'
+            ]);
+        }
     }
 
-    // Method untuk menghitung jarak (akan coba gunakan real route distance jika tersedia)
-    public function getDistanceText()
+    /**
+     * Method untuk center map ke tujuan
+     */
+    public function goToDestination(): void
     {
-        if (!$this->destinationLat || !$this->destinationLng) {
+        try {
+            $this->dispatch('center-map-to-location',
+                mapId: $this->mapId,
+                lat: $this->destinationLat,
+                lng: $this->destinationLng,
+                zoom: 15
+            );
+        } catch (\Exception $e) {
+            Log::error('MapsRoute Component: Error going to destination', [
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'method' => 'goToDestination'
+            ]);
+        }
+    }
+
+    /**
+     * Refresh location data manually
+     */
+    public function refreshLocationData(): void
+    {
+        try {
+            $this->initializeLocationData();
+
+            if ($this->isActualLocation) {
+                $this->dispatch('update-route-marker-position',
+                    mapId: $this->mapId,
+                    lat: $this->lat,
+                    lng: $this->lng,
+                    address: $this->address,
+                    isActual: $this->isActualLocation,
+                    weatherData: $this->weatherData,
+                    currentTime: $this->currentTime,
+                    destinationLat: $this->destinationLat,
+                    destinationLng: $this->destinationLng,
+                    destinationAddress: $this->destinationAddress
+                );
+            }
+
+        } catch (\Exception $e) {
+            Log::error('MapsRoute Component: Error refreshing location data', [
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'method' => 'refreshLocationData'
+            ]);
+        }
+    }
+
+    /**
+     * Calculate distance between current location and destination
+     */
+    public function calculateDistance(): ?float
+    {
+        if (!$this->lat || !$this->lng || !$this->destinationLat || !$this->destinationLng) {
             return null;
         }
 
-        // Use current user location if real-time tracking is enabled
-        $originLat = $this->useRealTimeTracking && $this->currentUserLat ?
-            $this->currentUserLat : $this->lat;
-        $originLng = $this->useRealTimeTracking && $this->currentUserLng ?
-            $this->currentUserLng : $this->lng;
+        return app('geolocation')->calculateDistance(
+            $this->lat,
+            $this->lng,
+            $this->destinationLat,
+            $this->destinationLng
+        );
+    }
 
-        // Simple distance calculation (haversine formula) as fallback
-        $earthRadius = 6371; // km
-        $dLat = deg2rad($this->destinationLat - $originLat);
-        $dLng = deg2rad($this->destinationLng - $originLng);
-
-        $a = sin($dLat/2) * sin($dLat/2) +
-             cos(deg2rad($originLat)) * cos(deg2rad($this->destinationLat)) *
-             sin($dLng/2) * sin($dLng/2);
-
-        $c = 2 * atan2(sqrt($a), sqrt(1-$a));
-        $distance = $earthRadius * $c;
+    /**
+     * Get distance text for display
+     */
+    public function getDistanceText(): ?string
+    {
+        $distance = $this->calculateDistance();
+        if (!$distance) return null;
 
         if ($distance < 1) {
             return round($distance * 1000) . ' m';
@@ -218,70 +376,162 @@ class MapsRoute extends Component
         return round($distance, 1) . ' km';
     }
 
-    // Method untuk mendapatkan real route distance dari OSRM
-    public function getRealRouteDistance()
+    /**
+     * Check if user is near destination
+     */
+    public function isNearDestination(float $radiusKm = 1.0): bool
     {
-        if (!$this->destinationLat || !$this->destinationLng) {
-            return null;
+        if (!Auth::id() || !$this->destinationLat || !$this->destinationLng) {
+            return false;
         }
 
-        // Use current user location if real-time tracking is enabled
-        $originLat = $this->useRealTimeTracking && $this->currentUserLat ?
-            $this->currentUserLat : $this->lat;
-        $originLng = $this->useRealTimeTracking && $this->currentUserLng ?
-            $this->currentUserLng : $this->lng;
-
-        try {
-            // Call OSRM API untuk mendapatkan real distance
-            $url = "https://router.project-osrm.org/route/v1/driving/{$originLng},{$originLat};{$this->destinationLng},{$this->destinationLat}?overview=false";
-
-            $context = stream_context_create([
-                'http' => [
-                    'timeout' => 5, // 5 seconds timeout
-                    'method' => 'GET'
-                ]
-            ]);
-
-            $response = @file_get_contents($url, false, $context);
-
-            if ($response !== false) {
-                $data = json_decode($response, true);
-
-                if (isset($data['routes'][0]['distance'])) {
-                    $distanceMeters = $data['routes'][0]['distance'];
-                    $distanceKm = $distanceMeters / 1000;
-
-                    if ($distanceKm < 1) {
-                        return round($distanceMeters) . ' m';
-                    }
-
-                    return round($distanceKm, 1) . ' km';
-                }
-            }
-        } catch (Exception $e) {
-            // Fallback to haversine calculation
-        }
-
-        // Fallback to simple distance calculation
-        return $this->getDistanceText();
+        return app('geolocation')->isUserNearLocation(
+            Auth::id(),
+            $this->destinationLat,
+            $this->destinationLng,
+            $radiusKm
+        );
     }
 
     /**
-     * Get current coordinates (real-time or static)
+     * Handle JavaScript errors dari frontend (via Livewire event)
      */
-    public function getCurrentCoordinates(): array
+    #[On('log-js-error')]
+    public function logJavaScriptError($data)
+    {
+        try {
+            Log::error('MapsRoute Component: JavaScript Error', [
+                'user_id' => Auth::id(),
+                'component' => $data['component'] ?? 'MapsRoute',
+                'function' => $data['function'] ?? 'Unknown',
+                'error' => $data['error'] ?? 'No error message',
+                'mapId' => $data['mapId'] ?? null,
+                'user_agent' => $data['user_agent'] ?? request()->userAgent(),
+                'ip_address' => request()->ip(),
+                'url' => request()->fullUrl(),
+                'timestamp' => now(),
+                'source' => 'javascript'
+            ]);
+
+        } catch (\Exception $e) {
+            // Fallback jika logging gagal
+            Log::critical('MapsRoute Component: Failed to log JavaScript error', [
+                'original_error' => $data ?? 'No data',
+                'logging_error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    // ========== UTILITY METHODS ==========
+
+    /**
+     * Format timestamp to WITA time
+     */
+    private function formatWitaTime(?string $timestamp = null): ?string
+    {
+        if (!$timestamp) return null;
+
+        return Carbon::parse($timestamp)->setTimezone('Asia/Makassar')->format('H:i') . ' WITA';
+    }
+
+    /**
+     * Get current WITA time
+     */
+    private function getCurrentWitaTime(): string
+    {
+        return Carbon::now('Asia/Makassar')->format('H:i') . ' WITA';
+    }
+
+    /**
+     * Get location status
+     */
+    public function getLocationStatus(): string
+    {
+        return $this->isActualLocation ? 'actual' : 'default';
+    }
+
+    /**
+     * Get location status text
+     */
+    public function getLocationStatusText(): string
+    {
+        return $this->isActualLocation ? 'Lokasi Aktual' : 'Lokasi Default';
+    }
+
+    /**
+     * Get location status CSS class
+     */
+    public function getLocationStatusClass(): string
+    {
+        return $this->isActualLocation ? 'status-success' : 'status-warning';
+    }
+
+    /**
+     * Get location text color class
+     */
+    public function getLocationTextClass(): string
+    {
+        return $this->isActualLocation ? 'text-success' : 'text-warning';
+    }
+
+    /**
+     * Check if location is recent (within last 5 minutes)
+     */
+    public function isLocationRecent(): bool
+    {
+        if (!$this->currentTime || !$this->isActualLocation) {
+            return false;
+        }
+
+        if (!Auth::id()) return false;
+
+        $location = app('geolocation')->getUserLocation(Auth::id());
+
+        if (!$location['last_updated']) {
+            return false;
+        }
+
+        $lastUpdate = Carbon::parse($location['last_updated']);
+        return $lastUpdate->diffInMinutes(Carbon::now()) <= 5;
+    }
+
+    /**
+     * Check if tracking is active
+     */
+    public function isTrackingActive(): bool
+    {
+        if (!Auth::id()) return false;
+
+        $trackingCacheKey = "user_tracking_state_" . Auth::id();
+        return Cache::get($trackingCacheKey, false);
+    }
+
+    /**
+     * Get route information
+     */
+    public function getRouteInfo(): array
     {
         return [
-            'lat' => $this->useRealTimeTracking && $this->currentUserLat ?
-                $this->currentUserLat : $this->lat,
-            'lng' => $this->useRealTimeTracking && $this->currentUserLng ?
-                $this->currentUserLng : $this->lng,
-            'address' => $this->useRealTimeTracking && $this->currentUserAddress ?
-                $this->currentUserAddress : $this->address,
-            'isRealTime' => $this->useRealTimeTracking
+            'origin' => [
+                'lat' => $this->lat,
+                'lng' => $this->lng,
+                'address' => $this->address ?? 'Lokasi tidak diketahui'
+            ],
+            'destination' => [
+                'lat' => $this->destinationLat,
+                'lng' => $this->destinationLng,
+                'address' => $this->destinationAddress
+            ],
+            'distance' => $this->getDistanceText(),
+            'isNearDestination' => $this->isNearDestination(),
+            'routeColor' => $this->routeColor,
+            'routeWeight' => $this->routeWeight
         ];
     }
 
+    /**
+     * Render the component
+     */
     public function render()
     {
         return view('livewire.components.maps-route');
