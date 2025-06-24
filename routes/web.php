@@ -85,6 +85,14 @@ Route::prefix('app')
             Route::get('/{user}/view', App\Livewire\App\Pages\User\View::class)->name('view');
             Route::get('/{user}/edit', App\Livewire\App\Pages\User\Edit::class)->name('edit');
         });
+
+        // Permission Management Routes
+        Route::prefix('permission')->name('permission.')->group(function () {
+            Route::get('/', App\Livewire\App\Pages\Permission\Index::class)->name('index');
+            Route::get('/create', App\Livewire\App\Pages\Permission\Create::class)->name('create');
+            Route::get('/{permission}/view', App\Livewire\App\Pages\Permission\View::class)->name('view');
+            Route::get('/{permission}/edit', App\Livewire\App\Pages\Permission\Edit::class)->name('edit');
+        });
     });
 
 /*

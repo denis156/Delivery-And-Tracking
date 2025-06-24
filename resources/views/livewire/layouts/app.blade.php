@@ -48,9 +48,9 @@
 
                 <x-menu-item title="Beranda" icon="phosphor.gauge" link="{{ route('app.dashboard') }}" exact />
 
-                <x-menu-sub title="Management Pengguna" icon="phosphor.users-three">
-                    <x-menu-item title="Pengguna" icon="phosphor.user-list" link="{{ route('app.user.index') }}" exact />
-                    <x-menu-item title="Supir" icon="phosphor.archive" link="####" />
+                <x-menu-sub title="Management Pengguna" icon="phosphor.user-gear">
+                    <x-menu-item title="Permission" icon="phosphor.key" link="{{ route('app.permission.index') }}" exact />
+                    <x-menu-item title="Pengguna" icon="phosphor.users-four" link="{{ route('app.user.index') }}" exact />
                 </x-menu-sub>
             </x-menu>
         </x-slot:sidebar>
