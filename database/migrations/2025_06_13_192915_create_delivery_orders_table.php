@@ -9,7 +9,7 @@ return new class extends Migration
     /**
      * Run the migrations.
      *
-     * Tabel utama untuk delivery orders - pengganti surat jalan digital
+     * Tabel utama untuk delivery orders - surat jalan digital yang simplified
      */
     public function up(): void
     {
@@ -18,60 +18,47 @@ return new class extends Migration
 
             // Identitas order
             $table->string('order_number', 50)->unique()->comment('Nomor unik delivery order');
+            $table->string('barcode_do', 100)->unique()->comment('Barcode untuk delivery order');
+
             $table->enum('status', [
-                'draft',        // Dibuat PL, belum diverifikasi
-                'verified',     // Diverifikasi PR, siap dispatch
-                'dispatched',   // Driver mulai perjalanan
-                'in_transit',   // Dalam perjalanan (tracking aktif)
-                'arrived',      // Sampai tujuan
-                'completed',    // Selesai oleh PG
+                'draft',        // Petugas lapangan buat delivery order dan pilih driver
+                'loading',      // Driver loading barang, petugas lapangan input items
+                'verified',     // Petugas ruangan input data tujuan dan validasi dan cetak
+                'dispatched',   // Driver berangkat dengan surat jalan
+                'arrived',      // Driver sampai tujuan, mulai proses pembongkaran
+                'completed',    // Petugas gudang selesai pembongkaran dan validasi
                 'cancelled'     // Dibatalkan
             ])->default('draft')->comment('Status delivery order');
 
-            // Data pengirim dan penerima
-            $table->string('sender_name', 255)->comment('Nama pengirim');
-            $table->text('sender_address')->comment('Alamat pengirim');
-            $table->string('sender_phone', 20)->nullable()->comment('Telepon pengirim');
+            // Data penerima - ambil dari user dengan role client
+            $table->foreignId('client_id')->constrained('users')->comment('Client penerima dengan role client');
+            $table->text('delivery_address')->comment('Alamat pengiriman atau tujuan');
+            $table->string('recipient_pic', 255)->nullable()->comment('Person in charge di lokasi tujuan');
 
-            $table->string('recipient_name', 255)->comment('Nama penerima');
-            $table->text('recipient_address')->comment('Alamat penerima');
-            $table->string('recipient_phone', 20)->nullable()->comment('Telepon penerima');
-            $table->string('recipient_pic', 255)->nullable()->comment('PIC di lokasi tujuan');
-
-            // Koordinat tujuan untuk GPS
+            // Koordinat tujuan untuk sistem tracking menggunakan global positioning system
             $table->decimal('destination_latitude', 10, 8)->nullable()->comment('Latitude tujuan');
             $table->decimal('destination_longitude', 11, 8)->nullable()->comment('Longitude tujuan');
 
-            // User assignments
-            $table->foreignId('created_by')->constrained('users')->comment('PL yang membuat order');
-            $table->foreignId('verified_by')->nullable()->constrained('users')->comment('PR yang verifikasi');
-            $table->foreignId('driver_id')->nullable()->constrained('users')->comment('Driver yang ditugaskan');
-            $table->foreignId('completed_by')->nullable()->constrained('users')->comment('PG yang menyelesaikan');
+            // User assignments - sesuai workflow yang benar
+            $table->foreignId('created_by')->constrained('users')->comment('Petugas lapangan yang buat delivery order dan pilih driver dan input items');
+            $table->foreignId('driver_id')->nullable()->constrained('users')->comment('Driver yang dipilih petugas lapangan');
+            $table->foreignId('verified_by')->nullable()->constrained('users')->comment('Petugas ruangan yang input data tujuan dan verifikasi');
+            $table->foreignId('completed_by')->nullable()->constrained('users')->comment('Petugas gudang yang scan barcode dan selesaikan');
 
-            // Timestamps dan tanggal penting
-            $table->timestamp('verified_at')->nullable()->comment('Waktu verifikasi PR');
-            $table->timestamp('dispatched_at')->nullable()->comment('Waktu mulai perjalanan');
-            $table->timestamp('arrived_at')->nullable()->comment('Waktu sampai tujuan');
-            $table->timestamp('completed_at')->nullable()->comment('Waktu penyelesaian');
+            // Key timestamps - sesuai dengan status yang ada
+            $table->timestamp('loading_started_at')->nullable()->comment('Waktu mulai status loading');
+            $table->timestamp('verified_at')->nullable()->comment('Waktu status verified selesai');
+            $table->timestamp('dispatched_at')->nullable()->comment('Waktu status dispatched dimulai');
+            $table->timestamp('arrived_at')->nullable()->comment('Waktu status arrived dimulai');
+            $table->timestamp('completed_at')->nullable()->comment('Waktu status completed selesai');
 
-            // Estimasi dan aktual
-            $table->date('planned_delivery_date')->comment('Tanggal rencana pengiriman');
-            $table->time('planned_delivery_time')->nullable()->comment('Waktu rencana pengiriman');
-            $table->decimal('estimated_distance', 8, 2)->nullable()->comment('Estimasi jarak (km)');
-            $table->decimal('actual_distance', 8, 2)->nullable()->comment('Jarak aktual (km)');
-
-            // Catatan dan keterangan
-            $table->text('notes')->nullable()->comment('Catatan tambahan');
-            $table->text('delivery_notes')->nullable()->comment('Catatan pengiriman dari driver');
-            $table->text('completion_notes')->nullable()->comment('Catatan penyelesaian dari PG');
+            // Catatan
+            $table->text('notes')->nullable()->comment('Catatan tambahan order');
+            $table->text('completion_notes')->nullable()->comment('Catatan penyelesaian dari petugas gudang');
 
             // Discrepancy handling
             $table->boolean('has_discrepancy')->default(false)->comment('Ada ketidaksesuaian barang');
             $table->text('discrepancy_notes')->nullable()->comment('Catatan ketidaksesuaian');
-
-            // Surat jalan fisik
-            $table->string('physical_document_number', 100)->nullable()->comment('Nomor surat jalan fisik');
-            $table->timestamp('document_printed_at')->nullable()->comment('Waktu cetak dokumen');
 
             $table->timestamps();
             $table->softDeletes();
@@ -79,9 +66,10 @@ return new class extends Migration
             // Indexes untuk performance
             $table->index(['status', 'created_at'], 'idx_status_created');
             $table->index(['driver_id', 'status'], 'idx_driver_status');
+            $table->index(['client_id', 'created_at'], 'idx_client_date');
             $table->index(['created_by', 'created_at'], 'idx_creator_date');
-            $table->index('planned_delivery_date', 'idx_planned_date');
             $table->index('order_number', 'idx_order_number');
+            $table->index('barcode_do', 'idx_barcode_delivery_order');
         });
     }
 

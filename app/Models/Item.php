@@ -2,15 +2,20 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Casts\Attribute;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Class\StatusHelper;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Item extends Model
 {
     use HasFactory, SoftDeletes;
+
+    // * ========================================
+    // * KONFIGURASI MODEL
+    // * ========================================
 
     protected $fillable = [
         'delivery_order_id',
@@ -18,81 +23,53 @@ class Item extends Model
         'description',
         'category',
         'unit',
-        'planned_quantity',
-        'actual_quantity',
+        'sent_quantity',
+        'received_quantity',
         'weight',
-        'length',
-        'width',
-        'height',
         'unit_value',
         'total_value',
-        'is_insured',
-        'condition_sent',
-        'condition_received',
-        'is_fragile',
-        'requires_cold_storage',
         'status',
+        'condition',
         'notes',
-        'damage_notes',
-        'barcode',
-        'serial_number',
+        'discrepancy_notes',
+        'barcode_item',
         'sort_order',
     ];
 
-    protected $casts = [
-        'planned_quantity' => 'decimal:2',
-        'actual_quantity' => 'decimal:2',
-        'weight' => 'decimal:2',
-        'length' => 'decimal:2',
-        'width' => 'decimal:2',
-        'height' => 'decimal:2',
-        'unit_value' => 'decimal:2',
-        'total_value' => 'decimal:2',
-        'is_insured' => 'boolean',
-        'is_fragile' => 'boolean',
-        'requires_cold_storage' => 'boolean',
-        'sort_order' => 'integer',
-    ];
+    /**
+     * Get the attributes that should be cast (Laravel 12.x style)
+     */
+    protected function casts(): array
+    {
+        return [
+            'sent_quantity' => 'decimal:2',
+            'received_quantity' => 'decimal:2',
+            'weight' => 'decimal:2',
+            'unit_value' => 'decimal:2',
+            'total_value' => 'decimal:2',
+            'sort_order' => 'integer',
+            'created_at' => 'datetime',
+            'updated_at' => 'datetime',
+            'deleted_at' => 'datetime',
+        ];
+    }
 
-    // Status constants
-    public const STATUS_PREPARED = 'prepared';
-    public const STATUS_LOADED = 'loaded';
-    public const STATUS_IN_TRANSIT = 'in_transit';
-    public const STATUS_DELIVERED = 'delivered';
-    public const STATUS_DAMAGED = 'damaged';
-    public const STATUS_RETURNED = 'returned';
-
-    public const STATUSES = [
-        self::STATUS_PREPARED => 'Disiapkan',
-        self::STATUS_LOADED => 'Dimuat',
-        self::STATUS_IN_TRANSIT => 'Dalam Perjalanan',
-        self::STATUS_DELIVERED => 'Terkirim',
-        self::STATUS_DAMAGED => 'Rusak',
-        self::STATUS_RETURNED => 'Dikembalikan',
-    ];
-
-    // Condition constants
-    public const CONDITION_GOOD = 'baik';
-    public const CONDITION_MINOR_DAMAGE = 'rusak_ringan';
-    public const CONDITION_MAJOR_DAMAGE = 'rusak_berat';
-
-    public const CONDITIONS = [
-        self::CONDITION_GOOD => 'Baik',
-        self::CONDITION_MINOR_DAMAGE => 'Rusak Ringan',
-        self::CONDITION_MAJOR_DAMAGE => 'Rusak Berat',
-    ];
+    // * ========================================
+    // * RELATIONSHIPS
+    // * ========================================
 
     /**
-     * Relationships
+     * Relasi ke delivery order
      */
     public function deliveryOrder(): BelongsTo
     {
         return $this->belongsTo(DeliveryOrder::class);
     }
 
-    /**
-     * Scopes
-     */
+    // * ========================================
+    // * QUERY SCOPES
+    // * ========================================
+
     public function scopeByStatus($query, string $status)
     {
         return $query->where('status', $status);
@@ -103,20 +80,14 @@ class Item extends Model
         return $query->where('category', $category);
     }
 
-    public function scopeFragile($query)
+    public function scopeByCondition($query, string $condition)
     {
-        return $query->where('is_fragile', true);
-    }
-
-    public function scopeInsured($query)
-    {
-        return $query->where('is_insured', true);
+        return $query->where('condition', $condition);
     }
 
     public function scopeWithDiscrepancy($query)
     {
-        return $query->whereColumn('actual_quantity', '!=', 'planned_quantity')
-            ->orWhere('condition_received', '!=', 'condition_sent');
+        return $query->whereColumn('received_quantity', '!=', 'sent_quantity');
     }
 
     public function scopeOrdered($query)
@@ -124,9 +95,10 @@ class Item extends Model
         return $query->orderBy('sort_order')->orderBy('id');
     }
 
-    /**
-     * Model Events
-     */
+    // * ========================================
+    // * MODEL EVENTS
+    // * ========================================
+
     protected static function booted(): void
     {
         static::creating(function (Item $item) {
@@ -137,208 +109,217 @@ class Item extends Model
             }
 
             // Auto calculate total value
-            if ($item->unit_value && $item->planned_quantity) {
-                $item->total_value = $item->unit_value * $item->planned_quantity;
+            if ($item->unit_value && $item->sent_quantity) {
+                $item->total_value = $item->unit_value * $item->sent_quantity;
             }
         });
 
         static::updating(function (Item $item) {
             // Recalculate total value if unit_value or quantity changed
-            if ($item->isDirty(['unit_value', 'planned_quantity']) && $item->unit_value && $item->planned_quantity) {
-                $item->total_value = $item->unit_value * $item->planned_quantity;
-            }
-        });
-
-        static::updated(function (Item $item) {
-            // Record status history if item status changed
-            if ($item->wasChanged('status')) {
-                $item->deliveryOrder->recordStatusHistory(
-                    'item_status_changed',
-                    "Status item '{$item->name}' diubah ke {$item->status_label}"
-                );
-            }
-
-            // Record discrepancy if actual quantity differs from planned
-            if ($item->wasChanged('actual_quantity') && $item->actual_quantity != $item->planned_quantity) {
-                $difference = $item->actual_quantity - $item->planned_quantity;
-                $type = $difference > 0 ? 'kelebihan' : 'kekurangan';
-                $amount = abs($difference);
-
-                $item->deliveryOrder->recordStatusHistory(
-                    'discrepancy_noted',
-                    "Ketidaksesuaian item '{$item->name}': {$type} {$amount} {$item->unit}"
-                );
-
-                // Update delivery order discrepancy flag
-                $item->deliveryOrder->update(['has_discrepancy' => true]);
+            if ($item->isDirty(['unit_value', 'sent_quantity']) && $item->unit_value && $item->sent_quantity) {
+                $item->total_value = $item->unit_value * $item->sent_quantity;
             }
         });
     }
+
+    // * ========================================
+    // * BUSINESS LOGIC METHODS
+    // * ========================================
 
     /**
-     * Business Logic Methods
+     * Cek apakah item memiliki discrepancy
      */
-    public function markAsLoaded(): void
-    {
-        $this->update(['status' => self::STATUS_LOADED]);
-    }
-
-    public function markAsInTransit(): void
-    {
-        $this->update(['status' => self::STATUS_IN_TRANSIT]);
-    }
-
-    public function markAsDelivered(?float $actualQuantity = null, ?string $conditionReceived = null): void
-    {
-        $updateData = ['status' => self::STATUS_DELIVERED];
-
-        if (!is_null($actualQuantity)) {
-            $updateData['actual_quantity'] = $actualQuantity;
-        }
-
-        if ($conditionReceived) {
-            $updateData['condition_received'] = $conditionReceived;
-        }
-
-        $this->update($updateData);
-    }
-
-    public function markAsDamaged(string $damageNotes = '', ?string $conditionReceived = null): void
-    {
-        $this->update([
-            'status' => self::STATUS_DAMAGED,
-            'condition_received' => $conditionReceived ?? self::CONDITION_MAJOR_DAMAGE,
-            'damage_notes' => $damageNotes,
-        ]);
-    }
-
     public function hasDiscrepancy(): bool
     {
-        return $this->actual_quantity != $this->planned_quantity ||
-            ($this->condition_received && $this->condition_received != $this->condition_sent);
-    }
-
-    public function getDiscrepancyDescription(): ?string
-    {
-        $discrepancies = [];
-
-        // Quantity discrepancy
-        if ($this->actual_quantity && $this->actual_quantity != $this->planned_quantity) {
-            $difference = $this->actual_quantity - $this->planned_quantity;
-            $type = $difference > 0 ? 'Kelebihan' : 'Kekurangan';
-            $amount = abs($difference);
-            $discrepancies[] = "{$type}: {$amount} {$this->unit}";
-        }
-
-        // Condition discrepancy
-        if ($this->condition_received && $this->condition_received != $this->condition_sent) {
-            $discrepancies[] = "Kondisi berubah dari {$this->condition_sent_label} ke {$this->condition_received_label}";
-        }
-
-        return !empty($discrepancies) ? implode(', ', $discrepancies) : null;
+        return $this->received_quantity && $this->received_quantity != $this->sent_quantity;
     }
 
     /**
-     * Laravel 12.x Accessor Methods
+     * Get deskripsi discrepancy
+     */
+    public function getDiscrepancyDescription(): ?string
+    {
+        if (!$this->hasDiscrepancy()) {
+            return null;
+        }
+
+        $difference = $this->received_quantity - $this->sent_quantity;
+        $type = $difference > 0 ? 'Kelebihan' : 'Kekurangan';
+        $amount = abs($difference);
+
+        return "{$type}: {$amount} {$this->unit}";
+    }
+
+    // * ========================================
+    // * ACCESSORS (Laravel 12.x Attribute Style)
+    // * ========================================
+
+    /**
+     * Get status label menggunakan StatusHelper
      */
     protected function statusLabel(): Attribute
     {
         return Attribute::make(
-            get: fn() => self::STATUSES[$this->status] ?? $this->status,
+            get: fn() => StatusHelper::getItemStatusLabel($this->status),
         );
     }
 
-    protected function conditionSentLabel(): Attribute
+    /**
+     * Get status color menggunakan StatusHelper
+     */
+    protected function statusColor(): Attribute
     {
         return Attribute::make(
-            get: fn() => self::CONDITIONS[$this->condition_sent] ?? $this->condition_sent,
+            get: fn() => StatusHelper::getItemStatusColor($this->status),
         );
     }
 
-    protected function conditionReceivedLabel(): Attribute
+    /**
+     * Get condition label menggunakan StatusHelper
+     */
+    protected function conditionLabel(): Attribute
     {
         return Attribute::make(
-            get: fn() => $this->condition_received ? (self::CONDITIONS[$this->condition_received] ?? $this->condition_received) : null,
+            get: fn() => StatusHelper::getConditionLabel($this->condition),
         );
     }
 
+    /**
+     * Get condition color menggunakan StatusHelper
+     */
+    protected function conditionColor(): Attribute
+    {
+        return Attribute::make(
+            get: fn() => StatusHelper::getConditionColor($this->condition),
+        );
+    }
+
+    /**
+     * Get formatted weight menggunakan StatusHelper
+     */
     protected function formattedWeight(): Attribute
     {
         return Attribute::make(
             get: function () {
                 if (!$this->weight) return '-';
 
-                $totalWeight = $this->weight * $this->planned_quantity;
-                return number_format($this->weight, 1) . ' kg/unit (' . number_format($totalWeight, 1) . ' kg total)';
+                $totalWeight = $this->weight * $this->sent_quantity;
+                return number_format($this->weight, 1) . ' kg/unit (' . StatusHelper::formatWeight($totalWeight) . ' total)';
             }
         );
     }
 
-    protected function formattedDimensions(): Attribute
-    {
-        return Attribute::make(
-            get: function () {
-                if (!$this->length || !$this->width || !$this->height) return '-';
-
-                return "{$this->length} × {$this->width} × {$this->height} cm";
-            }
-        );
-    }
-
+    /**
+     * Get formatted value menggunakan StatusHelper
+     */
     protected function formattedValue(): Attribute
     {
         return Attribute::make(
             get: function () {
                 if (!$this->total_value) return '-';
 
-                return 'Rp ' . number_format($this->total_value, 0, ',', '.');
+                return StatusHelper::formatRupiah($this->total_value);
             }
         );
     }
 
-    protected function volume(): Attribute
+    /**
+     * Get formatted unit value menggunakan StatusHelper
+     */
+    protected function formattedUnitValue(): Attribute
     {
         return Attribute::make(
             get: function () {
-                if (!$this->length || !$this->width || !$this->height) return null;
+                if (!$this->unit_value) return '-';
 
-                return ($this->length * $this->width * $this->height) / 1000000; // Convert to m³
+                return StatusHelper::formatRupiah($this->unit_value);
             }
         );
     }
 
-    protected function formattedVolume(): Attribute
+    /**
+     * Get total weight untuk item ini
+     */
+    protected function totalWeight(): Attribute
+    {
+        return Attribute::make(
+            get: fn() => $this->weight ? ($this->weight * $this->sent_quantity) : 0,
+        );
+    }
+
+    /**
+     * Get formatted sent quantity menggunakan StatusHelper
+     */
+    protected function formattedSentQuantity(): Attribute
+    {
+        return Attribute::make(
+            get: fn() => StatusHelper::formatQuantity($this->sent_quantity, $this->unit),
+        );
+    }
+
+    /**
+     * Get formatted received quantity menggunakan StatusHelper
+     */
+    protected function formattedReceivedQuantity(): Attribute
     {
         return Attribute::make(
             get: function () {
-                $volume = $this->volume;
-                if (!$volume) return '-';
+                if (!$this->received_quantity) return '-';
 
-                return number_format($volume, 3) . ' m³';
+                return StatusHelper::formatQuantity($this->received_quantity, $this->unit);
             }
         );
     }
 
-    protected function specialHandlingRequirements(): Attribute
+    // * ========================================
+    // * STATIC HELPER METHODS
+    // * ========================================
+
+    /**
+     * Get all available statuses menggunakan StatusHelper
+     */
+    public static function getAllStatuses(): array
     {
-        return Attribute::make(
-            get: function () {
-                $requirements = [];
+        return StatusHelper::getAllItemStatuses();
+    }
 
-                if ($this->is_fragile) {
-                    $requirements[] = 'Barang Mudah Pecah';
-                }
+    /**
+     * Get all available conditions menggunakan StatusHelper
+     */
+    public static function getAllConditions(): array
+    {
+        return StatusHelper::getAllConditions();
+    }
 
-                if ($this->requires_cold_storage) {
-                    $requirements[] = 'Perlu Penyimpanan Dingin';
-                }
+    /**
+     * Get status color by status key menggunakan StatusHelper
+     */
+    public static function getStatusColorByKey(string $status): string
+    {
+        return StatusHelper::getItemStatusColor($status);
+    }
 
-                if ($this->is_insured) {
-                    $requirements[] = 'Diasuransikan';
-                }
+    /**
+     * Get status label by status key menggunakan StatusHelper
+     */
+    public static function getStatusLabelByKey(string $status): string
+    {
+        return StatusHelper::getItemStatusLabel($status);
+    }
 
-                return $requirements;
-            }
-        );
+    /**
+     * Get condition color by condition key menggunakan StatusHelper
+     */
+    public static function getConditionColorByKey(string $condition): string
+    {
+        return StatusHelper::getConditionColor($condition);
+    }
+
+    /**
+     * Get condition label by condition key menggunakan StatusHelper
+     */
+    public static function getConditionLabelByKey(string $condition): string
+    {
+        return StatusHelper::getConditionLabel($condition);
     }
 }
