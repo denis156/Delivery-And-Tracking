@@ -134,16 +134,16 @@ class HeroSection extends Component
                                             <div class="w-3 h-3 bg-success rounded-full"></div>
                                         </div>
                                         <div class="flex-1 flex justify-center">
-                                            <div class="bg-base-100 rounded-lg px-4 py-1 text-sm text-base-content/60">
+                                            <div class="bg-base-100 rounded-lg px-4 py-1 text-md text-base-content/60">
                                                 {{ config('app.url') }}/app/dashboard
                                             </div>
                                         </div>
                                     </div>
 
                                     <!-- Dashboard Content -->
-                                    <x-card class="p-6 bg-gradient-to-br from-base-100 to-base-200 min-h-64">
+                                    <x-card class="bg-gradient-to-br from-base-100 to-base-200 min-h-64">
                                         <img
-                                            src="https://picsum.photos/1200/600?random=dashboard&blur=1"
+                                            src="{{ asset('images/Dashboard-App.png') }}"
                                             alt="Dashboard DelivTrack Preview"
                                             class="w-full h-full object-cover rounded-xl opacity-60 group-hover:opacity-80 transition-opacity duration-300"
                                         />
