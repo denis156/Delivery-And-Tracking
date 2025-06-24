@@ -52,44 +52,33 @@
 
                 {{-- Dashboard Menu untuk Sistem Management Surat Jalan & Tracking Truck --}}
                 <x-menu-item title="Dashboard" icon="phosphor.gauge-light" link="{{ route('app.dashboard') }}" exact />
-
-                <x-menu-separator />
                 {{-- Master Data --}}
                 <x-menu-sub title="Master Data" icon="phosphor.database-light">
                     <x-menu-item title="Data Sopir" icon="phosphor.user-circle-light" link="###" exact />
                     <x-menu-item title="Data Klien" icon="phosphor.buildings-light" link="###" exact />
                     <x-menu-item title="Data Barang" icon="phosphor.package-light" link="###" exact />
                 </x-menu-sub>
-
-                <x-menu-separator />
                 {{-- Operasional --}}
                 <x-menu-sub title="Operasional" icon="phosphor.truck-light">
                     <x-menu-item title="Surat Jalan" icon="phosphor.receipt-light" link="###" exact />
                     <x-menu-item title="Status Pengiriman" icon="phosphor.clock-clockwise-light" link="###" exact />
                 </x-menu-sub>
-
-                <x-menu-separator />
                 {{-- Tracking --}}
                 <x-menu-sub title="Tracking & Monitoring" icon="phosphor.monitor-light">
                     <x-menu-item title="Live Tracking" icon="phosphor.map-pin-simple-area-light" link="###" exact />
                     <x-menu-item title="Riwayat Perjalanan" icon="phosphor.clock-counter-clockwise-light" link="###" exact />
                 </x-menu-sub>
-
-                <x-menu-separator />
                 {{-- Laporan --}}
                 <x-menu-sub title="Laporan" icon="phosphor.chart-line-light">
                     <x-menu-item title="Laporan Pengiriman" icon="phosphor.file-text-light" link="###" exact />
                     <x-menu-item title="Laporan Keuangan" icon="phosphor.chart-pie-light" link="###" exact />
                 </x-menu-sub>
-
-                <x-menu-separator />
                 {{-- Management Pengguna --}}
                 <x-menu-sub title="Management Pengguna" icon="phosphor.user-gear-light">
                     <x-menu-item title="Pengguna" icon="phosphor.users-four-light" link="{{ route('app.user.index') }}" exact />
                     <x-menu-item title="Permission" icon="phosphor.key-light" link="{{ route('app.permission.index') }}" exact />
                 </x-menu-sub>
-                <x-menu-separator />
-
+                {{-- Logout --}}
                 <x-menu-item title="Keluar" icon="phosphor.sign-out-light" link="{{ route('logout') }}" exact />
                 <x-menu-separator />
             </x-menu>
