@@ -2,6 +2,7 @@
 // Route management dan real-time updates
 
 import { mapsRouteCore } from './MapsRouteCore.js';
+import { mapsRouteRotation } from './MapsRouteRotation.js';
 
 export class MapsRouteManager {
     constructor() {
@@ -185,6 +186,9 @@ export class MapsRouteManager {
             // Update HANYA posisi driver marker (smooth movement)
             const newLatLng = L.latLng(lat, lng);
             originMarker.setLatLng(newLatLng);
+
+            // ENHANCED: Apply marker rotation based on movement/compass
+            mapsRouteRotation.updateMarkerRotation(mapId, lat, lng, originMarker);
 
             // Update origin marker popup
             const mapData = {

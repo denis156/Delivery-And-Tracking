@@ -3,10 +3,28 @@
 
 import { mapsRouteCore } from './MapsRouteCore.js';
 import { mapsRouteManager } from './MapsRouteManager.js';
+import { mapsRouteRotation } from './MapsRouteRotation.js';
 
 // Global functions yang dibutuhkan oleh component blade
 window.centerRouteView = function(mapId) {
     mapsRouteManager.centerRouteView(mapId);
+};
+
+// ENHANCED: Add rotation control functions
+window.toggleMarkerRotation = function(enabled) {
+    mapsRouteRotation.setRotationEnabled(enabled);
+};
+
+window.toggleSmoothRotation = function(enabled) {
+    mapsRouteRotation.setSmoothRotation(enabled);
+};
+
+window.requestCompassPermission = function() {
+    return mapsRouteRotation.requestPermission();
+};
+
+window.getRotationStatus = function() {
+    return mapsRouteRotation.getStatus();
 };
 
 // Make instances accessible globally untuk debugging
@@ -19,6 +37,8 @@ window.debugMapsRoute = {
     centerRoute: (mapId) => mapsRouteManager.centerRouteView(mapId),
     core: mapsRouteCore,
     manager: mapsRouteManager,
+    rotation: mapsRouteRotation,
+    rotationStatus: () => mapsRouteRotation.getStatus(),
     logs: true
 };
 
@@ -60,4 +80,4 @@ document.addEventListener('livewire:navigating', function() {
 });
 
 // Export untuk penggunaan internal
-export { mapsRouteCore, mapsRouteManager };
+export { mapsRouteCore, mapsRouteManager, mapsRouteRotation };

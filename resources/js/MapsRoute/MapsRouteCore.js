@@ -1,6 +1,8 @@
 // resources/js/MapsRoute/MapsRouteCore.js
 // Core functionality untuk Maps Route component
 
+import { mapsRouteRotation } from './MapsRouteRotation.js';
+
 export class MapsRouteCore {
     constructor() {
         this.instances = {};
@@ -118,19 +120,23 @@ export class MapsRouteCore {
      * Create map markers
      */
     createMarkers(map, mapData) {
-        // Origin marker (User location) - marker yang akan bergerak
+        // Origin marker (User location) - marker yang akan bergerak dan berotasi
         const userLocationIcon = L.icon({
             iconUrl: '/images/map-pin/location-driver.png',
             iconSize: [32, 32],
             iconAnchor: [16, 32],
-            popupAnchor: [0, -32]
+            popupAnchor: [0, -32],
+            className: 'rotating-marker' // Add class for identification
         });
 
+        // Create RotatedMarker for driver location
         const originMarker = L.marker([mapData.lat, mapData.lng], {
-            icon: userLocationIcon
+            icon: userLocationIcon,
+            rotationAngle: 0, // Initial rotation angle
+            rotationOrigin: 'center center' // Rotation around center
         }).addTo(map);
 
-        // Destination marker - marker statis
+        // Destination marker - marker statis (regular marker)
         const destinationIcon = L.icon({
             iconUrl: '/images/map-pin/location-destination.png',
             iconSize: [32, 32],

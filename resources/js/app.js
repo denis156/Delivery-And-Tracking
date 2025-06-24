@@ -9,6 +9,9 @@ import L from 'leaflet';
 import 'leaflet-routing-machine';
 import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
 
+// Import Leaflet RotatedMarker plugin
+import 'leaflet-rotatedmarker';
+
 // Fix Leaflet default markers icons with Vite
 // This is important because Vite changes asset paths
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
