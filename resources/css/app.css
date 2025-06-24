@@ -1,5 +1,5 @@
 @import "tailwindcss";
-@import 'leaflet/dist/leaflet.css';
+@import "leaflet/dist/leaflet.css";
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
@@ -95,9 +95,9 @@
     --radius-selector: 1rem;
     --radius-field: 1rem;
     --radius-box: 1rem;
-    --size-selector: 0.25rem;
-    --size-field: 0.25rem;
-    --border: 2px;
+    --size-selector: 0.21875rem;
+    --size-field: 0.21875rem;
+    --border: 1px;
     --depth: 1;
     --noise: 1;
 }
@@ -154,9 +154,9 @@
     --radius-selector: 1rem;
     --radius-field: 1rem;
     --radius-box: 1rem;
-    --size-selector: 0.25rem;
-    --size-field: 0.25rem;
-    --border: 2px;
+    --size-selector: 0.21875rem;
+    --size-field: 0.21875rem;
+    --border: 1px;
     --depth: 1;
     --noise: 1;
 }
