@@ -25,3 +25,6 @@ L.Icon.Default.mergeOptions({
 
 // Make Leaflet globally available for Alpine components
 window.L = L;
+
+// Import Maps Route functionality
+import './MapsRoute/MapsRouteMain.js';
