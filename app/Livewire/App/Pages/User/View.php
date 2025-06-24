@@ -28,8 +28,8 @@ class View extends Component
     {
         // Safety check untuk driver
         if ($user->isDriver()) {
-            $this->error('Driver tidak dapat dilihat dari halaman ini.', position: 'toast-bottom');
-            $this->redirect(route('app.user'), navigate: true);
+            $this->error('Driver tidak dapat dilihat dari halaman ini.', position: 'toast-top toast-end');
+            $this->redirect(route('app.user.index'), navigate: true);
             return;
         }
 
@@ -53,7 +53,7 @@ class View extends Component
      */
     public function backToList(): void
     {
-        $this->redirect(route('app.user'), navigate: true);
+        $this->redirect(route('app.user.index'), navigate: true);
     }
 
     /**
@@ -86,8 +86,8 @@ class View extends Component
      */
     public function handleUserDeleted(): void
     {
-        $this->success('User berhasil dihapus.', position: 'toast-bottom');
-        $this->redirect(route('app.user'), navigate: true);
+        $this->success('User berhasil dihapus.', position: 'toast-top toast-end');
+        $this->redirect(route('app.user.index'), navigate: true);
     }
 
     // * ========================================

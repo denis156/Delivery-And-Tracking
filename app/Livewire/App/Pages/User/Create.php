@@ -230,7 +230,7 @@ class Create extends Component
                     $this->error(
                         title: 'Gagal upload avatar!',
                         description: 'Terjadi kesalahan saat mengupload foto profil.',
-                        position: 'toast-bottom'
+                        position: 'toast-top toast-end'
                     );
                     return;
                 }
@@ -241,9 +241,9 @@ class Create extends Component
             $this->success(
                 title: 'Pengguna berhasil dibuat!',
                 description: "Pengguna {$user->name} telah ditambahkan ke sistem dengan peran {$user->role_label}.",
-                position: 'toast-bottom',
+                position: 'toast-top toast-end',
                 timeout: 5000,
-                redirectTo: route('app.user')
+                redirectTo: route('app.user.index')
             );
 
         } catch (\Illuminate\Database\QueryException $e) {
@@ -251,13 +251,13 @@ class Create extends Component
                 $this->error(
                     title: 'Email sudah digunakan!',
                     description: 'Alamat email ini sudah terdaftar dalam sistem.',
-                    position: 'toast-bottom'
+                    position: 'toast-top toast-end'
                 );
             } else {
                 $this->error(
                     title: 'Gagal membuat pengguna!',
                     description: 'Terjadi kesalahan database. Silakan coba lagi.',
-                    position: 'toast-bottom'
+                    position: 'toast-top toast-end'
                 );
             }
         } catch (\Exception $e) {
@@ -266,7 +266,7 @@ class Create extends Component
             $this->error(
                 title: 'Gagal membuat pengguna!',
                 description: 'Terjadi kesalahan sistem. Silakan coba lagi atau hubungi administrator.',
-                position: 'toast-bottom'
+                position: 'toast-top toast-end'
             );
         }
     }
@@ -276,7 +276,7 @@ class Create extends Component
      */
     public function cancel(): void
     {
-        $this->redirect(route('app.user'), navigate: true);
+        $this->redirect(route('app.user.index'), navigate: true);
     }
 
     /**
@@ -298,7 +298,7 @@ class Create extends Component
         $this->info(
             title: 'Form direset!',
             description: 'Semua field telah dikosongkan.',
-            position: 'toast-bottom'
+            position: 'toast-top toast-end'
         );
     }
 
@@ -335,7 +335,7 @@ class Create extends Component
         $this->success(
             title: 'Status preview diubah!',
             description: 'Status pengguna telah diubah ke ' . ($newStatus ? 'Aktif' : 'Nonaktif'),
-            position: 'toast-bottom'
+            position: 'toast-top toast-end'
         );
     }
 

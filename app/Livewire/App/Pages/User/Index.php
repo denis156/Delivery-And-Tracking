@@ -73,7 +73,7 @@ class Index extends Component
         $this->sortBy = ['column' => 'created_at', 'direction' => 'desc'];
         $this->perPage = 12;
         $this->resetPage();
-        $this->success('Filter berhasil dibersihkan.', position: 'toast-bottom');
+        $this->success('Filter berhasil dibersihkan.', position: 'toast-top toast-end');
     }
 
     /**
@@ -84,7 +84,7 @@ class Index extends Component
         if ($this->users()->count() === 0 && $this->users()->currentPage() > 1) {
             $this->resetPage();
         }
-        $this->success('User berhasil dihapus.', position: 'toast-bottom');
+        $this->success('User berhasil dihapus.', position: 'toast-top toast-end');
     }
 
     /**
@@ -93,7 +93,7 @@ class Index extends Component
     public function handleUserCreated(): void
     {
         $this->resetPage();
-        $this->success('User berhasil ditambahkan.', position: 'toast-bottom');
+        $this->success('User berhasil ditambahkan.', position: 'toast-top toast-end');
     }
 
     /**

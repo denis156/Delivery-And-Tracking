@@ -42,8 +42,8 @@ class Edit extends Component
     {
         // Safety check untuk driver
         if ($user->isDriver()) {
-            $this->error('Driver tidak dapat diedit dari halaman ini.', position: 'toast-bottom');
-            $this->redirect(route('app.user'), navigate: true);
+            $this->error('Driver tidak dapat diedit dari halaman ini.', position: 'toast-top toast-end');
+            $this->redirect(route('app.user.index'), navigate: true);
             return;
         }
 
@@ -253,7 +253,7 @@ class Edit extends Component
                     $this->error(
                         title: 'Gagal upload avatar!',
                         description: 'Terjadi kesalahan saat mengupload foto profil.',
-                        position: 'toast-bottom'
+                        position: 'toast-top toast-end'
                     );
                     return;
                 }
@@ -264,7 +264,7 @@ class Edit extends Component
             $this->success(
                 title: 'Pengguna berhasil diperbarui!',
                 description: "Data pengguna {$this->user->name} telah diperbarui.",
-                position: 'toast-bottom',
+                position: 'toast-top toast-end',
                 timeout: 5000,
                 redirectTo: route('app.user.view', $this->user)
             );
@@ -274,13 +274,13 @@ class Edit extends Component
                 $this->error(
                     title: 'Email sudah digunakan!',
                     description: 'Alamat email ini sudah terdaftar dalam sistem.',
-                    position: 'toast-bottom'
+                    position: 'toast-top toast-end'
                 );
             } else {
                 $this->error(
                     title: 'Gagal memperbarui pengguna!',
                     description: 'Terjadi kesalahan database. Silakan coba lagi.',
-                    position: 'toast-bottom'
+                    position: 'toast-top toast-end'
                 );
             }
         } catch (\Exception $e) {
@@ -289,7 +289,7 @@ class Edit extends Component
             $this->error(
                 title: 'Gagal memperbarui pengguna!',
                 description: 'Terjadi kesalahan sistem. Silakan coba lagi atau hubungi administrator.',
-                position: 'toast-bottom'
+                position: 'toast-top toast-end'
             );
         }
     }
@@ -307,7 +307,7 @@ class Edit extends Component
      */
     public function backToList(): void
     {
-        $this->redirect(route('app.user'), navigate: true);
+        $this->redirect(route('app.user.index'), navigate: true);
     }
 
     /**
@@ -340,8 +340,8 @@ class Edit extends Component
      */
     public function handleUserDeleted(): void
     {
-        $this->success('User berhasil dihapus.', position: 'toast-bottom');
-        $this->redirect(route('app.user'), navigate: true);
+        $this->success('User berhasil dihapus.', position: 'toast-top toast-end');
+        $this->redirect(route('app.user.index'), navigate: true);
     }
 
     // * ========================================
