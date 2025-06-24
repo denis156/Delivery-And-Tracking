@@ -6,7 +6,7 @@
             <div class="breadcrumbs text-sm hidden lg:block">
                 <ul>
                     <li><a href="{{ route('app.dashboard') }}" wire:navigate>Beranda</a></li>
-                    <li><a href="{{ route('app.user') }}" wire:navigate>Pengguna</a></li>
+                    <li><a href="{{ route('app.user.index') }}" wire:navigate>Pengguna</a></li>
                     <li>{{ $user->name }}</li>
                 </ul>
             </div>
