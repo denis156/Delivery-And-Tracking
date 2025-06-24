@@ -4,7 +4,7 @@ namespace App\Class;
 
 /**
  * Helper class untuk mengelola status, color, dan label
- * Menghindari duplikasi kode di model DeliveryOrder dan Item
+ * Menghindari duplikasi kode di model DeliveryOrder, Item dan Permission & Role
  */
 class StatusHelper
 {
@@ -37,6 +37,18 @@ class StatusHelper
     const CONDITION_BAIK = 'baik';
     const CONDITION_RUSAK_RINGAN = 'rusak_ringan';
     const CONDITION_RUSAK_BERAT = 'rusak_berat';
+
+    // * ========================================
+    // * PERMISSION CATEGORY CONSTANTS
+    // * ========================================
+
+    const PERMISSION_CATEGORY_USER = 'user';
+    const PERMISSION_CATEGORY_ROLE = 'role';
+    const PERMISSION_CATEGORY_PERMISSION = 'permission';
+    const PERMISSION_CATEGORY_SYSTEM = 'system';
+    const PERMISSION_CATEGORY_DELIVERY = 'delivery';
+    const PERMISSION_CATEGORY_DRIVER = 'driver';
+    const PERMISSION_CATEGORY_GENERAL = 'general';
 
     // * ========================================
     // * DELIVERY ORDER STATUS MAPPINGS
@@ -114,6 +126,36 @@ class StatusHelper
         self::CONDITION_BAIK => 'Baik',
         self::CONDITION_RUSAK_RINGAN => 'Rusak Ringan',
         self::CONDITION_RUSAK_BERAT => 'Rusak Berat',
+    ];
+
+    // * ========================================
+    // * PERMISSION CATEGORY MAPPINGS
+    // * ========================================
+
+    /**
+     * Mapping warna DaisyUI untuk permission categories
+     */
+    private static array $permissionCategoryColors = [
+        self::PERMISSION_CATEGORY_USER => 'primary',
+        self::PERMISSION_CATEGORY_ROLE => 'secondary',
+        self::PERMISSION_CATEGORY_PERMISSION => 'accent',
+        self::PERMISSION_CATEGORY_SYSTEM => 'warning',
+        self::PERMISSION_CATEGORY_DELIVERY => 'info',
+        self::PERMISSION_CATEGORY_DRIVER => 'success',
+        self::PERMISSION_CATEGORY_GENERAL => 'neutral',
+    ];
+
+    /**
+     * Mapping icon untuk permission categories
+     */
+    private static array $permissionCategoryIcons = [
+        self::PERMISSION_CATEGORY_USER => 'phosphor.users',
+        self::PERMISSION_CATEGORY_ROLE => 'phosphor.user-circle',
+        self::PERMISSION_CATEGORY_PERMISSION => 'phosphor.key',
+        self::PERMISSION_CATEGORY_SYSTEM => 'phosphor.gear',
+        self::PERMISSION_CATEGORY_DELIVERY => 'phosphor.truck',
+        self::PERMISSION_CATEGORY_DRIVER => 'phosphor.car',
+        self::PERMISSION_CATEGORY_GENERAL => 'phosphor.shield-check',
     ];
 
     // * ========================================
@@ -218,6 +260,51 @@ class StatusHelper
     }
 
     // * ========================================
+    // * PERMISSION HELPER METHODS
+    // * ========================================
+
+    /**
+     * Get permission category dari nama permission
+     */
+    public static function getPermissionCategory(string $name): string
+    {
+        $name = strtolower($name);
+
+        if (str_contains($name, 'user')) return self::PERMISSION_CATEGORY_USER;
+        if (str_contains($name, 'role')) return self::PERMISSION_CATEGORY_ROLE;
+        if (str_contains($name, 'permission')) return self::PERMISSION_CATEGORY_PERMISSION;
+        if (str_contains($name, 'system') || str_contains($name, 'admin')) return self::PERMISSION_CATEGORY_SYSTEM;
+        if (str_contains($name, 'delivery') || str_contains($name, 'order')) return self::PERMISSION_CATEGORY_DELIVERY;
+        if (str_contains($name, 'driver')) return self::PERMISSION_CATEGORY_DRIVER;
+
+        return self::PERMISSION_CATEGORY_GENERAL;
+    }
+
+    /**
+     * Get permission category color
+     */
+    public static function getPermissionColor(string $category): string
+    {
+        return self::$permissionCategoryColors[$category] ?? 'neutral';
+    }
+
+    /**
+     * Get permission category icon
+     */
+    public static function getPermissionIcon(string $category): string
+    {
+        return self::$permissionCategoryIcons[$category] ?? 'phosphor.shield-check';
+    }
+
+    /**
+     * Check if permission can be deleted (tidak ada usage)
+     */
+    public static function canPermissionBeDeleted(\Spatie\Permission\Models\Permission $permission): bool
+    {
+        return $permission->roles()->count() === 0 && $permission->users()->count() === 0;
+    }
+
+    // * ========================================
     // * FORMATTING HELPER METHODS
     // * ========================================
 
@@ -293,5 +380,13 @@ class StatusHelper
     public static function isValidCondition(string $condition): bool
     {
         return array_key_exists($condition, self::$conditionLabels);
+    }
+
+    /**
+     * Validate permission category
+     */
+    public static function isValidPermissionCategory(string $category): bool
+    {
+        return array_key_exists($category, self::$permissionCategoryColors);
     }
 }
