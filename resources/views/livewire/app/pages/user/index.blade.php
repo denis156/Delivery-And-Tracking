@@ -29,37 +29,37 @@
     </x-header>
 
     {{-- STATISTICS CARDS --}}
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 md:gap-4 mb-6">
         <x-stat
             title="Total Pengguna"
             :value="$userStats['totalUsers']"
             icon="phosphor.users"
-            color="text-primary-content"
-            class="text-primary-content bg-primary"
+            color="text-primary"
+            class="bg-primary/20 shadow-md hover:shadow-xl transition-all duration-300"
             :tooltip="'Total ' . $userStats['totalUsers'] . ' pengguna terdaftar (' . $userStats['activeUsers'] . ' aktif, ' . $userStats['inactiveUsers'] . ' nonaktif)'"
         />
         <x-stat
             title="Pengguna Aktif"
             :value="$userStats['activeUsers']"
             icon="phosphor.check-circle"
-            color="text-success-content"
-            class="text-success-content bg-success"
+            color="text-success"
+            class="bg-success/20 shadow-md hover:shadow-xl transition-all duration-300"
             :tooltip="($userStats['totalUsers'] > 0 ? number_format(($userStats['activeUsers'] / $userStats['totalUsers']) * 100, 1) : 0) . '% dari total pengguna dalam status aktif'"
         />
         <x-stat
             title="Pengguna Nonaktif"
             :value="$userStats['inactiveUsers']"
             icon="phosphor.x-circle"
-            color="text-warning-content"
-            class="text-warning-content bg-warning"
+            color="text-warning"
+            class="text-warning bg-warning/20 shadow-md hover:shadow-xl transition-all duration-300"
             :tooltip="($userStats['totalUsers'] > 0 ? number_format(($userStats['inactiveUsers'] / $userStats['totalUsers']) * 100, 1) : 0) . '% dari total pengguna dalam status nonaktif'"
         />
         <x-stat
             title="Pengguna Terhapus"
             :value="$userStats['deletedUsers']"
             icon="phosphor.trash"
-            color="text-error-content"
-            class="text-error-content bg-error"
+            color="text-error"
+            class="text-error bg-error/20 shadow-md hover:shadow-xl transition-all duration-300"
             :tooltip="$userStats['deletedUsers'] . ' pengguna yang telah dihapus dari sistem'"
         />
     </div>
@@ -97,14 +97,14 @@
         </x-card>
     @else
         {{-- USER CARDS --}}
-        <x-card class="p-6">
+        <x-card class="p-6 shadow-md">
             {{-- Grid Layout menggunakan DaisyUI responsive grid --}}
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4">
                 @foreach($users as $user)
                     {{-- User Card menggunakan Model Accessors --}}
                     <x-card
                         title="{{ $user->name }}"
-                        class="bg-base-200 hover:shadow-lg transition-all duration-100 cursor-pointer"
+                        class="bg-base-200 shadow-md hover:shadow-xl transition-all duration-300"
                         wire:click="viewUser({{ $user->id }})"
                         no-separator
                     >
@@ -123,7 +123,7 @@
                                 <x-avatar
                                     :placeholder="$user->avatar_placeholder"
                                     :image="$user->avatar"
-                                    class="w-18 ring-{{ $user->status_color }} ring-offset-base-100 rounded-full ring-2 ring-offset-2"
+                                    class="w-10 md:w-20 ring-{{ $user->status_color }} ring-offset-base-100 rounded-full ring-2 ring-offset-2"
                                 />
                             </div>
 
@@ -131,37 +131,35 @@
                             <div class="divider divider-horizontal"></div>
 
                             {{-- User Information --}}
-                            <div class="card bg-base-300 rounded-box h-30 grow p-3 overflow-hidden">
+                            <div class="card bg-base-300 rounded-box h-30 grow p-3 shadow-md">
                                 <div class="flex flex-col justify-between h-full overflow-hidden">
                                     {{-- Role Badge menggunakan Model Accessor --}}
                                     <div class="flex justify-center mb-2">
-                                        <div class="badge badge-{{ $user->role_color }} badge-sm">
-                                            {{ $user->role_label }}
-                                        </div>
+                                        <x-badge value="{{ $user->role_label }}" class="badge-lg badge-{{ $user->role_color }} text-xs truncate" />
                                     </div>
 
                                     {{-- Contact Information --}}
-                                    <div class="space-y-1 text-xs flex-1 min-w-0 overflow-hidden">
+                                    <div class="space-y-1 text-xs flex-1 overflow-hidden">
                                         {{-- Email --}}
-                                        <div class="flex items-center gap-1 min-w-0 overflow-hidden">
-                                            <x-icon name="phosphor.envelope-simple" class="w-3 h-3 text-[10px] flex-shrink-0" />
-                                            <span class="truncate text-[10px] text-base-content/80 min-w-0" title="{{ $user->email }}">
+                                        <div class="flex items-center gap-1 overflow-hidden">
+                                            <x-icon name="phosphor.envelope-simple" class="h-[10px] md:h-[19px]" />
+                                            <span class="truncate text-[10px] md:text-[14px] text-base-content/80" title="{{ $user->email }}">
                                                 {{ $user->email }}
                                             </span>
                                         </div>
 
                                         {{-- Created Date --}}
-                                        <div class="flex items-center gap-1 min-w-0 overflow-hidden">
-                                            <x-icon name="phosphor.calendar" class="w-3 h-3 text-[10px] flex-shrink-0" />
-                                            <span class="truncate text-[10px] text-base-content/80 min-w-0" title="Tanggal bergabung">
+                                        <div class="flex items-center gap-1 overflow-hidden">
+                                            <x-icon name="phosphor.calendar" class="h-[10px] md:h-[19px]" />
+                                            <span class="truncate text-[10px] md:text-[14px] text-base-content/80" title="Tanggal bergabung">
                                                 {{ $user->created_at->format('d M Y') }}
                                             </span>
                                         </div>
 
                                         {{-- Last Updated --}}
-                                        <div class="flex items-center gap-1 min-w-0 overflow-hidden">
-                                            <x-icon name="phosphor.clock" class="w-3 h-3 text-[10px] flex-shrink-0" />
-                                            <span class="truncate text-[10px] text-base-content/80 min-w-0" title="Terakhir diperbarui">
+                                        <div class="flex items-center gap-1 overflow-hidden">
+                                            <x-icon name="phosphor.clock" class="h-[10px] md:h-[19px]" />
+                                            <span class="truncate text-[10px] md:text-[14px] text-base-content/80" title="Terakhir diperbarui">
                                                 {{ $user->updated_at->diffForHumans() }}
                                             </span>
                                         </div>
@@ -176,7 +174,7 @@
                             <x-button
                                 label="Lihat"
                                 wire:click.stop="viewUser({{ $user->id }})"
-                                class="btn-info btn-sm"
+                                class="btn-info btn-md"
                                 icon="phosphor.eye"
                                 responsive
                                 tooltip="Lihat detail {{ $user->name }}"
@@ -186,17 +184,17 @@
                             <x-button
                                 :label="$user->is_active ? 'Nonaktifkan' : 'Aktifkan'"
                                 wire:click.stop="openToggleModal({{ $user->id }})"
-                                class="btn-{{ $user->is_active ? 'warning' : 'success' }} btn-sm"
+                                class="btn-{{ $user->is_active ? 'warning' : 'success' }} btn-md"
                                 :icon="$user->is_active ? 'phosphor.pause' : 'phosphor.play'"
                                 responsive
-                                :tooltip="$user->is_active ? 'Nonaktifkan pengguna' : 'Aktifkan pengguna'"
+                                :tooltip="$user->is_active ? 'Nonaktifkan akun pengguna' : 'Aktifkan akun pengguna'"
                             />
 
                             {{-- Delete Button --}}
                             <x-button
                                 label="Hapus"
                                 wire:click.stop="openDeleteModal({{ $user->id }})"
-                                class="btn-error btn-sm"
+                                class="btn-error btn-md"
                                 icon="phosphor.trash"
                                 responsive
                                 tooltip="Hapus {{ $user->name }}"
