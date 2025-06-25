@@ -17,7 +17,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {{-- PREVIEW & ACTIONS SECTION --}}
         <div class="lg:col-span-1">
-            <x-card title="Preview & Actions" separator sticky>
+            <x-card title="Preview & Actions" separator sticky class="shadow-md">
                 <x-slot:menu>
                     <x-icon name="phosphor.eye" class="w-5 h-5 text-primary" />
                 </x-slot:menu>
@@ -118,7 +118,7 @@
 
         {{-- FORM SECTION --}}
         <div class="lg:col-span-2">
-            <x-card title="Informasi Pengguna Baru" separator>
+            <x-card title="Informasi Pengguna Baru" separator class="shadow-md">
                 <x-slot:menu>
                     <x-icon name="phosphor.user-plus" class="w-5 h-5 text-primary" />
                 </x-slot:menu>

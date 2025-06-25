@@ -17,7 +17,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {{-- USER PROFILE CARD --}}
         <div class="lg:col-span-1">
-            <x-card title="Profil Pengguna" separator sticky>
+            <x-card title="Profil Pengguna" separator sticky class="shadow-md">
                 <x-slot:menu>
                     <x-icon name="phosphor.user-circle" class="w-5 h-5 text-{{ $user->role_color }}" />
                 </x-slot:menu>
@@ -29,7 +29,7 @@
                         <div class="flex justify-center">
                             <div class="avatar">
                                 <div
-                                    class="w-32 h-32 rounded-full ring ring-{{ $user->role_color }} ring-offset-base-100 ring-offset-4">
+                                    class="w-32 h-32 rounded-full ring ring-{{ $user->role_color }} ring-offset-base-100 ring-offset-4 shadow-md hover:shadow-xl transition-all duration-300">
                                     @if ($user->avatar)
                                         <img src="{{ $user->avatar }}" alt="{{ $user->name }}"
                                             class="w-full h-full object-cover" />
@@ -85,7 +85,7 @@
         {{-- MAIN CONTENT AREA --}}
         <div class="lg:col-span-2 space-y-6">
             {{-- Account Information --}}
-            <x-card title="Informasi Akun" separator>
+            <x-card title="Informasi Akun" separator class="shadow-md">
                 <x-slot:menu>
                     <x-icon name="phosphor.info" class="w-5 h-5 text-info" />
                 </x-slot:menu>
@@ -97,7 +97,8 @@
 
                         <div class="space-y-3">
                             {{-- Name --}}
-                            <div class="flex items-center gap-3 p-3 bg-base-200 rounded-lg">
+                            <div
+                                class="flex items-center gap-3 p-3 bg-base-200 rounded-lg shadow-md hover:shadow-xl transition-all duration-300">
                                 <x-icon name="phosphor.user" class="w-5 h-5 text-primary flex-shrink-0" />
                                 <div class="min-w-0 flex-1">
                                     <p class="text-sm font-medium text-base-content/70">Nama Lengkap</p>
@@ -106,7 +107,8 @@
                             </div>
 
                             {{-- Email --}}
-                            <div class="flex items-center gap-3 p-3 bg-base-200 rounded-lg">
+                            <div
+                                class="flex items-center gap-3 p-3 bg-base-200 rounded-lg shadow-md hover:shadow-xl transition-all duration-300">
                                 <x-icon name="phosphor.envelope" class="w-5 h-5 text-info flex-shrink-0" />
                                 <div class="min-w-0 flex-1">
                                     <p class="text-sm font-medium text-base-content/70">Email</p>
@@ -115,7 +117,8 @@
                             </div>
 
                             {{-- Role --}}
-                            <div class="flex items-center gap-3 p-3 bg-base-200 rounded-lg">
+                            <div
+                                class="flex items-center gap-3 p-3 bg-base-200 rounded-lg shadow-md hover:shadow-xl transition-all duration-300">
                                 <x-icon name="phosphor.identification-badge"
                                     class="w-5 h-5 text-{{ $user->role_color }} flex-shrink-0" />
                                 <div class="min-w-0 flex-1">
@@ -132,7 +135,8 @@
 
                         <div class="space-y-3">
                             {{-- Active Status --}}
-                            <div class="flex items-center gap-3 p-3 bg-base-200 rounded-lg">
+                            <div
+                                class="flex items-center gap-3 p-3 bg-base-200 rounded-lg shadow-md hover:shadow-xl transition-all duration-300">
                                 <x-icon name="phosphor.{{ $user->is_active ? 'check-circle' : 'pause-circle' }}"
                                     class="w-5 h-5 text-{{ $user->status_color }} flex-shrink-0" />
                                 <div class="min-w-0 flex-1">
@@ -142,7 +146,8 @@
                             </div>
 
                             {{-- Email Verification --}}
-                            <div class="flex items-center gap-3 p-3 bg-base-200 rounded-lg">
+                            <div
+                                class="flex items-center gap-3 p-3 bg-base-200 rounded-lg shadow-md hover:shadow-xl transition-all duration-300">
                                 <x-icon
                                     name="phosphor.{{ $user->email_verified_at ? 'shield-check' : 'shield-warning' }}"
                                     class="w-5 h-5 text-{{ $user->email_verified_at ? 'success' : 'warning' }} flex-shrink-0" />
@@ -160,7 +165,8 @@
                             </div>
 
                             {{-- Join Date --}}
-                            <div class="flex items-center gap-3 p-3 bg-base-200 rounded-lg">
+                            <div
+                                class="flex items-center gap-3 p-3 bg-base-200 rounded-lg shadow-md hover:shadow-xl transition-all duration-300">
                                 <x-icon name="phosphor.calendar-plus" class="w-5 h-5 text-secondary flex-shrink-0" />
                                 <div class="min-w-0 flex-1">
                                     <p class="text-sm font-medium text-base-content/70">Bergabung</p>
@@ -172,7 +178,8 @@
                             </div>
 
                             {{-- Last Update --}}
-                            <div class="flex items-center gap-3 p-3 bg-base-200 rounded-lg">
+                            <div
+                                class="flex items-center gap-3 p-3 bg-base-200 rounded-lg shadow-md hover:shadow-xl transition-all duration-300">
                                 <x-icon name="phosphor.clock-clockwise" class="w-5 h-5 text-accent flex-shrink-0" />
                                 <div class="min-w-0 flex-1">
                                     <p class="text-sm font-medium text-base-content/70">Terakhir Diperbarui</p>
@@ -188,31 +195,33 @@
             </x-card>
 
             {{-- Activity Summary --}}
-            <x-card title="Ringkasan Aktivitas" separator>
+            <x-card title="Ringkasan Aktivitas" separator class="shadow-md">
                 <x-slot:menu>
                     <x-icon name="phosphor.chart-line" class="w-5 h-5 text-success" />
                 </x-slot:menu>
 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
                     {{-- Account Age --}}
                     <x-stat title="Usia Akun" :value="$userActivity['joinedDays'] . ' hari'" description="{{ $userActivity['accountAge'] }}"
-                        icon="phosphor.calendar-check" color="text-primary" />
+                        icon="phosphor.calendar-check" color="text-primary"
+                        class="bg-base-200 shadow-md hover:shadow-xl transition-all duration-300" />
 
                     {{-- Last Activity --}}
                     <x-stat title="Aktivitas Terakhir" :value="$userActivity['lastUpdateDays'] . ' hari lalu'"
                         description="{{ $userActivity['lastUpdate'] }}" icon="phosphor.clock-clockwise"
-                        color="text-secondary" />
+                        color="text-secondary" class="bg-base-200 shadow-md hover:shadow-xl transition-all duration-300" />
 
                     {{-- Email Status --}}
                     <x-stat title="Status Email" :value="$userActivity['isEmailVerified'] ? 'Terverifikasi' : 'Belum Verifikasi'"
                         description="{{ $userActivity['isEmailVerified'] ? 'Email sudah dikonfirmasi' : 'Perlu verifikasi email' }}"
                         icon="phosphor.{{ $userActivity['isEmailVerified'] ? 'check-circle' : 'warning-circle' }}"
-                        color="text-{{ $userActivity['isEmailVerified'] ? 'success' : 'warning' }}" />
+                        color="text-{{ $userActivity['isEmailVerified'] ? 'success' : 'warning' }}"
+                        class="bg-base-200 shadow-md hover:shadow-xl transition-all duration-300" />
                 </div>
             </x-card>
 
             {{-- User Capabilities & Permissions --}}
-            <x-card title="Hak Akses & Kemampuan" separator>
+            <x-card title="Hak Akses & Kemampuan" separator class="shadow-md">
                 <x-slot:menu>
                     <x-icon name="phosphor.key" class="w-5 h-5 text-warning" />
                 </x-slot:menu>
@@ -223,7 +232,7 @@
                         <h4 class="font-semibold text-base-content border-b border-base-300 pb-2">Akses Sistem</h4>
 
                         <div class="space-y-3">
-                            <div class="flex items-center justify-between p-3 bg-base-200 rounded-lg">
+                            <div class="flex items-center justify-between p-3 bg-base-200 rounded-lg shadow-md hover:shadow-xl transition-all duration-300">
                                 <div class="flex items-center gap-3">
                                     <x-icon name="phosphor.{{ $userCapabilities['canLogin'] ? 'check' : 'x' }}"
                                         class="w-5 h-5 text-{{ $userCapabilities['canLogin'] ? 'success' : 'error' }}" />
@@ -235,7 +244,7 @@
                                 </div>
                             </div>
 
-                            <div class="flex items-center justify-between p-3 bg-base-200 rounded-lg">
+                            <div class="flex items-center justify-between p-3 bg-base-200 rounded-lg shadow-md hover:shadow-xl transition-all duration-300">
                                 <div class="flex items-center gap-3">
                                     <x-icon
                                         name="phosphor.{{ $userCapabilities['hasEmailVerified'] ? 'check' : 'x' }}"
@@ -248,7 +257,7 @@
                                 </div>
                             </div>
 
-                            <div class="flex items-center justify-between p-3 bg-base-200 rounded-lg">
+                            <div class="flex items-center justify-between p-3 bg-base-200 rounded-lg shadow-md hover:shadow-xl transition-all duration-300">
                                 <div class="flex items-center gap-3">
                                     <x-icon name="phosphor.{{ $userCapabilities['isManageable'] ? 'check' : 'x' }}"
                                         class="w-5 h-5 text-{{ $userCapabilities['isManageable'] ? 'success' : 'warning' }}" />
@@ -268,7 +277,7 @@
                         </h4>
 
                         <div class="space-y-3">
-                            <div class="flex items-center justify-between p-3 bg-base-200 rounded-lg">
+                            <div class="flex items-center justify-between p-3 bg-base-200 rounded-lg shadow-md hover:shadow-xl transition-all duration-300">
                                 <div class="flex items-center gap-3">
                                     <x-icon name="phosphor.{{ $userCapabilities['canManageUsers'] ? 'check' : 'x' }}"
                                         class="w-5 h-5 text-{{ $userCapabilities['canManageUsers'] ? 'success' : 'error' }}" />
@@ -280,7 +289,7 @@
                                 </div>
                             </div>
 
-                            <div class="flex items-center justify-between p-3 bg-base-200 rounded-lg">
+                            <div class="flex items-center justify-between p-3 bg-base-200 rounded-lg shadow-md hover:shadow-xl transition-all duration-300">
                                 <div class="flex items-center gap-3">
                                     <x-icon name="phosphor.{{ $userCapabilities['canViewReports'] ? 'check' : 'x' }}"
                                         class="w-5 h-5 text-{{ $userCapabilities['canViewReports'] ? 'success' : 'error' }}" />
@@ -292,7 +301,7 @@
                                 </div>
                             </div>
 
-                            <div class="flex items-center justify-between p-3 bg-base-200 rounded-lg">
+                            <div class="flex items-center justify-between p-3 bg-base-200 rounded-lg shadow-md hover:shadow-xl transition-all duration-300">
                                 <div class="flex items-center gap-3">
                                     <x-icon name="phosphor.{{ $userCapabilities['canManageSystem'] ? 'check' : 'x' }}"
                                         class="w-5 h-5 text-{{ $userCapabilities['canManageSystem'] ? 'success' : 'error' }}" />
@@ -309,7 +318,7 @@
 
                 {{-- Role Description --}}
                 <div
-                    class="mt-6 p-4 bg-{{ $user->role_color }}/10 border border-{{ $user->role_color }}/30 rounded-lg">
+                    class="mt-6 p-4 bg-{{ $user->role_color }}/10 border border-{{ $user->role_color }}/30 rounded-lg shadow-md hover:shadow-xl transition-all duration-300">
                     <h5 class="font-semibold text-{{ $user->role_color }} mb-2">Deskripsi Peran:
                         {{ $user->role_label }}</h5>
                     <p class="text-sm text-base-content/70">
@@ -350,7 +359,7 @@
             </x-card>
 
             {{-- Timeline or Additional Info (Optional) --}}
-            <x-card title="Riwayat Akun" separator>
+            <x-card title="Riwayat Akun" separator class="shadow-md">
                 <x-slot:menu>
                     <x-icon name="phosphor.clock-counter-clockwise" class="w-5 h-5 text-neutral" />
                 </x-slot:menu>

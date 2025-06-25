@@ -19,7 +19,7 @@
 
         {{-- ACTIONS & PREVIEW SECTION --}}
         <div class="lg:col-span-1">
-            <x-card title="Actions & Preview" separator sticky>
+            <x-card title="Actions & Preview" separator sticky class="shadow-md">
                 <x-slot:menu>
                     <x-icon name="phosphor.gear" class="w-5 h-5 text-warning" />
                 </x-slot:menu>
@@ -111,7 +111,7 @@
 
         {{-- FORM SECTION --}}
         <div class="lg:col-span-2">
-            <x-card title="Edit Informasi Pengguna" separator>
+            <x-card title="Edit Informasi Pengguna" separator class="shadow-md">
                 <x-slot:menu>
                     <x-icon name="phosphor.pencil" class="w-5 h-5 text-warning" />
                 </x-slot:menu>
