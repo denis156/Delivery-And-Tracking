@@ -60,7 +60,7 @@
                 </x-menu-sub>
                 {{-- Operasional --}}
                 <x-menu-sub title="Operasional" icon="phosphor.truck-light">
-                    <x-menu-item title="Surat Jalan" icon="phosphor.receipt-light" link="###" exact />
+                    <x-menu-item title="Surat Jalan" icon="phosphor.receipt-light" link="{{ route('app.delivery-order.index') }}" exact />
                     <x-menu-item title="Status Pengiriman" icon="phosphor.clock-clockwise-light" link="###" exact />
                 </x-menu-sub>
                 {{-- Tracking --}}

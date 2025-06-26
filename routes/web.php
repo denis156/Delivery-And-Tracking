@@ -93,6 +93,11 @@ Route::prefix('app')
             Route::get('/{permission}/view', App\Livewire\App\Pages\Permission\View::class)->name('view');
             Route::get('/{permission}/edit', App\Livewire\App\Pages\Permission\Edit::class)->name('edit');
         });
+
+        // DeliveryOrder Management Routes
+        Route::prefix('delivery-order')->name('delivery-order.')->group(function () {
+            Route::get('/', App\Livewire\App\Pages\DeliveryOrder\Index::class)->name('index');
+        });
     });
 
 /*
