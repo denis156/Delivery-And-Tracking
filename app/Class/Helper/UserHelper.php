@@ -47,7 +47,7 @@ class UserHelper
      * Mapping label bahasa Indonesia untuk user roles
      */
     private static array $roleLabels = [
-        self::ROLE_ADMIN => 'Administrator',
+        self::ROLE_ADMIN => 'Admin',
         self::ROLE_MANAGER => 'Manajer',
         self::ROLE_CLIENT => 'Klien',
         self::ROLE_DRIVER => 'Sopir',
@@ -60,7 +60,7 @@ class UserHelper
      * Mapping icon untuk user roles
      */
     private static array $roleIcons = [
-        self::ROLE_ADMIN => 'phosphor.crown',
+        self::ROLE_ADMIN => 'phosphor.desktop-tower',
         self::ROLE_MANAGER => 'phosphor.briefcase',
         self::ROLE_CLIENT => 'phosphor.user',
         self::ROLE_DRIVER => 'phosphor.car',
