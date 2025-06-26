@@ -20,7 +20,7 @@
         @foreach ($stats as $stat)
             <x-stat title="{{ $stat['title'] }}" value="{{ number_format($stat['value']) }}" icon="{{ $stat['icon'] }}"
                 color="{{ $stat['color'] }}"
-                class="{{ $stat['bg'] }} shadow-md hover:shadow-xl transition-all duration-300" />
+                class="{{ $stat['bg'] }} shadow-md hover:shadow-primary transition-all duration-300" />
         @endforeach
     </div>
 
@@ -75,7 +75,7 @@
                 <div class="space-y-4 flex-1 overflow-y-auto">
                     @forelse($recentDeliveries->take(6) as $delivery)
                         <div
-                            class="flex items-center justify-between p-4 bg-base-300 rounded-lg shadow-md hover:shadow-xl transition-all duration-300">
+                            class="flex items-center justify-between p-4 bg-base-300 rounded-lg shadow-md hover:shadow-primary transition-all duration-300">
                             <div class="flex-1">
                                 <div class="flex items-center gap-3 mb-2">
                                     <x-badge value="{{ $delivery['order_number'] }}"
@@ -158,7 +158,7 @@
 
                 <div class="space-y-4 flex-1 overflow-y-auto">
                     @foreach ($activeTrucks as $truck)
-                        <div class="p-3 bg-base-300 rounded-lg shadow-md hover:shadow-xl transition-all duration-300">
+                        <div class="p-3 bg-base-300 rounded-lg shadow-md hover:shadow-primary transition-all duration-300">
                             <div class="flex items-center justify-between mb-2">
                                 <span class="font-semibold font-mono">{{ $truck['plate'] }}</span>
                                 <x-badge value="{{ $truck['status'] }}"
