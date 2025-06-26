@@ -50,12 +50,8 @@
     /* Base Colors - Clean, professional, high contrast */
     --color-base-100: oklch(99% 0 0); /* Pure white for maximum clarity */
     --color-base-200: oklch(96% 0.004 240); /* Very light blue-gray */
-    --color-base-300: oklch(
-        89% 0.008 240
-    ); /* Light gray with subtle blue tint */
-    --color-base-content: oklch(
-        15% 0.02 240
-    ); /* Deep charcoal for excellent readability */
+    --color-base-300: oklch(89% 0.008 240); /* Light gray with subtle blue tint */
+    --color-base-content: oklch(15% 0.02 240); /* Deep charcoal for excellent readability */
 
     /* Primary - Modern dark green, professional and trustworthy */
     --color-primary: oklch(45% 0.12 155); /* Professional dark green */
@@ -63,9 +59,7 @@
 
     /* Secondary - Sophisticated teal, modern and fresh */
     --color-secondary: oklch(45% 0.12 200); /* Sophisticated teal */
-    --color-secondary-content: oklch(
-        98% 0.01 200
-    ); /* Light content on secondary */
+    --color-secondary-content: oklch(98% 0.01 200); /* Light content on secondary */
 
     /* Accent - Vibrant green, for highlights and success states */
     --color-accent: oklch(60% 0.18 150); /* Modern vibrant green */
@@ -115,16 +109,12 @@
     --color-base-content: oklch(95% 0.01 240); /* Almost white text */
 
     /* Primary - Bright dark green for dark theme */
-    --color-primary: oklch(
-        65% 0.14 155
-    ); /* Brighter dark green for dark theme */
+    --color-primary: oklch(65% 0.14 155); /* Brighter dark green for dark theme */
     --color-primary-content: oklch(15% 0.03 155); /* Dark content on primary */
 
     /* Secondary - Bright sophisticated teal */
     --color-secondary: oklch(65% 0.14 200); /* Brighter teal for dark theme */
-    --color-secondary-content: oklch(
-        15% 0.02 200
-    ); /* Dark content on secondary */
+    --color-secondary-content: oklch(15% 0.02 200); /* Dark content on secondary */
 
     /* Accent - Vibrant green that pops on dark */
     --color-accent: oklch(75% 0.2 150); /* Brighter green for dark theme */
