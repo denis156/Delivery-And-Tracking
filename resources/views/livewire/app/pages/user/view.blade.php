@@ -29,7 +29,7 @@
                         <div class="flex justify-center">
                             <div class="avatar">
                                 <div
-                                    class="w-32 h-32 rounded-full ring ring-{{ $user->role_color }} ring-offset-base-100 ring-offset-4 hover:shadow-xl hover:shadow-primary transition-all duration-300">
+                                    class="w-32 h-32 rounded-full ring ring-{{ $user->status_color }} ring-offset-base-100 ring-offset-4 hover:shadow-xl hover:shadow-primary transition-all duration-300">
                                     @if ($user->avatar)
                                         <img src="{{ $user->avatar }}" alt="{{ $user->name }}"
                                             class="w-full h-full object-cover" />
