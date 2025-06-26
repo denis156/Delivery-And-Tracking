@@ -35,7 +35,7 @@
             :value="$userStats['totalUsers']"
             icon="phosphor.users"
             color="text-primary"
-            class="bg-primary/20 shadow-xl hover:shadow-primary transition-all duration-300"
+            class="bg-primary/20 hover:shadow-xl hover:shadow-primary transition-all duration-300"
             :tooltip="'Total ' . $userStats['totalUsers'] . ' pengguna terdaftar (' . $userStats['activeUsers'] . ' aktif, ' . $userStats['inactiveUsers'] . ' nonaktif)'"
         />
         <x-stat
@@ -43,7 +43,7 @@
             :value="$userStats['activeUsers']"
             icon="phosphor.check-circle"
             color="text-success"
-            class="bg-success/20 shadow-xl hover:shadow-primary transition-all duration-300"
+            class="bg-success/20 hover:shadow-xl hover:shadow-primary transition-all duration-300"
             :tooltip="($userStats['totalUsers'] > 0 ? number_format(($userStats['activeUsers'] / $userStats['totalUsers']) * 100, 1) : 0) . '% dari total pengguna dalam status aktif'"
         />
         <x-stat
@@ -51,7 +51,7 @@
             :value="$userStats['inactiveUsers']"
             icon="phosphor.x-circle"
             color="text-warning"
-            class="text-warning bg-warning/20 shadow-xl hover:shadow-primary transition-all duration-300"
+            class="text-warning bg-warning/20 hover:shadow-xl hover:shadow-primary transition-all duration-300"
             :tooltip="($userStats['totalUsers'] > 0 ? number_format(($userStats['inactiveUsers'] / $userStats['totalUsers']) * 100, 1) : 0) . '% dari total pengguna dalam status nonaktif'"
         />
         <x-stat
@@ -59,7 +59,7 @@
             :value="$userStats['deletedUsers']"
             icon="phosphor.trash"
             color="text-error"
-            class="text-error bg-error/20 shadow-xl hover:shadow-primary transition-all duration-300"
+            class="text-error bg-error/20 hover:shadow-xl hover:shadow-primary transition-all duration-300"
             :tooltip="$userStats['deletedUsers'] . ' pengguna yang telah dihapus dari sistem'"
         />
     </div>
@@ -104,7 +104,7 @@
                     {{-- User Card menggunakan Model Accessors --}}
                     <x-card
                         title="{{ $user->name }}"
-                        class="bg-base-200 shadow-xl hover:shadow-primary transition-all duration-300"
+                        class="bg-base-200 hover:shadow-xl hover:shadow-primary transition-all duration-300"
                         wire:click="viewUser({{ $user->id }})"
                         no-separator
                     >
