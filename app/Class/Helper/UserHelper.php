@@ -35,12 +35,12 @@ class UserHelper
      */
     private static array $roleColors = [
         self::ROLE_MANAGER => 'primary',
-        self::ROLE_ADMIN => 'secondary',
-        self::ROLE_CLIENT => 'info',
-        self::ROLE_DRIVER => 'warning',
-        self::ROLE_PETUGAS_LAPANGAN => 'success',
-        self::ROLE_PETUGAS_RUANGAN => 'accent',
-        self::ROLE_PETUGAS_GUDANG => 'neutral',
+        self::ROLE_ADMIN => 'success',
+        self::ROLE_CLIENT => 'warning',
+        self::ROLE_DRIVER => 'error',
+        self::ROLE_PETUGAS_LAPANGAN => 'error',
+        self::ROLE_PETUGAS_RUANGAN => 'warning',
+        self::ROLE_PETUGAS_GUDANG => 'info',
     ];
 
     /**
