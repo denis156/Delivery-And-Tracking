@@ -35,12 +35,12 @@ class UserHelper
      */
     private static array $roleColors = [
         self::ROLE_MANAGER => 'primary',
-        self::ROLE_ADMIN => 'success',
+        self::ROLE_ADMIN => 'info',
         self::ROLE_CLIENT => 'warning',
         self::ROLE_DRIVER => 'error',
         self::ROLE_PETUGAS_LAPANGAN => 'error',
         self::ROLE_PETUGAS_RUANGAN => 'warning',
-        self::ROLE_PETUGAS_GUDANG => 'info',
+        self::ROLE_PETUGAS_GUDANG => 'success',
     ];
 
     /**
@@ -60,13 +60,13 @@ class UserHelper
      * Mapping icon untuk user roles
      */
     private static array $roleIcons = [
-        self::ROLE_ADMIN => 'phosphor.desktop-tower',
+        self::ROLE_ADMIN => 'phosphor.monitor-play',
         self::ROLE_MANAGER => 'phosphor.briefcase',
         self::ROLE_CLIENT => 'phosphor.user',
-        self::ROLE_DRIVER => 'phosphor.car',
-        self::ROLE_PETUGAS_LAPANGAN => 'phosphor.map-pin',
-        self::ROLE_PETUGAS_RUANGAN => 'phosphor.house',
-        self::ROLE_PETUGAS_GUDANG => 'phosphor.warehouse',
+        self::ROLE_DRIVER => 'phosphor.truck',
+        self::ROLE_PETUGAS_LAPANGAN => 'phosphor.hard-hat',
+        self::ROLE_PETUGAS_RUANGAN => 'phosphor.desktop-tower',
+        self::ROLE_PETUGAS_GUDANG => 'phosphor.garage',
     ];
 
     // * ========================================
