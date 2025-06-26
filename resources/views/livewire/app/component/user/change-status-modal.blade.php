@@ -20,7 +20,7 @@
                             @elseif(!$isPreviewMode && $user && $user->avatar)
                                 <img src="{{ $user->avatar }}" alt="{{ $user->name }}" class="w-full h-full object-cover" />
                             @else
-                                <div class="w-full h-full bg-{{ $isPreviewMode ? (\App\Models\User::getRoleColorByKey($previewData['role'] ?? 'client')) : $user->role_color }} text-{{ $isPreviewMode ? (\App\Models\User::getRoleColorByKey($previewData['role'] ?? 'client')) : $user->role_color }}-content rounded-full flex items-center justify-center text-lg font-bold">
+                                <div class="w-full h-full bg-{{ $userRoleColor }} text-{{ $userRoleColor }}-content rounded-full flex items-center justify-center text-lg font-bold">
                                     {{ strtoupper(substr($currentUser->name, 0, 2)) }}
                                 </div>
                             @endif
@@ -35,8 +35,8 @@
                             <div class="badge badge-{{ $currentUser->is_active ? 'success' : 'warning' }} badge-sm">
                                 {{ $currentUser->is_active ? 'Aktif' : 'Nonaktif' }}
                             </div>
-                            <div class="badge badge-{{ $isPreviewMode ? \App\Models\User::getRoleColorByKey($previewData['role'] ?? 'client') : $user->role_color }} badge-sm">
-                                {{ $isPreviewMode ? \App\Models\User::getRoleLabelByKey($previewData['role'] ?? 'client') : $user->role_label }}
+                            <div class="badge badge-{{ $userRoleColor }} badge-sm">
+                                {{ $userRoleLabel }}
                             </div>
                         </div>
                     </div>
@@ -77,7 +77,7 @@
                 @if($isPreviewMode)
                     <div class="flex items-center gap-2 mb-1">
                         <x-icon name="phosphor.user-plus" class="w-4 h-4" />
-                        <span>Akan dibuat sebagai: {{ \App\Models\User::getRoleLabelByKey($previewData['role'] ?? 'client') }}</span>
+                        <span>Akan dibuat sebagai: {{ $userRoleLabel }}</span>
                     </div>
                     <div class="flex items-center gap-2">
                         <x-icon name="phosphor.clock" class="w-4 h-4" />
@@ -115,7 +115,7 @@
             @if($currentUser)
                 <x-button
                     :label="$isPreviewMode ? 'Terapkan' : ucfirst($this->actionText)"
-                    wire:click="confirmToggleStatus"
+                    wire:click="confirmChangeStatus"
                     :class="$this->buttonClass"
                     :icon="$this->icon"
                     :disabled="$processing"

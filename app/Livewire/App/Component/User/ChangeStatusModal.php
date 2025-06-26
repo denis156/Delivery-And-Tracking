@@ -3,10 +3,11 @@
 namespace App\Livewire\App\Component\User;
 
 use App\Models\User;
+use App\Class\Helper\UserHelper;
 use Mary\Traits\Toast;
 use Livewire\Component;
 
-class ToggleStatusModal extends Component
+class ChangeStatusModal extends Component
 {
     use Toast;
 
@@ -27,8 +28,8 @@ class ToggleStatusModal extends Component
     // * ========================================
 
     protected $listeners = [
-        'openToggleStatusModal' => 'openModal',
-        'openToggleStatusPreview' => 'openPreviewModal'
+        'openChangeStatusModal' => 'openModal',
+        'openChangeStatusPreview' => 'openPreviewModal'
     ];
 
     // * ========================================
@@ -40,16 +41,18 @@ class ToggleStatusModal extends Component
      */
     public function openModal(int $userId): void
     {
-        $this->user = User::find($userId);
+        $this->user = User::excludeDrivers()
+            ->where('id', $userId)
+            ->first();
 
         if (!$this->user) {
-            $this->error('User tidak ditemukan.', position: 'toast-bottom');
+            $this->error('User tidak ditemukan atau tidak dapat diakses.', position: 'toast-top toast-end');
             return;
         }
 
-        // Safety check untuk driver
-        if ($this->user->role === 'driver') {
-            $this->error('Status driver tidak dapat diubah dari halaman ini.', position: 'toast-bottom');
+        // Safety check untuk role yang tidak diizinkan
+        if ($this->user->isDriver() || $this->user->isClient()) {
+            $this->error('Status pengguna ini tidak dapat diubah.', position: 'toast-top toast-end');
             return;
         }
 
@@ -62,6 +65,14 @@ class ToggleStatusModal extends Component
      */
     public function openPreviewModal(array $userData): void
     {
+        // Validate role yang diizinkan untuk preview
+        $allowedRoles = UserHelper::getManagementRoles() + UserHelper::getStaffRoles();
+
+        if (!isset($userData['role']) || !array_key_exists($userData['role'], $allowedRoles)) {
+            $this->error('Role yang dipilih tidak dapat dikelola statusnya.', position: 'toast-top toast-end');
+            return;
+        }
+
         $this->previewData = $userData;
         $this->isPreviewMode = true;
         $this->showModal = true;
@@ -80,9 +91,9 @@ class ToggleStatusModal extends Component
     }
 
     /**
-     * Konfirmasi toggle status user (hanya untuk edit/view)
+     * Konfirmasi toggle status user
      */
-    public function confirmToggleStatus(): void
+    public function confirmChangeStatus(): void
     {
         if ($this->isPreviewMode) {
             // Untuk preview mode, emit event ke parent untuk toggle status
@@ -93,7 +104,7 @@ class ToggleStatusModal extends Component
         }
 
         if (!$this->user) {
-            $this->error('User tidak ditemukan.', position: 'toast-bottom');
+            $this->error('User tidak ditemukan.', position: 'toast-top toast-end');
             $this->closeModal();
             return;
         }
@@ -101,25 +112,25 @@ class ToggleStatusModal extends Component
         $this->processing = true;
 
         try {
-            // Double check untuk driver
-            if ($this->user->role === 'driver') {
-                $this->error('Status driver tidak dapat diubah dari halaman ini.', position: 'toast-bottom');
+            // Double check untuk role yang tidak diizinkan
+            if ($this->user->isDriver() || $this->user->isClient()) {
+                $this->error('Status pengguna ini tidak dapat diubah.', position: 'toast-top toast-end');
                 $this->closeModal();
                 return;
             }
 
-            $oldStatus = $this->user->is_active;
-            $this->user->update(['is_active' => !$this->user->is_active]);
+            // Use model method untuk toggle status
+            $this->user->toggleStatus();
 
             $status = $this->user->is_active ? 'diaktifkan' : 'dinonaktifkan';
-            $this->success("User {$this->user->name} berhasil {$status}.", position: 'toast-bottom');
+            $this->success("User {$this->user->name} berhasil {$status}.", position: 'toast-top toast-end');
 
             // Emit event untuk refresh parent component
             $this->dispatch('userStatusUpdated');
 
             $this->closeModal();
         } catch (\Exception $e) {
-            $this->error('Gagal mengubah status user. Silakan coba lagi.', position: 'toast-bottom');
+            $this->error('Gagal mengubah status user. Silakan coba lagi.', position: 'toast-top toast-end');
             $this->processing = false;
         }
     }
@@ -194,16 +205,52 @@ class ToggleStatusModal extends Component
         return 'Pastikan Anda yakin dengan tindakan ini';
     }
 
+    /**
+     * Get user role color menggunakan Helper
+     */
+    public function getUserRoleColorProperty(): string
+    {
+        if ($this->isPreviewMode) {
+            return UserHelper::getRoleColor($this->previewData['role'] ?? UserHelper::ROLE_CLIENT);
+        }
+
+        if ($this->user) {
+            $role = $this->user->getPrimaryRole();
+            return $role ? UserHelper::getRoleColor($role) : 'neutral';
+        }
+
+        return 'neutral';
+    }
+
+    /**
+     * Get user role label menggunakan Helper
+     */
+    public function getUserRoleLabelProperty(): string
+    {
+        if ($this->isPreviewMode) {
+            return UserHelper::getRoleLabel($this->previewData['role'] ?? UserHelper::ROLE_CLIENT);
+        }
+
+        if ($this->user) {
+            $role = $this->user->getPrimaryRole();
+            return $role ? UserHelper::getRoleLabel($role) : 'Tidak ada role';
+        }
+
+        return 'Tidak ada role';
+    }
+
     // * ========================================
     // * RENDER
     // * ========================================
 
     public function render()
     {
-        return view('livewire.app.component.user.toggle-status-modal', [
+        return view('livewire.app.component.user.change-status-modal', [
             'currentUser' => $this->currentUser,
             'modalTitle' => $this->modalTitle,
             'modalSubtitle' => $this->modalSubtitle,
+            'userRoleColor' => $this->userRoleColor,
+            'userRoleLabel' => $this->userRoleLabel,
         ]);
     }
 }
