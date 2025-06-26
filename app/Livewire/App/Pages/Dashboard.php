@@ -19,11 +19,30 @@ class Dashboard extends Component
     public array $sortBy = ['column' => 'order_number', 'direction' => 'desc'];
     public string $statusFilter = '';
 
+    // Method untuk refresh line chart secara manual
+    public function refreshChart(): void
+    {
+        $this->dispatch('refreshChart', chartData: $this->getChartData());
+        $this->dispatch('refreshDoughnutChart', chartData: $this->getDoughnutChartData());
+        $this->success('Line Chart berhasil direfresh.', position: 'toast-top toast-end');
+    }
+
+    // Method untuk refresh doughnut chart secara manual
+    public function refreshDoughnutChart(): void
+    {
+        $this->dispatch('refreshDoughnutChart', chartData: $this->getDoughnutChartData());
+        $this->success('Doughnut chart berhasil direfresh.', position: 'toast-top toast-end');
+    }
+
     // Clear filters
     public function clear(): void
     {
         $this->reset(['search', 'statusFilter']);
         $this->success('Filter berhasil dibersihkan.', position: 'toast-top toast-end');
+
+        // Refresh both charts after filter change
+        $this->dispatch('refreshChart', chartData: $this->getChartData());
+        $this->dispatch('refreshDoughnutChart', chartData: $this->getDoughnutChartData());
     }
 
     // Dashboard stats - updated sesuai dengan status di migration
@@ -35,28 +54,28 @@ class Dashboard extends Component
                 'value' => 156,
                 'icon' => 'phosphor.receipt',
                 'color' => 'text-primary',
-                'bg' => 'bg-primary/10'
+                'bg' => 'bg-primary/20'
             ],
             [
                 'title' => 'Dalam Perjalanan',
                 'value' => 23,
                 'icon' => 'phosphor.truck',
                 'color' => 'text-warning',
-                'bg' => 'bg-warning/10'
+                'bg' => 'bg-warning/20'
             ],
             [
                 'title' => 'Selesai Hari Ini',
                 'value' => 8,
                 'icon' => 'phosphor.check-circle',
                 'color' => 'text-success',
-                'bg' => 'bg-success/10'
+                'bg' => 'bg-success/20'
             ],
             [
                 'title' => 'Ada Discrepancy',
                 'value' => 2,
                 'icon' => 'phosphor.warning-circle',
                 'color' => 'text-error',
-                'bg' => 'bg-error/10'
+                'bg' => 'bg-error/20'
             ]
         ];
     }
@@ -180,8 +199,8 @@ class Dashboard extends Component
             ->when($this->search, function (Collection $collection) {
                 return $collection->filter(function ($item) {
                     return str($item['order_number'])->contains($this->search, true) ||
-                           str($item['client_name'])->contains($this->search, true) ||
-                           str($item['driver_name'])->contains($this->search, true);
+                        str($item['client_name'])->contains($this->search, true) ||
+                        str($item['driver_name'])->contains($this->search, true);
                 });
             })
             ->when($this->statusFilter, function (Collection $collection) {
@@ -232,11 +251,21 @@ class Dashboard extends Component
                 'fuel' => 60,
                 'status' => 'Istirahat',
                 'last_update' => '10 menit lalu'
+            ],
+            [
+                'id' => 'TRK-005',
+                'plate' => 'DT 7890 FA',
+                'driver' => 'Rinto Bara',
+                'location' => 'Lalonona Konawe',
+                'speed' => '0 km/h',
+                'fuel' => 60,
+                'status' => 'Istirahat',
+                'last_update' => '10 menit lalu'
             ]
         ]);
     }
 
-    // Chart data for deliveries
+    // Chart data for line chart
     public function getChartData(): array
     {
         return [
@@ -250,14 +279,14 @@ class Dashboard extends Component
                     'tension' => 0.4
                 ],
                 [
-                    'label' => 'DO Selesai',
+                    'label' => 'Surat Jalan Selesai',
                     'data' => [10, 15, 13, 20, 18, 15, 8],
                     'borderColor' => 'rgb(34, 197, 94)',
                     'backgroundColor' => 'rgba(34, 197, 94, 0.1)',
                     'tension' => 0.4
                 ],
                 [
-                    'label' => 'DO Dengan Discrepancy',
+                    'label' => 'Surat Jalan Dengan Discrepancy',
                     'data' => [2, 4, 2, 5, 4, 3, 2],
                     'borderColor' => 'rgb(239, 68, 68)',
                     'backgroundColor' => 'rgba(239, 68, 68, 0.1)',
@@ -267,6 +296,58 @@ class Dashboard extends Component
         ];
     }
 
+    // Data untuk doughnut chart - Status distribution
+    public function getDoughnutChartData(): array
+    {
+        // Ambil data dari recent deliveries dan hitung distribusi status
+        $deliveries = $this->getRecentDeliveries();
+        $statusCounts = [];
+
+        foreach ($deliveries as $delivery) {
+            $status = $delivery['status_label'];
+            $statusCounts[$status] = ($statusCounts[$status] ?? 0) + 1;
+        }
+
+        // Default colors untuk setiap status
+        $statusColors = [
+            'Draft' => '#6B7280',           // Gray
+            'Loading' => '#F59E0B',         // Amber
+            'Terverifikasi' => '#3B82F6',   // Blue
+            'Dalam Perjalanan' => '#F59E0B', // Amber
+            'Tiba di Tujuan' => '#8B5CF6',  // Purple
+            'Selesai' => '#10B981',         // Green
+            'Dibatalkan' => '#EF4444'       // Red
+        ];
+
+        $labels = array_keys($statusCounts);
+        $data = array_values($statusCounts);
+        $colors = array_map(fn($label) => $statusColors[$label] ?? '#6B7280', $labels);
+
+        return [
+            'labels' => $labels,
+            'datasets' => [
+                [
+                    'data' => $data,
+                    'backgroundColor' => $colors,
+                    'borderColor' => '#ffffff',
+                    'borderWidth' => 2,
+                    'hoverBorderWidth' => 3,
+                    'hoverBorderColor' => '#ffffff'
+                ]
+            ]
+        ];
+    }
+
+    // Update method updated untuk refresh kedua chart
+    public function updated($propertyName): void
+    {
+        // When search or statusFilter changes, refresh both charts
+        if (in_array($propertyName, ['search', 'statusFilter'])) {
+            $this->dispatch('refreshChart', chartData: $this->getChartData());
+            $this->dispatch('refreshDoughnutChart', chartData: $this->getDoughnutChartData());
+        }
+    }
+
     public function render()
     {
         return view('livewire.app.pages.dashboard', [
@@ -274,6 +355,7 @@ class Dashboard extends Component
             'recentDeliveries' => $this->getRecentDeliveries(),
             'activeTrucks' => $this->getActiveTrucks(),
             'chartData' => $this->getChartData(),
+            'doughnutChartData' => $this->getDoughnutChartData(),
             'statusOptions' => $this->getStatusOptions(),
             'sortBy' => $this->sortBy
         ]);
