@@ -180,10 +180,10 @@
                                 tooltip="Lihat detail {{ $user->name }}"
                             />
 
-                            {{-- Toggle Status Button menggunakan Model Accessor --}}
+                            {{-- Change Status Button menggunakan Model Accessor --}}
                             <x-button
                                 :label="$user->is_active ? 'Nonaktifkan' : 'Aktifkan'"
-                                wire:click.stop="openToggleModal({{ $user->id }})"
+                                wire:click.stop="openChangeStatusModal({{ $user->id }})"
                                 class="btn-{{ $user->is_active ? 'warning' : 'success' }} btn-md"
                                 :icon="$user->is_active ? 'phosphor.pause' : 'phosphor.play'"
                                 responsive
@@ -444,8 +444,8 @@
     </x-drawer>
 
     {{-- MODAL COMPONENTS - Hanya yang diperlukan untuk Index --}}
-    {{-- Toggle Status Modal --}}
-    <livewire:app.component.user.toggle-status-modal />
+    {{-- Change Status Modal --}}
+    <livewire:app.component.user.change-status-modal />
 
     {{-- Delete User Modal --}}
     <livewire:app.component.user.delete-user-modal />

@@ -3,6 +3,7 @@
 namespace App\Livewire\App\Pages\User;
 
 use App\Models\User;
+use App\Class\Helper\UserHelper;
 use Mary\Traits\Toast;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -105,11 +106,11 @@ class Index extends Component
     }
 
     /**
-     * Open toggle status modal
+     * Open change status modal
      */
-    public function openToggleModal(int $userId): void
+    public function openChangeStatusModal(int $userId): void
     {
-        $this->dispatch('openToggleStatusModal', $userId);
+        $this->dispatch('openChangeStatusModal', $userId);
     }
 
     /**
@@ -125,11 +126,14 @@ class Index extends Component
     // * ========================================
 
     /**
-     * Get users with filters and search (exclude drivers)
+     * Get users with filters and search (exclude drivers and clients)
      */
     public function users()
     {
         $query = User::excludeDrivers()
+            ->whereDoesntHave('roles', function ($query) {
+                $query->where('name', UserHelper::ROLE_CLIENT);
+            })
             ->when($this->search, function ($q) {
                 $q->where(function ($query) {
                     $query->where('name', 'like', "%{$this->search}%")
@@ -144,7 +148,9 @@ class Index extends Component
                 }
             })
             ->when($this->roleFilter !== 'all', function ($q) {
-                $q->where('role', $this->roleFilter);
+                $q->whereHas('roles', function ($query) {
+                    $query->where('name', $this->roleFilter);
+                });
             })
             ->orderBy($this->sortBy['column'], $this->sortBy['direction']);
 
@@ -156,13 +162,13 @@ class Index extends Component
     // * ========================================
 
     /**
-     * Get available roles for filter (exclude drivers)
+     * Get available roles for filter (only management and staff roles)
      */
     public function getRolesProperty(): array
     {
         return collect([
             'all' => 'Semua Role'
-        ])->merge(User::getRolesExcludeDrivers())->toArray();
+        ])->merge(UserHelper::getManagementRoles() + UserHelper::getStaffRoles())->toArray();
     }
 
     /**
@@ -170,11 +176,21 @@ class Index extends Component
      */
     public function getUserStatsProperty(): array
     {
+        $baseQuery = User::excludeDrivers()
+            ->whereDoesntHave('roles', function ($query) {
+                $query->where('name', UserHelper::ROLE_CLIENT);
+            });
+
         return [
-            'totalUsers' => User::excludeDrivers()->count(),
-            'activeUsers' => User::excludeDrivers()->active()->count(),
-            'inactiveUsers' => User::excludeDrivers()->inactive()->count(),
-            'deletedUsers' => User::onlyTrashed()->excludeDrivers()->count(),
+            'totalUsers' => $baseQuery->count(),
+            'activeUsers' => $baseQuery->active()->count(),
+            'inactiveUsers' => $baseQuery->inactive()->count(),
+            'deletedUsers' => User::onlyTrashed()
+                ->excludeDrivers()
+                ->whereDoesntHave('roles', function ($query) {
+                    $query->where('name', UserHelper::ROLE_CLIENT);
+                })
+                ->count(),
         ];
     }
 

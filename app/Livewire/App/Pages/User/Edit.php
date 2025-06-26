@@ -3,6 +3,7 @@
 namespace App\Livewire\App\Pages\User;
 
 use App\Models\User;
+use App\Class\Helper\UserHelper;
 use Mary\Traits\Toast;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -40,9 +41,9 @@ class Edit extends Component
 
     public function mount(User $user): void
     {
-        // Safety check untuk driver
-        if ($user->isDriver()) {
-            $this->error('Driver tidak dapat diedit dari halaman ini.', position: 'toast-top toast-end');
+        // Safety check untuk driver dan client
+        if ($user->isDriver() || $user->isClient()) {
+            $this->error('Pengguna ini tidak dapat diedit dari halaman ini.', position: 'toast-top toast-end');
             $this->redirect(route('app.user.index'), navigate: true);
             return;
         }
@@ -53,7 +54,7 @@ class Edit extends Component
         $this->name = $user->name;
         $this->email = $user->email;
         $this->originalEmail = $user->email;
-        $this->role = $user->role;
+        $this->role = $user->getPrimaryRole() ?? UserHelper::ROLE_ADMIN;
         $this->is_active = $user->is_active;
     }
 
@@ -63,6 +64,9 @@ class Edit extends Component
 
     protected function rules(): array
     {
+        // Hanya role management dan staff yang diizinkan
+        $allowedRoles = array_keys(UserHelper::getManagementRoles() + UserHelper::getStaffRoles());
+
         return [
             'name' => [
                 'required',
@@ -80,7 +84,7 @@ class Edit extends Component
             'role' => [
                 'required',
                 'string',
-                'in:manager,admin,client,petugas-lapangan,petugas-ruangan,petugas-gudang'
+                'in:' . implode(',', $allowedRoles)
             ],
             'password' => [
                 'nullable',
@@ -230,7 +234,6 @@ class Edit extends Component
             $userData = [
                 'name' => trim($this->name),
                 'email' => strtolower(trim($this->email)),
-                'role' => $this->role,
                 'is_active' => $this->is_active,
             ];
 
@@ -260,6 +263,12 @@ class Edit extends Component
             }
 
             $this->user->update($userData);
+
+            // Update role jika berbeda menggunakan model method
+            $currentRole = $this->user->getPrimaryRole();
+            if ($currentRole !== $this->role) {
+                $this->user->setRole($this->role);
+            }
 
             $this->success(
                 title: 'Pengguna berhasil diperbarui!',
@@ -311,11 +320,11 @@ class Edit extends Component
     }
 
     /**
-     * Open toggle status modal
+     * Open change status modal
      */
-    public function toggleUserStatus(): void
+    public function changeUserStatus(): void
     {
-        $this->dispatch('openToggleStatusModal', $this->user->id);
+        $this->dispatch('openChangeStatusModal', $this->user->id);
     }
 
     /**
@@ -349,11 +358,11 @@ class Edit extends Component
     // * ========================================
 
     /**
-     * Get available roles for dropdown (exclude drivers)
+     * Get available roles for dropdown (only management and staff)
      */
     public function getRolesProperty(): array
     {
-        return User::getRolesExcludeDrivers();
+        return UserHelper::getManagementRoles() + UserHelper::getStaffRoles();
     }
 
     /**
@@ -364,6 +373,7 @@ class Edit extends Component
         return !empty($this->name) &&
                !empty($this->email) &&
                !empty($this->role) &&
+               UserHelper::isValidRole($this->role) &&
                ($this->password === $this->password_confirmation);
     }
 
@@ -462,9 +472,11 @@ class Edit extends Component
      */
     public function getHasChangesProperty(): bool
     {
+        $currentRole = $this->user->getPrimaryRole();
+
         return $this->name !== $this->user->name ||
                $this->email !== $this->user->email ||
-               $this->role !== $this->user->role ||
+               $this->role !== $currentRole ||
                $this->is_active !== $this->user->is_active ||
                !empty($this->password) ||
                $this->avatar !== null;

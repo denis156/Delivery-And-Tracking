@@ -31,7 +31,7 @@
                         <div class="flex justify-center">
                             <div class="avatar">
                                 <div
-                                    class="w-32 h-32 rounded-full ring ring-{{ $role ? \App\Models\User::getRoleColorByKey($role) : $user->role_color }} ring-offset-base-100 ring-offset-4">
+                                    class="w-32 h-32 rounded-full ring ring-{{ $role ? \App\Class\Helper\UserHelper::getRoleColor($role) : $user->role_color }} ring-offset-base-100 ring-offset-4">
                                     @if ($avatar)
                                         <img src="{{ $avatar->temporaryUrl() }}" alt="Preview"
                                             class="w-full h-full object-cover" />
@@ -40,7 +40,7 @@
                                             class="w-full h-full object-cover" />
                                     @else
                                         <div
-                                            class="w-full h-full bg-{{ $role ? \App\Models\User::getRoleColorByKey($role) : $user->role_color }} text-{{ $role ? \App\Models\User::getRoleColorByKey($role) : $user->role_color }}-content rounded-full flex items-center justify-center text-3xl font-bold">
+                                            class="w-full h-full bg-{{ $role ? \App\Class\Helper\UserHelper::getRoleColor($role) : $user->role_color }} text-{{ $role ? \App\Class\Helper\UserHelper::getRoleColor($role) : $user->role_color }}-content rounded-full flex items-center justify-center text-3xl font-bold">
                                             {{ $name ? strtoupper(substr($name, 0, 2)) : $user->avatar_placeholder }}
                                         </div>
                                     @endif
@@ -60,9 +60,9 @@
                             {{-- Status & Role Badges --}}
                             <div class="flex flex-wrap justify-center gap-2 mt-3">
                                 <div
-                                    class="badge badge-{{ $role ? \App\Models\User::getRoleColorByKey($role) : $user->role_color }} badge-lg">
+                                    class="badge badge-{{ $role ? \App\Class\Helper\UserHelper::getRoleColor($role) : $user->role_color }} badge-lg">
                                     <x-icon name="phosphor.identification-badge" class="w-4 h-4 mr-1" />
-                                    {{ $role ? \App\Models\User::getRoleLabelByKey($role) : $user->role_label }}
+                                    {{ $role ? \App\Class\Helper\UserHelper::getRoleLabel($role) : $user->role_label }}
                                 </div>
                                 <div class="badge badge-{{ $is_active ? 'success' : 'warning' }} badge-lg">
                                     <x-icon name="phosphor.{{ $is_active ? 'check-circle' : 'pause-circle' }}"
@@ -98,7 +98,7 @@
                         <x-button label="Kembali ke Detail" wire:click="cancel" class="btn-info btn-block"
                             icon="phosphor.arrow-left" />
 
-                        <x-button :label="$user->is_active ? 'Nonaktifkan' : 'Aktifkan'" wire:click="toggleUserStatus"
+                        <x-button :label="$user->is_active ? 'Nonaktifkan' : 'Aktifkan'" wire:click="changeUserStatus"
                             class="btn-{{ $user->is_active ? 'warning' : 'success' }} btn-outline btn-block"
                             :icon="$user->is_active ? 'phosphor.pause' : 'phosphor.play'" />
 
@@ -275,8 +275,8 @@
     </div>
 
     {{-- MODAL COMPONENTS yang dibutuhkan untuk actions --}}
-    {{-- Toggle Status Modal --}}
-    <livewire:app.component.user.toggle-status-modal />
+    {{-- Change Status Modal --}}
+    <livewire:app.component.user.change-status-modal />
 
     {{-- Delete User Modal --}}
     <livewire:app.component.user.delete-user-modal />

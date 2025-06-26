@@ -3,6 +3,7 @@
 namespace App\Livewire\App\Component\User;
 
 use App\Models\User;
+use App\Class\Helper\UserHelper;
 use Mary\Traits\Toast;
 use Livewire\Component;
 
@@ -48,16 +49,18 @@ class DeleteUserModal extends Component
      */
     public function openModal(int $userId): void
     {
-        $this->user = User::find($userId);
+        $this->user = User::excludeDrivers()
+            ->where('id', $userId)
+            ->first();
 
         if (!$this->user) {
-            $this->error('User tidak ditemukan.', position: 'toast-bottom');
+            $this->error('User tidak ditemukan atau tidak dapat diakses.', position: 'toast-top toast-end');
             return;
         }
 
-        // Safety check untuk driver
-        if ($this->user->role === 'driver') {
-            $this->error('Driver tidak dapat dihapus dari halaman ini.', position: 'toast-bottom');
+        // Safety check untuk role yang tidak diizinkan
+        if ($this->user->isDriver() || $this->user->isClient()) {
+            $this->error('Pengguna ini tidak dapat dihapus.', position: 'toast-top toast-end');
             return;
         }
 
@@ -85,7 +88,7 @@ class DeleteUserModal extends Component
         $this->validate();
 
         if (!$this->user) {
-            $this->error('User tidak ditemukan.', position: 'toast-bottom');
+            $this->error('User tidak ditemukan.', position: 'toast-top toast-end');
             $this->closeModal();
             return;
         }
@@ -99,9 +102,9 @@ class DeleteUserModal extends Component
         $this->processing = true;
 
         try {
-            // Double check untuk driver
-            if ($this->user->role === 'driver') {
-                $this->error('Driver tidak dapat dihapus dari halaman ini.', position: 'toast-bottom');
+            // Double check untuk role yang tidak diizinkan
+            if ($this->user->isDriver() || $this->user->isClient()) {
+                $this->error('Pengguna ini tidak dapat dihapus.', position: 'toast-top toast-end');
                 $this->closeModal();
                 return;
             }
@@ -109,14 +112,14 @@ class DeleteUserModal extends Component
             $userName = $this->user->name;
             $this->user->delete();
 
-            $this->success("User {$userName} berhasil dihapus.", position: 'toast-bottom');
+            $this->success("User {$userName} berhasil dihapus.", position: 'toast-top toast-end');
 
             // Emit event untuk refresh parent component
             $this->dispatch('userDeleted');
 
             $this->closeModal();
         } catch (\Exception $e) {
-            $this->error('Gagal menghapus user. Silakan coba lagi.', position: 'toast-bottom');
+            $this->error('Gagal menghapus user. Silakan coba lagi.', position: 'toast-top toast-end');
             $this->processing = false;
         }
     }
@@ -135,12 +138,42 @@ class DeleteUserModal extends Component
         return strtolower($this->confirmText) === strtolower($this->user->name);
     }
 
+    /**
+     * Get user role color menggunakan Helper
+     */
+    public function getUserRoleColorProperty(): string
+    {
+        if ($this->user) {
+            $role = $this->user->getPrimaryRole();
+            return $role ? UserHelper::getRoleColor($role) : 'neutral';
+        }
+
+        return 'neutral';
+    }
+
+    /**
+     * Get user role label menggunakan Helper
+     */
+    public function getUserRoleLabelProperty(): string
+    {
+        if ($this->user) {
+            $role = $this->user->getPrimaryRole();
+            return $role ? UserHelper::getRoleLabel($role) : 'Tidak ada role';
+        }
+
+        return 'Tidak ada role';
+    }
+
     // * ========================================
     // * RENDER
     // * ========================================
 
     public function render()
     {
-        return view('livewire.app.component.user.delete-user-modal');
+        return view('livewire.app.component.user.delete-user-modal', [
+            'canDelete' => $this->canDelete,
+            'userRoleColor' => $this->userRoleColor,
+            'userRoleLabel' => $this->userRoleLabel,
+        ]);
     }
 }

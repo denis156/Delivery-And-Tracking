@@ -28,11 +28,11 @@
                         {{-- Avatar Preview --}}
                         <div class="flex justify-center">
                             <div class="avatar">
-                                <div class="w-32 h-32 rounded-full ring ring-{{ $role ? \App\Models\User::getRoleColorByKey($role) : 'neutral' }} ring-offset-base-100 ring-offset-4">
+                                <div class="w-32 h-32 rounded-full ring ring-{{ $role ? \App\Class\Helper\UserHelper::getRoleColor($role) : 'neutral' }} ring-offset-base-100 ring-offset-4">
                                     @if($avatar)
                                         <img src="{{ $avatar->temporaryUrl() }}" alt="Preview" class="w-full h-full object-cover" />
                                     @else
-                                        <div class="w-full h-full bg-{{ $role ? \App\Models\User::getRoleColorByKey($role) : 'neutral' }} text-{{ $role ? \App\Models\User::getRoleColorByKey($role) : 'neutral' }}-content rounded-full flex items-center justify-center text-3xl font-bold">
+                                        <div class="w-full h-full bg-{{ $role ? \App\Class\Helper\UserHelper::getRoleColor($role) : 'neutral' }} text-{{ $role ? \App\Class\Helper\UserHelper::getRoleColor($role) : 'neutral' }}-content rounded-full flex items-center justify-center text-3xl font-bold">
                                             {{ $name ? strtoupper(substr($name, 0, 2)) : 'U' }}
                                         </div>
                                     @endif
@@ -51,9 +51,9 @@
 
                             {{-- Status & Role Badges --}}
                             <div class="flex flex-wrap justify-center gap-2 mt-3">
-                                <div class="badge badge-{{ $role ? \App\Models\User::getRoleColorByKey($role) : 'neutral' }} badge-lg">
+                                <div class="badge badge-{{ $role ? \App\Class\Helper\UserHelper::getRoleColor($role) : 'neutral' }} badge-lg">
                                     <x-icon name="phosphor.identification-badge" class="w-4 h-4 mr-1" />
-                                    {{ $role ? \App\Models\User::getRoleLabelByKey($role) : 'Pilih Role' }}
+                                    {{ $role ? \App\Class\Helper\UserHelper::getRoleLabel($role) : 'Pilih Role' }}
                                 </div>
                                 <div class="badge badge-{{ $is_active ? 'success' : 'warning' }} badge-lg">
                                     <x-icon name="phosphor.{{ $is_active ? 'check-circle' : 'pause-circle' }}" class="w-4 h-4 mr-1" />
@@ -145,7 +145,7 @@
                                                 @if($avatar)
                                                     <img src="{{ $avatar->temporaryUrl() }}" alt="Preview" />
                                                 @else
-                                                    <div class="w-full h-full bg-{{ $role ? \App\Models\User::getRoleColorByKey($role) : 'neutral' }} text-{{ $role ? \App\Models\User::getRoleColorByKey($role) : 'neutral' }}-content rounded-full flex items-center justify-center text-xl font-bold">
+                                                    <div class="w-full h-full bg-{{ $role ? \App\Class\Helper\UserHelper::getRoleColor($role) : 'neutral' }} text-{{ $role ? \App\Class\Helper\UserHelper::getRoleColor($role) : 'neutral' }}-content rounded-full flex items-center justify-center text-xl font-bold">
                                                         {{ $name ? strtoupper(substr($name, 0, 2)) : 'U' }}
                                                     </div>
                                                 @endif
@@ -206,38 +206,17 @@
 
                             {{-- Role Description --}}
                             @if($role)
-                                <div class="bg-{{ \App\Models\User::getRoleColorByKey($role) }}/10 border border-{{ \App\Models\User::getRoleColorByKey($role) }}/30 rounded-lg p-3">
+                                <div class="bg-{{ \App\Class\Helper\UserHelper::getRoleColor($role) }}/10 border border-{{ \App\Class\Helper\UserHelper::getRoleColor($role) }}/30 rounded-lg p-3">
                                     <div class="flex items-center gap-3 mb-2">
-                                        <div class="badge badge-{{ \App\Models\User::getRoleColorByKey($role) }} badge-lg">
-                                            {{ \App\Models\User::getRoleLabelByKey($role) }}
+                                        <div class="badge badge-{{ \App\Class\Helper\UserHelper::getRoleColor($role) }} badge-lg">
+                                            {{ \App\Class\Helper\UserHelper::getRoleLabel($role) }}
                                         </div>
-                                        <span class="text-sm font-medium text-{{ \App\Models\User::getRoleColorByKey($role) }}">
+                                        <span class="text-sm font-medium text-{{ \App\Class\Helper\UserHelper::getRoleColor($role) }}">
                                             Deskripsi Peran
                                         </span>
                                     </div>
                                     <p class="text-sm text-base-content/70">
-                                        @switch($role)
-                                            @case('admin')
-                                                Administrator memiliki akses penuh ke sistem, dapat mengelola pengguna, melihat semua laporan, dan mengonfigurasi sistem.
-                                            @break
-                                            @case('manager')
-                                                Manajer dapat mengelola pengguna dan melihat laporan, tetapi tidak memiliki akses ke konfigurasi sistem.
-                                            @break
-                                            @case('client')
-                                                Klien memiliki akses terbatas hanya untuk fitur yang berkaitan dengan layanan mereka.
-                                            @break
-                                            @case('petugas-lapangan')
-                                                Petugas lapangan bertanggung jawab untuk operasional di lapangan dan memiliki akses sesuai kebutuhan tugasnya.
-                                            @break
-                                            @case('petugas-ruangan')
-                                                Petugas ruangan mengelola operasional internal dan memiliki akses untuk mengelola data dalam ruangan.
-                                            @break
-                                            @case('petugas-gudang')
-                                                Petugas gudang bertanggung jawab untuk mengelola inventori dan logistik gudang.
-                                            @break
-                                            @default
-                                                Pengguna dengan peran khusus dalam sistem.
-                                        @endswitch
+                                        {{ \App\Class\Helper\UserHelper::getRoleDescription($role) }}
                                     </p>
                                 </div>
                             @endif
@@ -334,6 +313,7 @@
     </div>
 
     {{-- MODAL COMPONENTS --}}
-    {{-- Toggle Status Modal (untuk preview) --}}
-    <livewire:app.component.user.toggle-status-modal />
+    
+    {{-- Change Status Modal (untuk preview) --}}
+    <livewire:app.component.user.change-status-modal />
 </div>

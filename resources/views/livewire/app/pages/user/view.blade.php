@@ -71,7 +71,7 @@
                         <x-button label="Edit Pengguna" wire:click="editUser" class="btn-warning btn-block"
                             icon="phosphor.pencil" />
 
-                        <x-button :label="$user->is_active ? 'Nonaktifkan' : 'Aktifkan'" wire:click="toggleUserStatus"
+                        <x-button :label="$user->is_active ? 'Nonaktifkan' : 'Aktifkan'" wire:click="changeUserStatus"
                             class="btn-{{ $user->is_active ? 'warning' : 'success' }} btn-outline btn-block"
                             :icon="$user->is_active ? 'phosphor.pause' : 'phosphor.play'" />
 
@@ -316,44 +316,13 @@
                     </div>
                 </div>
 
-                {{-- Role Description --}}
+                {{-- Role Description menggunakan Helper --}}
                 <div
                     class="mt-6 p-4 bg-{{ $user->role_color }}/10 border border-{{ $user->role_color }}/30 rounded-lg hover:shadow-xl hover:shadow-primary transition-all duration-300">
                     <h5 class="font-semibold text-{{ $user->role_color }} mb-2">Deskripsi Peran:
                         {{ $user->role_label }}</h5>
                     <p class="text-sm text-base-content/70">
-                        @switch($user->role)
-                            @case('admin')
-                                Administrator memiliki akses penuh ke sistem, dapat mengelola pengguna, melihat semua laporan,
-                                dan mengonfigurasi sistem.
-                            @break
-
-                            @case('manager')
-                                Manajer dapat mengelola pengguna dan melihat laporan, tetapi tidak memiliki akses ke konfigurasi
-                                sistem.
-                            @break
-
-                            @case('client')
-                                Klien memiliki akses terbatas hanya untuk fitur yang berkaitan dengan layanan mereka.
-                            @break
-
-                            @case('petugas-lapangan')
-                                Petugas lapangan bertanggung jawab untuk operasional di lapangan dan memiliki akses sesuai
-                                kebutuhan tugasnya.
-                            @break
-
-                            @case('petugas-ruangan')
-                                Petugas ruangan mengelola operasional internal dan memiliki akses untuk mengelola data dalam
-                                ruangan.
-                            @break
-
-                            @case('petugas-gudang')
-                                Petugas gudang bertanggung jawab untuk mengelola inventori dan logistik gudang.
-                            @break
-
-                            @default
-                                Pengguna dengan peran khusus dalam sistem.
-                        @endswitch
+                        {{ $roleDescription }}
                     </p>
                 </div>
             </x-card>
@@ -425,8 +394,8 @@
     </div>
 
     {{-- MODAL COMPONENTS yang dibutuhkan untuk actions --}}
-    {{-- Toggle Status Modal --}}
-    <livewire:app.component.user.toggle-status-modal />
+    {{-- Change Status Modal --}}
+    <livewire:app.component.user.change-status-modal />
 
     {{-- Delete User Modal --}}
     <livewire:app.component.user.delete-user-modal />

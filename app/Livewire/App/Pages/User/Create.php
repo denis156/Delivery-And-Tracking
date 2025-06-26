@@ -3,6 +3,7 @@
 namespace App\Livewire\App\Pages\User;
 
 use App\Models\User;
+use App\Class\Helper\UserHelper;
 use Mary\Traits\Toast;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -23,7 +24,7 @@ class Create extends Component
 
     public string $name = '';
     public string $email = '';
-    public string $role = 'client';
+    public string $role = '';
     public string $password = '';
     public string $password_confirmation = '';
     public bool $is_active = true;
@@ -35,8 +36,9 @@ class Create extends Component
 
     public function mount(): void
     {
-        // Initialize default values
-        $this->role = User::ROLE_CLIENT;
+        // Initialize dengan role yang diizinkan (Management atau Staff)
+        $allowedRoles = UserHelper::getManagementRoles() + UserHelper::getStaffRoles();
+        $this->role = array_key_first($allowedRoles) ?: UserHelper::ROLE_ADMIN;
         $this->is_active = true;
     }
 
@@ -46,6 +48,9 @@ class Create extends Component
 
     protected function rules(): array
     {
+        // Hanya role management dan staff yang diizinkan
+        $allowedRoles = array_keys(UserHelper::getManagementRoles() + UserHelper::getStaffRoles());
+
         return [
             'name' => [
                 'required',
@@ -63,7 +68,7 @@ class Create extends Component
             'role' => [
                 'required',
                 'string',
-                'in:manager,admin,client,petugas-lapangan,petugas-ruangan,petugas-gudang'
+                'in:' . implode(',', $allowedRoles)
             ],
             'password' => [
                 'required',
@@ -215,7 +220,6 @@ class Create extends Component
             $userData = [
                 'name' => trim($this->name),
                 'email' => strtolower(trim($this->email)),
-                'role' => $this->role,
                 'password' => Hash::make($this->password),
                 'is_active' => $this->is_active,
                 'email_verified_at' => now(),
@@ -238,9 +242,14 @@ class Create extends Component
 
             $user = User::create($userData);
 
+            // Set role menggunakan model method
+            $user->setRole($this->role);
+
+            $roleLabel = UserHelper::getRoleLabel($this->role);
+
             $this->success(
                 title: 'Pengguna berhasil dibuat!',
-                description: "Pengguna {$user->name} telah ditambahkan ke sistem dengan peran {$user->role_label}.",
+                description: "Pengguna {$user->name} telah ditambahkan ke sistem dengan peran {$roleLabel}.",
                 position: 'toast-top toast-end',
                 timeout: 5000,
                 redirectTo: route('app.user.index')
@@ -291,7 +300,10 @@ class Create extends Component
             'password_confirmation',
             'avatar'
         ]);
-        $this->role = User::ROLE_CLIENT;
+
+        // Reset ke role yang diizinkan
+        $allowedRoles = UserHelper::getManagementRoles() + UserHelper::getStaffRoles();
+        $this->role = array_key_first($allowedRoles) ?: UserHelper::ROLE_ADMIN;
         $this->is_active = true;
         $this->resetValidation();
 
@@ -315,7 +327,7 @@ class Create extends Component
             'avatar_preview' => $this->avatar ? $this->avatar->temporaryUrl() : null,
         ];
 
-        $this->dispatch('openToggleStatusPreview', $previewData);
+        $this->dispatch('openChangeStatusPreview', $previewData);
     }
 
     // * ========================================
@@ -344,11 +356,11 @@ class Create extends Component
     // * ========================================
 
     /**
-     * Get available roles for dropdown (exclude drivers)
+     * Get available roles for dropdown (hanya management dan staff)
      */
     public function getRolesProperty(): array
     {
-        return User::getRolesExcludeDrivers();
+        return UserHelper::getManagementRoles() + UserHelper::getStaffRoles();
     }
 
     /**
@@ -359,6 +371,7 @@ class Create extends Component
         return !empty($this->name) &&
                !empty($this->email) &&
                !empty($this->role) &&
+               UserHelper::isValidRole($this->role) &&
                !empty($this->password) &&
                !empty($this->password_confirmation) &&
                $this->password === $this->password_confirmation;

@@ -3,6 +3,7 @@
 namespace App\Livewire\App\Pages\User;
 
 use App\Models\User;
+use App\Class\Helper\UserHelper;
 use Mary\Traits\Toast;
 use Livewire\Component;
 use Livewire\Attributes\Title;
@@ -26,9 +27,9 @@ class View extends Component
 
     public function mount(User $user): void
     {
-        // Safety check untuk driver
-        if ($user->isDriver()) {
-            $this->error('Driver tidak dapat dilihat dari halaman ini.', position: 'toast-top toast-end');
+        // Safety check untuk driver dan client
+        if ($user->isDriver() || $user->isClient()) {
+            $this->error('Pengguna ini tidak dapat dilihat dari halaman ini.', position: 'toast-top toast-end');
             $this->redirect(route('app.user.index'), navigate: true);
             return;
         }
@@ -57,11 +58,11 @@ class View extends Component
     }
 
     /**
-     * Open toggle status modal
+     * Open change status modal
      */
-    public function toggleUserStatus(): void
+    public function changeUserStatus(): void
     {
-        $this->dispatch('openToggleStatusModal', $this->user->id);
+        $this->dispatch('openChangeStatusModal', $this->user->id);
     }
 
     /**
@@ -113,33 +114,25 @@ class View extends Component
      */
     public function getUserCapabilitiesProperty(): array
     {
+        $role = $this->user->getPrimaryRole();
+
         $capabilities = [
             'canLogin' => $this->user->is_active,
             'hasEmailVerified' => !is_null($this->user->email_verified_at),
             'isManageable' => $this->user->isManageable(),
         ];
 
-        // Role-based capabilities
-        switch ($this->user->role) {
-            case User::ROLE_ADMIN:
-                $capabilities['canManageUsers'] = true;
-                $capabilities['canViewReports'] = true;
-                $capabilities['canManageSystem'] = true;
-                break;
-            case User::ROLE_MANAGER:
-                $capabilities['canManageUsers'] = true;
-                $capabilities['canViewReports'] = true;
-                $capabilities['canManageSystem'] = false;
-                break;
-            case User::ROLE_CLIENT:
-                $capabilities['canManageUsers'] = false;
-                $capabilities['canViewReports'] = false;
-                $capabilities['canManageSystem'] = false;
-                break;
-            default:
-                $capabilities['canManageUsers'] = false;
-                $capabilities['canViewReports'] = false;
-                $capabilities['canManageSystem'] = false;
+        // Role-based capabilities menggunakan Helper
+        if ($role) {
+            $capabilities['canManageUsers'] = UserHelper::canManageUsers($role);
+            $capabilities['canViewReports'] = UserHelper::isManagementRole($role);
+            $capabilities['canManageSystem'] = $role === UserHelper::ROLE_ADMIN;
+            $capabilities['canManageDeliveries'] = UserHelper::canManageDeliveries($role);
+        } else {
+            $capabilities['canManageUsers'] = false;
+            $capabilities['canViewReports'] = false;
+            $capabilities['canManageSystem'] = false;
+            $capabilities['canManageDeliveries'] = false;
         }
 
         return $capabilities;
@@ -157,6 +150,15 @@ class View extends Component
         ];
     }
 
+    /**
+     * Get role description menggunakan Helper
+     */
+    public function getRoleDescriptionProperty(): string
+    {
+        $role = $this->user->getPrimaryRole();
+        return $role ? UserHelper::getRoleDescription($role) : 'Belum memiliki role';
+    }
+
     // * ========================================
     // * RENDER
     // * ========================================
@@ -167,6 +169,7 @@ class View extends Component
             'userActivity' => $this->userActivity,
             'userCapabilities' => $this->userCapabilities,
             'userStats' => $this->userStats,
+            'roleDescription' => $this->roleDescription,
         ]);
     }
 }

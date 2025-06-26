@@ -25,8 +25,8 @@
                 <div class="flex items-center gap-4">
                     <!-- Avatar -->
                     <x-avatar
-                        :placeholder="strtoupper(substr($user->name, 0, 2))"
-                        :image="$user->avatar_url ? asset('storage/' . $user->avatar_url) : null"
+                        :placeholder="$user->avatar_placeholder"
+                        :image="$user->avatar"
                         class="w-12 h-12 ring-2 ring-error ring-offset-2 ring-offset-base-100"
                     />
 
@@ -35,11 +35,11 @@
                         <h4 class="font-semibold text-base-content">{{ $user->name }}</h4>
                         <p class="text-sm text-base-content/70">{{ $user->email }}</p>
                         <div class="flex items-center gap-2 mt-1">
-                            <div class="badge badge-{{ $user->is_active ? 'success' : 'warning' }} badge-sm">
-                                {{ $user->is_active ? 'Aktif' : 'Nonaktif' }}
+                            <div class="badge badge-{{ $user->status_color }} badge-sm">
+                                {{ $user->status_label }}
                             </div>
-                            <div class="badge badge-primary badge-sm">
-                                {{ ucfirst($user->role) }}
+                            <div class="badge badge-{{ $userRoleColor }} badge-sm">
+                                {{ $userRoleLabel }}
                             </div>
                         </div>
                     </div>
@@ -58,6 +58,10 @@
                         <x-icon name="phosphor.clock" class="w-4 h-4" />
                         <span>Update: {{ $user->updated_at->diffForHumans() }}</span>
                     </div>
+                    <div class="flex items-center gap-2">
+                        <x-icon name="phosphor.identification-badge" class="w-4 h-4" />
+                        <span>Peran: {{ $userRoleLabel }}</span>
+                    </div>
                 </div>
             </div>
 
@@ -69,10 +73,10 @@
                     placeholder="Ketik: {{ $user->name }}"
                     wire:model.live="confirmText"
                     icon="phosphor.keyboard"
-                    :class="$this->canDelete ? 'input-success' : 'input-error'"
+                    :class="$canDelete ? 'input-success' : 'input-error'"
                 />
 
-                @if($this->canDelete)
+                @if($canDelete)
                     <div class="flex items-center gap-2 mt-2 text-success">
                         <x-icon name="phosphor.check-circle" class="w-4 h-4" />
                         <span class="text-sm">Konfirmasi berhasil</span>
@@ -127,7 +131,7 @@
                     wire:click="confirmDelete"
                     class="btn-error"
                     icon="phosphor.trash"
-                    :disabled="!$this->canDelete || $processing"
+                    :disabled="!$canDelete || $processing"
                     spinner
                 />
             @endif
