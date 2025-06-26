@@ -2,7 +2,8 @@
 
 namespace App\Models;
 
-use App\Class\StatusHelper;
+use App\Class\Helper\ItemHelper;
+use App\Class\Helper\FormatHelper;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -85,9 +86,14 @@ class Item extends Model
         return $query->where('condition', $condition);
     }
 
+    /**
+     * DIPERBAIKI: Tambah null check untuk discrepancy scope
+     */
     public function scopeWithDiscrepancy($query)
     {
-        return $query->whereColumn('received_quantity', '!=', 'sent_quantity');
+        return $query->whereNotNull('received_quantity')
+                    ->whereNotNull('sent_quantity')
+                    ->whereColumn('received_quantity', '!=', 'sent_quantity');
     }
 
     public function scopeOrdered($query)
@@ -108,6 +114,11 @@ class Item extends Model
                 $item->sort_order = $maxOrder + 1;
             }
 
+            // Auto generate barcode if empty
+            if (empty($item->barcode_item)) {
+                $item->barcode_item = FormatHelper::generateBarcode('BC');
+            }
+
             // Auto calculate total value
             if ($item->unit_value && $item->sent_quantity) {
                 $item->total_value = $item->unit_value * $item->sent_quantity;
@@ -123,22 +134,35 @@ class Item extends Model
     }
 
     // * ========================================
-    // * BUSINESS LOGIC METHODS
+    // * BUSINESS LOGIC METHODS - DIPERBAIKI
     // * ========================================
 
     /**
      * Cek apakah item memiliki discrepancy
+     * DIPERBAIKI: Tambah null check
      */
     public function hasDiscrepancy(): bool
     {
-        return $this->received_quantity && $this->received_quantity != $this->sent_quantity;
+        // Jika received_quantity null, belum ada discrepancy
+        if (is_null($this->received_quantity)) {
+            return false;
+        }
+
+        return $this->received_quantity != $this->sent_quantity;
     }
 
     /**
      * Get deskripsi discrepancy
+     * DIPERBAIKI: Null safety yang robust
      */
     public function getDiscrepancyDescription(): ?string
     {
+        // Jika received_quantity null, belum ada data untuk discrepancy
+        if (is_null($this->received_quantity)) {
+            return null;
+        }
+
+        // Jika tidak ada discrepancy
         if (!$this->hasDiscrepancy()) {
             return null;
         }
@@ -150,52 +174,97 @@ class Item extends Model
         return "{$type}: {$amount} {$this->unit}";
     }
 
+    /**
+     * Get discrepancy percentage
+     */
+    public function getDiscrepancyPercentage(): ?float
+    {
+        if (is_null($this->received_quantity) || $this->sent_quantity == 0) {
+            return null;
+        }
+
+        $difference = abs($this->received_quantity - $this->sent_quantity);
+        return ($difference / $this->sent_quantity) * 100;
+    }
+
+    /**
+     * Check if item is completely missing (received = 0)
+     */
+    public function isCompletelyMissing(): bool
+    {
+        return $this->received_quantity === 0.0;
+    }
+
+    /**
+     * Check if item has excess quantity
+     */
+    public function hasExcess(): bool
+    {
+        if (is_null($this->received_quantity)) {
+            return false;
+        }
+
+        return $this->received_quantity > $this->sent_quantity;
+    }
+
+    /**
+     * Check if item has shortage
+     */
+    public function hasShortage(): bool
+    {
+        if (is_null($this->received_quantity)) {
+            return false;
+        }
+
+        return $this->received_quantity < $this->sent_quantity;
+    }
+
     // * ========================================
     // * ACCESSORS (Laravel 12.x Attribute Style)
     // * ========================================
 
     /**
-     * Get status label menggunakan StatusHelper
+     * Get status label menggunakan ItemHelper
      */
     protected function statusLabel(): Attribute
     {
         return Attribute::make(
-            get: fn() => StatusHelper::getItemStatusLabel($this->status),
+            get: fn() => ItemHelper::getStatusLabel($this->status),
         );
     }
 
     /**
-     * Get status color menggunakan StatusHelper
+     * Get status color menggunakan ItemHelper
      */
     protected function statusColor(): Attribute
     {
         return Attribute::make(
-            get: fn() => StatusHelper::getItemStatusColor($this->status),
+            get: fn() => ItemHelper::getStatusColor($this->status),
         );
     }
 
     /**
-     * Get condition label menggunakan StatusHelper
+     * Get condition label menggunakan ItemHelper
      */
     protected function conditionLabel(): Attribute
     {
         return Attribute::make(
-            get: fn() => StatusHelper::getConditionLabel($this->condition),
+            get: fn() => ItemHelper::getConditionLabel($this->condition),
         );
     }
 
     /**
-     * Get condition color menggunakan StatusHelper
+     * Get condition color menggunakan ItemHelper
      */
     protected function conditionColor(): Attribute
     {
         return Attribute::make(
-            get: fn() => StatusHelper::getConditionColor($this->condition),
+            get: fn() => ItemHelper::getConditionColor($this->condition),
         );
     }
 
     /**
-     * Get formatted weight menggunakan StatusHelper
+     * Get formatted weight menggunakan FormatHelper
      */
     protected function formattedWeight(): Attribute
     {
@@ -204,13 +273,13 @@ class Item extends Model
                 if (!$this->weight) return '-';
 
                 $totalWeight = $this->weight * $this->sent_quantity;
-                return number_format($this->weight, 1) . ' kg/unit (' . StatusHelper::formatWeight($totalWeight) . ' total)';
+                return number_format($this->weight, 1) . ' kg/unit (' . FormatHelper::formatWeight($totalWeight) . ' total)';
             }
         );
     }
 
     /**
-     * Get formatted value menggunakan StatusHelper
+     * Get formatted value menggunakan FormatHelper
      */
     protected function formattedValue(): Attribute
     {
@@ -218,13 +287,13 @@ class Item extends Model
             get: function () {
                 if (!$this->total_value) return '-';
 
-                return StatusHelper::formatRupiah($this->total_value);
+                return FormatHelper::formatRupiah($this->total_value);
             }
         );
     }
 
     /**
-     * Get formatted unit value menggunakan StatusHelper
+     * Get formatted unit value menggunakan FormatHelper
      */
     protected function formattedUnitValue(): Attribute
     {
@@ -232,7 +301,7 @@ class Item extends Model
             get: function () {
                 if (!$this->unit_value) return '-';
 
-                return StatusHelper::formatRupiah($this->unit_value);
+                return FormatHelper::formatRupiah($this->unit_value);
             }
         );
     }
@@ -248,17 +317,17 @@ class Item extends Model
     }
 
     /**
-     * Get formatted sent quantity menggunakan StatusHelper
+     * Get formatted sent quantity menggunakan FormatHelper
      */
     protected function formattedSentQuantity(): Attribute
     {
         return Attribute::make(
-            get: fn() => StatusHelper::formatQuantity($this->sent_quantity, $this->unit),
+            get: fn() => FormatHelper::formatQuantity($this->sent_quantity, $this->unit),
         );
     }
 
     /**
-     * Get formatted received quantity menggunakan StatusHelper
+     * Get formatted received quantity menggunakan FormatHelper
      */
     protected function formattedReceivedQuantity(): Attribute
     {
@@ -266,7 +335,7 @@ class Item extends Model
             get: function () {
                 if (!$this->received_quantity) return '-';
 
-                return StatusHelper::formatQuantity($this->received_quantity, $this->unit);
+                return FormatHelper::formatQuantity($this->received_quantity, $this->unit);
             }
         );
     }
@@ -276,50 +345,66 @@ class Item extends Model
     // * ========================================
 
     /**
-     * Get all available statuses menggunakan StatusHelper
+     * Get all available statuses menggunakan ItemHelper
      */
     public static function getAllStatuses(): array
     {
-        return StatusHelper::getAllItemStatuses();
+        return ItemHelper::getAllStatuses();
     }
 
     /**
-     * Get all available conditions menggunakan StatusHelper
+     * Get all available conditions menggunakan ItemHelper
      */
     public static function getAllConditions(): array
     {
-        return StatusHelper::getAllConditions();
+        return ItemHelper::getAllConditions();
     }
 
     /**
-     * Get status color by status key menggunakan StatusHelper
+     * Get status color by status key menggunakan ItemHelper
      */
     public static function getStatusColorByKey(string $status): string
     {
-        return StatusHelper::getItemStatusColor($status);
+        return ItemHelper::getStatusColor($status);
     }
 
     /**
-     * Get status label by status key menggunakan StatusHelper
+     * Get status label by status key menggunakan ItemHelper
      */
     public static function getStatusLabelByKey(string $status): string
     {
-        return StatusHelper::getItemStatusLabel($status);
+        return ItemHelper::getStatusLabel($status);
     }
 
     /**
-     * Get condition color by condition key menggunakan StatusHelper
+     * Get condition color by condition key menggunakan ItemHelper
      */
     public static function getConditionColorByKey(string $condition): string
     {
-        return StatusHelper::getConditionColor($condition);
+        return ItemHelper::getConditionColor($condition);
     }
 
     /**
-     * Get condition label by condition key menggunakan StatusHelper
+     * Get condition label by condition key menggunakan ItemHelper
      */
     public static function getConditionLabelByKey(string $condition): string
     {
-        return StatusHelper::getConditionLabel($condition);
+        return ItemHelper::getConditionLabel($condition);
+    }
+
+    /**
+     * Validate status menggunakan ItemHelper
+     */
+    public static function isValidStatus(string $status): bool
+    {
+        return ItemHelper::isValidStatus($status);
+    }
+
+    /**
+     * Validate condition menggunakan ItemHelper
+     */
+    public static function isValidCondition(string $condition): bool
+    {
+        return ItemHelper::isValidCondition($condition);
     }
 }

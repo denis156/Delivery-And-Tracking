@@ -2,7 +2,8 @@
 
 namespace App\Models;
 
-use App\Class\StatusHelper;
+use App\Class\Helper\DeliveryOrderHelper;
+use App\Class\Helper\FormatHelper;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -41,9 +42,6 @@ class DeliveryOrder extends Model
         'discrepancy_notes',
     ];
 
-    /**
-     * Get the attributes that should be cast (Laravel 12.x style)
-     */
     protected function casts(): array
     {
         return [
@@ -65,49 +63,31 @@ class DeliveryOrder extends Model
     // * RELATIONSHIPS
     // * ========================================
 
-    /**
-     * Relasi ke client penerima
-     */
     public function client(): BelongsTo
     {
         return $this->belongsTo(User::class, 'client_id');
     }
 
-    /**
-     * Relasi ke petugas lapangan yang membuat delivery order
-     */
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    /**
-     * Relasi ke driver yang ditugaskan
-     */
     public function driver(): BelongsTo
     {
         return $this->belongsTo(User::class, 'driver_id');
     }
 
-    /**
-     * Relasi ke petugas ruangan yang verifikasi
-     */
     public function verifier(): BelongsTo
     {
         return $this->belongsTo(User::class, 'verified_by');
     }
 
-    /**
-     * Relasi ke petugas gudang yang menyelesaikan
-     */
     public function completedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'completed_by');
     }
 
-    /**
-     * Relasi ke items dalam delivery order
-     */
     public function items(): HasMany
     {
         return $this->hasMany(Item::class)->orderBy('sort_order');
@@ -140,16 +120,16 @@ class DeliveryOrder extends Model
     public function scopeActiveOrders($query)
     {
         return $query->whereIn('status', [
-            StatusHelper::DO_STATUS_LOADING,
-            StatusHelper::DO_STATUS_VERIFIED,
-            StatusHelper::DO_STATUS_DISPATCHED,
-            StatusHelper::DO_STATUS_ARRIVED
+            DeliveryOrderHelper::STATUS_LOADING,
+            DeliveryOrderHelper::STATUS_VERIFIED,
+            DeliveryOrderHelper::STATUS_DISPATCHED,
+            DeliveryOrderHelper::STATUS_ARRIVED
         ]);
     }
 
     public function scopeCompletedOrders($query)
     {
-        return $query->where('status', StatusHelper::DO_STATUS_COMPLETED);
+        return $query->where('status', DeliveryOrderHelper::STATUS_COMPLETED);
     }
 
     public function scopeWithDiscrepancy($query)
@@ -170,65 +150,87 @@ class DeliveryOrder extends Model
     {
         static::creating(function (DeliveryOrder $deliveryOrder) {
             if (empty($deliveryOrder->order_number)) {
-                $deliveryOrder->order_number = StatusHelper::generateOrderNumber('DO');
+                $deliveryOrder->order_number = FormatHelper::generateOrderNumber('DO');
             }
 
             if (empty($deliveryOrder->barcode_do)) {
-                $deliveryOrder->barcode_do = StatusHelper::generateBarcode('BC');
+                $deliveryOrder->barcode_do = FormatHelper::generateBarcode('BC');
             }
         });
     }
 
     // * ========================================
-    // * BUSINESS LOGIC METHODS
+    // * BUSINESS LOGIC METHODS - DIPERBAIKI
     // * ========================================
 
     /**
      * Cek apakah delivery order memiliki discrepancy
+     * DIPERBAIKI: Tambah null check yang robust
      */
     public function hasDiscrepancies(): bool
     {
-        return $this->has_discrepancy ||
-            $this->items()->whereColumn('received_quantity', '!=', 'sent_quantity')->exists();
+        // Cek flag discrepancy yang sudah ada
+        if ($this->has_discrepancy) {
+            return true;
+        }
+
+        // Cek discrepancy di level item dengan null safety
+        return $this->items()
+            ->whereNotNull('received_quantity')
+            ->whereNotNull('sent_quantity')
+            ->whereColumn('received_quantity', '!=', 'sent_quantity')
+            ->exists();
+    }
+
+    /**
+     * Get total discrepancy items
+     */
+    public function getTotalDiscrepancyItems(): int
+    {
+        return $this->items()
+            ->whereNotNull('received_quantity')
+            ->whereNotNull('sent_quantity')
+            ->whereColumn('received_quantity', '!=', 'sent_quantity')
+            ->count();
+    }
+
+    /**
+     * Get items with discrepancy
+     */
+    public function getDiscrepancyItems()
+    {
+        return $this->items()
+            ->whereNotNull('received_quantity')
+            ->whereNotNull('sent_quantity')
+            ->whereColumn('received_quantity', '!=', 'sent_quantity')
+            ->get();
     }
 
     // * ========================================
     // * ACCESSORS (Laravel 12.x Attribute Style)
     // * ========================================
 
-    /**
-     * Get status label dalam bahasa Indonesia menggunakan StatusHelper
-     */
     protected function statusLabel(): Attribute
     {
         return Attribute::make(
-            get: fn() => StatusHelper::getDeliveryOrderStatusLabel($this->status),
+            get: fn() => DeliveryOrderHelper::getStatusLabel($this->status),
         );
     }
 
-    /**
-     * Get status color menggunakan StatusHelper
-     */
     protected function statusColor(): Attribute
     {
         return Attribute::make(
-            get: fn() => StatusHelper::getDeliveryOrderStatusColor($this->status),
+            get: fn() => DeliveryOrderHelper::getStatusColor($this->status),
         );
     }
 
-    /**
-     * Get progress percentage menggunakan StatusHelper
-     */
     protected function progressPercentage(): Attribute
     {
         return Attribute::make(
-            get: fn() => StatusHelper::getDeliveryOrderProgressPercentage($this->status),
+            get: fn() => DeliveryOrderHelper::getProgressPercentage($this->status),
         );
     }
 
-    /**
-     * Get total items dalam delivery order
-     */
     protected function totalItems(): Attribute
     {
         return Attribute::make(
@@ -236,9 +238,6 @@ class DeliveryOrder extends Model
         );
     }
 
-    /**
-     * Get total berat dalam delivery order
-     */
     protected function totalWeight(): Attribute
     {
         return Attribute::make(
@@ -246,9 +245,6 @@ class DeliveryOrder extends Model
         );
     }
 
-    /**
-     * Get total nilai dalam delivery order
-     */
     protected function totalValue(): Attribute
     {
         return Attribute::make(
@@ -256,29 +252,20 @@ class DeliveryOrder extends Model
         );
     }
 
-    /**
-     * Get formatted total value menggunakan StatusHelper
-     */
     protected function formattedTotalValue(): Attribute
     {
         return Attribute::make(
-            get: fn() => StatusHelper::formatRupiah($this->total_value),
+            get: fn() => FormatHelper::formatRupiah($this->total_value),
         );
     }
 
-    /**
-     * Get formatted total weight menggunakan StatusHelper
-     */
     protected function formattedTotalWeight(): Attribute
     {
         return Attribute::make(
-            get: fn() => StatusHelper::formatWeight($this->total_weight),
+            get: fn() => FormatHelper::formatWeight($this->total_weight),
         );
     }
 
-    /**
-     * Get Google Maps URL berdasarkan koordinat tujuan
-     */
     protected function mapUrl(): Attribute
     {
         return Attribute::make(
@@ -287,7 +274,7 @@ class DeliveryOrder extends Model
                     return null;
                 }
 
-                return "https://www.google.com/maps?q={$this->destination_latitude},{$this->destination_longitude}";
+                return FormatHelper::generateMapsUrl($this->destination_latitude, $this->destination_longitude);
             }
         );
     }
@@ -296,27 +283,23 @@ class DeliveryOrder extends Model
     // * STATIC HELPER METHODS
     // * ========================================
 
-    /**
-     * Get all available statuses untuk dropdown menggunakan StatusHelper
-     */
     public static function getAllStatuses(): array
     {
-        return StatusHelper::getAllDeliveryOrderStatuses();
+        return DeliveryOrderHelper::getAllStatuses();
     }
 
-    /**
-     * Get status color by status key menggunakan StatusHelper
-     */
     public static function getStatusColorByKey(string $status): string
     {
-        return StatusHelper::getDeliveryOrderStatusColor($status);
+        return DeliveryOrderHelper::getStatusColor($status);
     }
 
-    /**
-     * Get status label by status key menggunakan StatusHelper
-     */
     public static function getStatusLabelByKey(string $status): string
     {
-        return StatusHelper::getDeliveryOrderStatusLabel($status);
+        return DeliveryOrderHelper::getStatusLabel($status);
+    }
+
+    public static function isValidStatus(string $status): bool
+    {
+        return DeliveryOrderHelper::isValidStatus($status);
     }
 }

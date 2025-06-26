@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Class\Helper\UserHelper;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -12,54 +13,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasRoles, HasFactory, Notifiable, SoftDeletes;
-
-    // * ========================================
-    // * KONSTANTA PERAN PENGGUNA
-    // * ========================================
-
-    const ROLE_MANAGER = 'manager';
-    const ROLE_ADMIN = 'admin';
-    const ROLE_DRIVER = 'driver';
-    const ROLE_CLIENT = 'client';
-    const ROLE_PETUGAS_LAPANGAN = 'petugas-lapangan';
-    const ROLE_PETUGAS_RUANGAN = 'petugas-ruangan';
-    const ROLE_PETUGAS_GUDANG = 'petugas-gudang';
-
-    // * ========================================
-    // * KONFIGURASI WARNA PERAN (DaisyUI Colors)
-    // * ========================================
-
-    /**
-     * Mapping warna badge untuk setiap peran pengguna sesuai DaisyUI documentation
-     */
-    private static array $roleColors = [
-        self::ROLE_MANAGER => 'primary',
-        self::ROLE_ADMIN => 'secondary',
-        self::ROLE_CLIENT => 'info',
-        self::ROLE_DRIVER => 'warning',
-        self::ROLE_PETUGAS_LAPANGAN => 'success',
-        self::ROLE_PETUGAS_RUANGAN => 'accent',
-        self::ROLE_PETUGAS_GUDANG => 'neutral',
-    ];
-
-    // * ========================================
-    // * LABEL PERAN BAHASA INDONESIA
-    // * ========================================
-
-    /**
-     * Mapping label peran dalam bahasa Indonesia
-     */
-    private static array $roleLabels = [
-        self::ROLE_ADMIN => 'Administrator',
-        self::ROLE_MANAGER => 'Manajer',
-        self::ROLE_CLIENT => 'Klien',
-        self::ROLE_DRIVER => 'Sopir',
-        self::ROLE_PETUGAS_LAPANGAN => 'Petugas Lapangan',
-        self::ROLE_PETUGAS_RUANGAN => 'Petugas Ruangan',
-        self::ROLE_PETUGAS_GUDANG => 'Petugas Gudang',
-    ];
 
     // * ========================================
     // * KONFIGURASI MODEL
@@ -78,9 +32,6 @@ class User extends Authenticatable implements MustVerifyEmail
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast (Laravel 12.x style)
-     */
     protected function casts(): array
     {
         return [
@@ -107,33 +58,26 @@ class User extends Authenticatable implements MustVerifyEmail
         return $query->where('is_active', false);
     }
 
-    /**
-     * Scope untuk exclude drivers - menggunakan Spatie Permission
-     */
     public function scopeExcludeDrivers($query)
     {
         return $query->whereDoesntHave('roles', function ($query) {
-            $query->where('name', self::ROLE_DRIVER);
+            $query->where('name', UserHelper::ROLE_DRIVER);
         });
     }
 
-    /**
-     * Scope untuk hanya drivers - menggunakan Spatie Permission
-     */
     public function scopeOnlyDrivers($query)
     {
         return $query->whereHas('roles', function ($query) {
-            $query->where('name', self::ROLE_DRIVER);
+            $query->where('name', UserHelper::ROLE_DRIVER);
         });
     }
 
     // * ========================================
-    // * ACCESSORS (Laravel 12.x Attribute Style)
+    // * ACCESSORS (Laravel 12.x Attribute Style) - DIPERBAIKI
     // * ========================================
 
     /**
-     * Get avatar URL with fallback - untuk digunakan di seluruh aplikasi
-     * Returns full asset URL or null for placeholder
+     * DIPERBAIKI: Hapus double processing, langsung return asset URL
      */
     protected function avatar(): Attribute
     {
@@ -142,65 +86,101 @@ class User extends Authenticatable implements MustVerifyEmail
         );
     }
 
-    /**
-     * Get status color based on is_active state - konsisten di seluruh aplikasi
-     * Returns DaisyUI color class sesuai dokumentasi
-     */
     protected function statusColor(): Attribute
     {
         return Attribute::make(
-            get: fn () => $this->is_active ? 'success' : 'warning',
+            get: fn () => UserHelper::getStatusColor($this->is_active),
         );
     }
 
-    /**
-     * Get status label in Indonesian
-     */
     protected function statusLabel(): Attribute
     {
         return Attribute::make(
-            get: fn () => $this->is_active ? 'Aktif' : 'Nonaktif',
+            get: fn () => UserHelper::getStatusLabel($this->is_active),
         );
     }
 
     /**
-     * Get role color for badge - menggunakan Spatie role pertama
+     * DIPERBAIKI: Tambah null check yang robust
      */
     protected function roleColor(): Attribute
     {
         return Attribute::make(
             get: function () {
                 $role = $this->roles->first();
-                return $role ? (self::$roleColors[$role->name] ?? 'neutral') : 'neutral';
+                return $role ? UserHelper::getRoleColor($role->name) : 'neutral';
             }
         );
     }
 
     /**
-     * Get role label in Indonesian - menggunakan Spatie role pertama
+     * DIPERBAIKI: Tambah null check yang robust
      */
     protected function roleLabel(): Attribute
     {
         return Attribute::make(
             get: function () {
                 $role = $this->roles->first();
-                return $role ? (self::$roleLabels[$role->name] ?? ucfirst($role->name)) : 'Tidak ada role';
+                return $role ? UserHelper::getRoleLabel($role->name) : 'Tidak ada role';
             }
         );
     }
 
     /**
-     * Get avatar placeholder (initials)
+     * DIPERBAIKI: Tambah null check yang robust
      */
-    protected function avatarPlaceholder(): Attribute
+    protected function roleIcon(): Attribute
     {
         return Attribute::make(
             get: function () {
-                $nameParts = explode(' ', $this->name);
-                if (count($nameParts) >= 2) {
-                    return strtoupper(substr($nameParts[0], 0, 1) . substr($nameParts[1], 0, 1));
-                }
-                return strtoupper(substr($this->name, 0, 2));
+                $role = $this->roles->first();
+                return $role ? UserHelper::getRoleIcon($role->name) : 'phosphor.user';
+            }
+        );
+    }
+
+    protected function avatarPlaceholder(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => UserHelper::generateAvatarPlaceholder($this->name),
+        );
+    }
+
+    /**
+     * DIPERBAIKI: Tambah null check yang robust
+     */
+    protected function displayName(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                $role = $this->roles->first();
+                return $role ? UserHelper::generateDisplayName($this->name, $role->name) : $this->name;
+            }
+        );
+    }
+
+    /**
+     * DIPERBAIKI: Tambah null check yang robust
+     */
+    protected function roleDescription(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                $role = $this->roles->first();
+                return $role ? UserHelper::getRoleDescription($role->name) : 'Belum memiliki role';
+            }
+        );
+    }
+
+    /**
+     * DIPERBAIKI: Tambah null check yang robust
+     */
+    protected function rolePriority(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                $role = $this->roles->first();
+                return $role ? UserHelper::getRolePriority($role->name) : 99;
             }
         );
     }
@@ -209,134 +189,112 @@ class User extends Authenticatable implements MustVerifyEmail
     // * STATIC HELPER METHODS
     // * ========================================
 
-    /**
-     * Get all available roles for dropdowns
-     */
     public static function getAllRoles(): array
     {
-        return self::$roleLabels;
+        return UserHelper::getAllRoles();
     }
 
-    /**
-     * Get all available roles excluding drivers
-     */
     public static function getRolesExcludeDrivers(): array
     {
-        $roles = self::$roleLabels;
-        unset($roles[self::ROLE_DRIVER]);
-        return $roles;
+        return UserHelper::getRolesExcludeDrivers();
     }
 
-    /**
-     * Get role color by role key - static method untuk digunakan di luar model
-     */
+    public static function getManagementRoles(): array
+    {
+        return UserHelper::getManagementRoles();
+    }
+
+    public static function getStaffRoles(): array
+    {
+        return UserHelper::getStaffRoles();
+    }
+
     public static function getRoleColorByKey(string $role): string
     {
-        return self::$roleColors[$role] ?? 'neutral';
+        return UserHelper::getRoleColor($role);
     }
 
-    /**
-     * Get role label by role key - static method untuk digunakan di luar model
-     */
     public static function getRoleLabelByKey(string $role): string
     {
-        return self::$roleLabels[$role] ?? ucfirst($role);
+        return UserHelper::getRoleLabel($role);
+    }
+
+    public static function getRoleIconByKey(string $role): string
+    {
+        return UserHelper::getRoleIcon($role);
+    }
+
+    public static function isValidRole(string $role): bool
+    {
+        return UserHelper::isValidRole($role);
+    }
+
+    public static function sortByRolePriority(array $users): array
+    {
+        return UserHelper::sortByRolePriority($users);
     }
 
     // * ========================================
-    // * HELPER METHODS - Updated untuk Spatie Permission
+    // * HELPER METHODS - DIPERBAIKI
     // * ========================================
 
-    /**
-     * Mengaktifkan pengguna
-     */
     public function activate(): bool
     {
         return $this->update(['is_active' => true]);
     }
 
-    /**
-     * Menonaktifkan pengguna
-     */
     public function deactivate(): bool
     {
         return $this->update(['is_active' => false]);
     }
 
-    /**
-     * Toggle status aktif pengguna
-     */
     public function toggleStatus(): bool
     {
         return $this->update(['is_active' => !$this->is_active]);
     }
 
-    /**
-     * Cek apakah pengguna aktif
-     */
     public function isActive(): bool
     {
         return $this->is_active;
     }
 
-    /**
-     * Cek apakah pengguna nonaktif
-     */
     public function isInactive(): bool
     {
         return !$this->is_active;
     }
 
-    /**
-     * Check if user is driver - menggunakan Spatie hasRole()
-     */
     public function isDriver(): bool
     {
-        return $this->hasRole(self::ROLE_DRIVER);
+        return $this->hasRole(UserHelper::ROLE_DRIVER);
     }
 
-    /**
-     * Check if user can be managed in regular user management (non-driver)
-     */
     public function isManageable(): bool
     {
         return !$this->isDriver();
     }
 
-    /**
-     * Check if user is admin - menggunakan Spatie hasRole()
-     */
     public function isAdmin(): bool
     {
-        return $this->hasRole(self::ROLE_ADMIN);
+        return $this->hasRole(UserHelper::ROLE_ADMIN);
     }
 
-    /**
-     * Check if user is manager - menggunakan Spatie hasRole()
-     */
     public function isManager(): bool
     {
-        return $this->hasRole(self::ROLE_MANAGER);
+        return $this->hasRole(UserHelper::ROLE_MANAGER);
     }
 
-    /**
-     * Check if user is client - menggunakan Spatie hasRole()
-     */
     public function isClient(): bool
     {
-        return $this->hasRole(self::ROLE_CLIENT);
+        return $this->hasRole(UserHelper::ROLE_CLIENT);
     }
 
-    /**
-     * Check if user has management access (admin or manager)
-     */
     public function hasManagementAccess(): bool
     {
-        return $this->hasAnyRole([self::ROLE_ADMIN, self::ROLE_MANAGER]);
+        return $this->hasAnyRole([UserHelper::ROLE_ADMIN, UserHelper::ROLE_MANAGER]);
     }
 
     /**
-     * Get primary role name (first role) - menggunakan Spatie
+     * DIPERBAIKI: Tambah null check
      */
     public function getPrimaryRole(): ?string
     {
@@ -344,24 +302,50 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
-     * Get all role names as array - menggunakan Spatie
+     * DIPERBAIKI: Method baru untuk cek apakah user punya role
      */
+    public function hasAnyRole(): bool
+    {
+        return $this->roles->isNotEmpty();
+    }
+
+    /**
+     * DIPERBAIKI: Method yang lebih robust untuk permission checking
+     */
+    public function canAccessAdmin(): bool
+    {
+        $role = $this->getPrimaryRole();
+        return $role ? UserHelper::canAccessAdmin($role) : false;
+    }
+
+    public function canManageUsers(): bool
+    {
+        $role = $this->getPrimaryRole();
+        return $role ? UserHelper::canManageUsers($role) : false;
+    }
+
+    public function canManageDeliveries(): bool
+    {
+        $role = $this->getPrimaryRole();
+        return $role ? UserHelper::canManageDeliveries($role) : false;
+    }
+
+    public function getAllowedRoleTransitions(): array
+    {
+        $role = $this->getPrimaryRole();
+        return $role ? UserHelper::getAllowedRoleTransitions($role) : [];
+    }
+
     public function getRoleNames(): array
     {
         return $this->roles->pluck('name')->toArray();
     }
 
-    /**
-     * Assign role ke user - wrapper untuk Spatie assignRole
-     */
     public function setRole(string $role): void
     {
-        $this->syncRoles($role); // Sync menghapus role lama dan assign role baru
+        $this->syncRoles($role);
     }
 
-    /**
-     * Get first role name untuk backward compatibility
-     */
     public function getRoleAttribute(): ?string
     {
         return $this->getPrimaryRole();
