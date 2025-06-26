@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Role;
 use App\Models\User;
+use App\Class\Helper\UserHelper;
 use Illuminate\Support\Facades\Hash;
 
 class RoleSeeder extends Seeder
@@ -17,15 +18,15 @@ class RoleSeeder extends Seeder
         // Reset cached roles and permissions
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
-        // Create all roles sesuai dengan konstanta di User model
+        // Create all roles sesuai dengan konstanta di UserHelper
         $roles = [
-            User::ROLE_MANAGER,
-            User::ROLE_ADMIN,
-            User::ROLE_DRIVER,
-            User::ROLE_CLIENT,
-            User::ROLE_PETUGAS_LAPANGAN,
-            User::ROLE_PETUGAS_RUANGAN,
-            User::ROLE_PETUGAS_GUDANG,
+            UserHelper::ROLE_ADMIN,
+            UserHelper::ROLE_MANAGER,
+            UserHelper::ROLE_DRIVER,
+            UserHelper::ROLE_CLIENT,
+            UserHelper::ROLE_PETUGAS_LAPANGAN,
+            UserHelper::ROLE_PETUGAS_RUANGAN,
+            UserHelper::ROLE_PETUGAS_GUDANG,
         ];
 
         foreach ($roles as $roleName) {
@@ -46,7 +47,7 @@ class RoleSeeder extends Seeder
             'email_verified_at' => now(),
             'is_active' => true,
         ]);
-        $admin->assignRole(User::ROLE_ADMIN);
+        $admin->assignRole(UserHelper::ROLE_ADMIN);
 
         // Demo Manager
         $manager = User::create([
@@ -56,7 +57,7 @@ class RoleSeeder extends Seeder
             'email_verified_at' => now(),
             'is_active' => true,
         ]);
-        $manager->assignRole(User::ROLE_MANAGER);
+        $manager->assignRole(UserHelper::ROLE_MANAGER);
 
         // Demo Driver
         $driver = User::create([
@@ -66,7 +67,7 @@ class RoleSeeder extends Seeder
             'email_verified_at' => now(),
             'is_active' => true,
         ]);
-        $driver->assignRole(User::ROLE_DRIVER);
+        $driver->assignRole(UserHelper::ROLE_DRIVER);
 
         // Demo Client
         $client = User::create([
@@ -76,7 +77,7 @@ class RoleSeeder extends Seeder
             'email_verified_at' => now(),
             'is_active' => true,
         ]);
-        $client->assignRole(User::ROLE_CLIENT);
+        $client->assignRole(UserHelper::ROLE_CLIENT);
 
         // Demo Petugas Lapangan
         $petugasLapangan = User::create([
@@ -86,7 +87,7 @@ class RoleSeeder extends Seeder
             'email_verified_at' => now(),
             'is_active' => true,
         ]);
-        $petugasLapangan->assignRole(User::ROLE_PETUGAS_LAPANGAN);
+        $petugasLapangan->assignRole(UserHelper::ROLE_PETUGAS_LAPANGAN);
 
         // Demo Petugas Ruangan
         $petugasRuangan = User::create([
@@ -96,7 +97,7 @@ class RoleSeeder extends Seeder
             'email_verified_at' => now(),
             'is_active' => true,
         ]);
-        $petugasRuangan->assignRole(User::ROLE_PETUGAS_RUANGAN);
+        $petugasRuangan->assignRole(UserHelper::ROLE_PETUGAS_RUANGAN);
 
         // Demo Petugas Gudang
         $petugasGudang = User::create([
@@ -106,6 +107,6 @@ class RoleSeeder extends Seeder
             'email_verified_at' => now(),
             'is_active' => true,
         ]);
-        $petugasGudang->assignRole(User::ROLE_PETUGAS_GUDANG);
+        $petugasGudang->assignRole(UserHelper::ROLE_PETUGAS_GUDANG);
     }
 }
