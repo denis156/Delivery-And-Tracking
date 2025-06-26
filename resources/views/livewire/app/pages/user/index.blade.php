@@ -1,7 +1,7 @@
 {{-- User Index Page - Mary UI + DaisyUI Standards --}}
 <div>
     {{-- HEADER --}}
-    <x-header title="Daftar Pengguna" separator progress-indicator>
+    <x-header title="Daftar Pengguna" subtitle="Halaman manajemen pengguna" separator progress-indicator>
         <x-slot:middle class="!justify-end">
             <x-input
                 placeholder="Cari nama atau email..."

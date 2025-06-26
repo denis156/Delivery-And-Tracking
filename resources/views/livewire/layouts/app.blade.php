@@ -54,6 +54,7 @@
                 <x-menu-item title="Dashboard" icon="phosphor.gauge-light" link="{{ route('app.dashboard') }}" exact />
                 {{-- Master Data --}}
                 <x-menu-sub title="Master Data" icon="phosphor.database-light">
+                    <x-menu-item title="Data Pengguna" icon="phosphor.users-four-light" link="{{ route('app.user.index') }}" />
                     <x-menu-item title="Data Sopir" icon="phosphor.user-circle-light" link="###" exact />
                     <x-menu-item title="Data Klien" icon="phosphor.buildings-light" link="###" exact />
                     <x-menu-item title="Data Barang" icon="phosphor.package-light" link="###" exact />
@@ -74,10 +75,10 @@
                     <x-menu-item title="Laporan Keuangan" icon="phosphor.chart-pie-light" link="###" exact />
                 </x-menu-sub>
                 {{-- Management Pengguna --}}
-                <x-menu-sub title="Management Pengguna" icon="phosphor.user-gear-light">
+                {{-- <x-menu-sub title="Management Pengguna" icon="phosphor.user-gear-light">
                     <x-menu-item title="Pengguna" icon="phosphor.users-four-light" link="{{ route('app.user.index') }}" exact />
                     <x-menu-item title="Permission" icon="phosphor.key-light" link="{{ route('app.permission.index') }}" exact />
-                </x-menu-sub>
+                </x-menu-sub> --}}
                 {{-- Logout --}}
                 <x-menu-item title="Keluar" icon="phosphor.sign-out-light" link="{{ route('logout') }}" exact />
                 <x-menu-separator />
