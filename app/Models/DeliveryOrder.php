@@ -24,7 +24,6 @@ class DeliveryOrder extends Model
         'status',
         'client_id',
         'delivery_address',
-        'recipient_pic',
         'destination_latitude',
         'destination_longitude',
         'created_by',

@@ -33,7 +33,6 @@ return new class extends Migration
             // Data penerima - ambil dari user dengan role client
             $table->foreignId('client_id')->constrained('users')->comment('Client penerima dengan role client');
             $table->text('delivery_address')->comment('Alamat pengiriman atau tujuan');
-            $table->string('recipient_pic', 255)->nullable()->comment('Person in charge di lokasi tujuan');
 
             // Koordinat tujuan untuk sistem tracking menggunakan global positioning system
             $table->decimal('destination_latitude', 10, 8)->nullable()->comment('Latitude tujuan');
