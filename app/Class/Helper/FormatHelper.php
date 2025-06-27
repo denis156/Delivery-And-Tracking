@@ -339,4 +339,48 @@ class FormatHelper
 
         return $barcode;
     }
+
+    // * ========================================
+    // * UI ICONS - CENTRALIZED
+    // * ========================================
+
+    /**
+     * Get common UI icons untuk menghindari hardcode di component
+     * CENTRALIZED: Semua icon UI umum di satu tempat
+     */
+    public static function getCommonIcons(): array
+    {
+        return [
+            'search' => 'phosphor.magnifying-glass',
+            'filter' => 'phosphor.funnel',
+            'add' => 'phosphor.plus-circle',
+            'edit' => 'phosphor.pencil',
+            'delete' => 'phosphor.trash',
+            'view' => 'phosphor.eye',
+            'info' => 'phosphor.info',
+            'warning' => 'phosphor.warning',
+            'success' => 'phosphor.check-circle',
+            'error' => 'phosphor.x-circle',
+            'email' => 'phosphor.envelope-simple',
+            'calendar' => 'phosphor.calendar',
+            'menu' => 'phosphor.dots-three-vertical',
+            'sort_asc' => 'phosphor.sort-ascending',
+            'sort_desc' => 'phosphor.sort-descending',
+            'reset' => 'phosphor.arrow-counter-clockwise',
+            'back' => 'phosphor.arrow-left',
+            'next' => 'phosphor.arrow-right',
+            'close' => 'phosphor.x',
+            'check' => 'phosphor.check',
+            'upload' => 'phosphor.upload',
+            'download' => 'phosphor.download',
+        ];
+    }
+
+    /**
+     * Get specific common icon
+     */
+    public static function getCommonIcon(string $key): string
+    {
+        return self::getCommonIcons()[$key] ?? 'phosphor.question';
+    }
 }

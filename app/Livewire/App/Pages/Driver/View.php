@@ -5,6 +5,7 @@ namespace App\Livewire\App\Pages\Driver;
 use App\Models\User;
 use App\Class\Helper\UserHelper;
 use App\Class\Helper\DriverHelper;
+use App\Class\Helper\FormatHelper;
 use Mary\Traits\Toast;
 use Livewire\Component;
 use Livewire\Attributes\Title;
@@ -84,7 +85,7 @@ class View extends Component
        return [
            'label' => UserHelper::getStatusLabel($this->user->is_active),
            'color' => UserHelper::getStatusColor($this->user->is_active),
-           'icon' => $this->user->is_active ? 'check-circle' : 'pause-circle',
+           'icon' => $this->user->is_active ? UserHelper::getStatusIcon('active') : UserHelper::getStatusIcon('inactive'),
        ];
    }
 
@@ -106,6 +107,12 @@ class View extends Component
                'vehicle_plate' => DriverHelper::getDriverFieldIcon('vehicle_plate'),
                'vehicle_status' => DriverHelper::getDriverFieldIcon('vehicle_status'),
                'driver_display' => DriverHelper::getDriverFieldIcon('driver_display'),
+               'edit' => FormatHelper::getCommonIcon('edit'),
+               'delete' => FormatHelper::getCommonIcon('delete'),
+               'back' => FormatHelper::getCommonIcon('back'),
+               'view' => FormatHelper::getCommonIcon('view'),
+               'pause' => 'phosphor.pause',
+               'play' => 'phosphor.play',
            ],
            'colors' => [
                'phone' => DriverHelper::getDriverFieldColor('phone'),
@@ -131,7 +138,7 @@ class View extends Component
        if (!$driver || !$driver->license_expiry) {
            return [
                'status' => 'no_license',
-               'label' => 'Tidak Ada Data',
+               'label' => DriverHelper::getLicenseStatusLabel('no_license'),
                'color' => 'error',
                'icon' => DriverHelper::getLicenseStatusIcon('no_license'),
                'daysToExpiry' => 0,
@@ -146,12 +153,12 @@ class View extends Component
        $licenseStatus = DriverHelper::getLicenseStatus($driver->license_expiry);
        $daysToExpiry = DriverHelper::getDaysToExpiry($driver->license_expiry);
        $isExpired = DriverHelper::isLicenseExpired($driver->license_expiry);
-       $isExpiringSoon = DriverHelper::isLicenseExpiringSoon($driver->license_expiry, 90);
+       $isExpiringSoon = DriverHelper::isLicenseExpiringSoon($driver->license_expiry, DriverHelper::LICENSE_WARNING_DAYS);
 
        // Status message berdasarkan kondisi
        $statusMessage = match($licenseStatus['status']) {
            'expired' => 'SIM sudah kadaluarsa dan perlu diperpanjang segera',
-           'expiring_soon' => 'SIM akan kadaluarsa dalam 90 hari ke depan, segera perpanjang',
+           'expiring_soon' => 'SIM akan kadaluarsa dalam ' . DriverHelper::LICENSE_WARNING_DAYS . ' hari ke depan, segera perpanjang',
            'valid' => 'SIM masih berlaku dan dapat digunakan untuk beroperasi',
            default => 'Status SIM tidak diketahui'
        };
@@ -272,7 +279,7 @@ class View extends Component
        if (!$driver) {
            return [
                'hasVehicle' => false,
-               'status' => 'Tidak Ada Data Kendaraan',
+               'status' => DriverHelper::getVehicleStatusLabel('none'),
                'description' => 'Driver belum memiliki informasi kendaraan',
                'icon' => DriverHelper::getVehicleStatusIcon('none'),
            ];
@@ -282,10 +289,10 @@ class View extends Component
        $hasPlate = !empty($driver->vehicle_plate);
 
        $status = match(true) {
-           $hasType && $hasPlate => 'Kendaraan Terdaftar',
+           $hasType && $hasPlate => DriverHelper::getVehicleStatusLabel('complete'),
            $hasType && !$hasPlate => 'Kendaraan Tanpa Plat',
            !$hasType && $hasPlate => 'Plat Tanpa Jenis',
-           default => 'Belum Ada Kendaraan'
+           default => DriverHelper::getVehicleStatusLabel('none')
        };
 
        $description = match(true) {

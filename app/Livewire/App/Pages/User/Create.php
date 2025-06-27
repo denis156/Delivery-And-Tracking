@@ -4,12 +4,15 @@ namespace App\Livewire\App\Pages\User;
 
 use App\Models\User;
 use App\Class\Helper\UserHelper;
+use App\Class\Helper\DriverHelper;
+use App\Class\Helper\FormatHelper;
 use Mary\Traits\Toast;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Validate;
+use Livewire\Attributes\Computed;
 
 #[Title('Tambah Pengguna')]
 #[Layout('livewire.layouts.app')]
@@ -104,6 +107,34 @@ class Create extends Component
             'password_confirmation.same' => 'Konfirmasi kata sandi tidak cocok.',
             'avatar.image' => 'File harus berupa gambar.',
             'avatar.max' => 'Ukuran foto profil maksimal 2MB.',
+        ];
+    }
+
+    /**
+     * DYNAMIC: User UI configuration from helper
+     */
+    #[Computed]
+    public function userUIConfig(): array
+    {
+        return [
+            'icons' => [
+                'add' => FormatHelper::getCommonIcon('add'),
+                'user' => FormatHelper::getCommonIcon('user'),
+                'users' => FormatHelper::getCommonIcon('users'),
+                'email' => FormatHelper::getCommonIcon('email'),
+                'success' => FormatHelper::getCommonIcon('success'),
+                'warning' => FormatHelper::getCommonIcon('warning'),
+                'info' => FormatHelper::getCommonIcon('info'),
+                'reset' => FormatHelper::getCommonIcon('reset'),
+            ],
+            'colors' => [
+                'active' => UserHelper::getStatusColor(UserHelper::STATUS_ACTIVE),
+                'inactive' => UserHelper::getStatusColor(UserHelper::STATUS_INACTIVE),
+            ],
+            'labels' => [
+                'active' => UserHelper::getStatusLabel(UserHelper::STATUS_ACTIVE),
+                'inactive' => UserHelper::getStatusLabel(UserHelper::STATUS_INACTIVE),
+            ]
         ];
     }
 

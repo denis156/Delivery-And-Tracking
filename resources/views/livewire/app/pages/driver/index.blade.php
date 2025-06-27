@@ -5,12 +5,12 @@
         icon-classes="text-primary h-10" separator progress-indicator>
         <x-slot:middle class="!justify-end">
             <x-input placeholder="Cari nama, email, SIM, atau plat..." wire:model.live.debounce="search" clearable
-                icon="phosphor.magnifying-glass" />
+                icon="{{ $this->driverUIConfig['icons']['search'] }}" />
         </x-slot:middle>
         <x-slot:actions>
-            <x-button label="Filter" @click="$wire.drawer = true" responsive icon="phosphor.funnel" class="btn-primary" />
+            <x-button label="Filter" @click="$wire.drawer = true" responsive icon="{{ $this->driverUIConfig['icons']['filter'] }}" class="btn-primary" />
             <x-button label="Tambah Sopir" link="{{ route('app.driver.create') }}" responsive
-                icon="phosphor.plus-circle" class="btn-success" />
+                icon="{{ $this->driverUIConfig['icons']['add'] }}" class="btn-success" />
         </x-slot:actions>
     </x-header>
 
@@ -18,11 +18,11 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 md:gap-4 mb-6">
         <x-stat title="Total Driver" :value="$this->driverStats['totalDrivers']" icon="{{ $this->driverUIConfig['icons']['user'] }}" color="text-primary"
             class="bg-primary/20 hover:shadow-xl hover:shadow-primary transition-all duration-300" :tooltip="$this->driverStats['totalDriversTooltip']" />
-        <x-stat title="Driver Aktif" :value="$this->driverStats['activeDrivers']" icon="phosphor.check-circle" color="text-success"
+        <x-stat title="Driver Aktif" :value="$this->driverStats['activeDrivers']" icon="{{ $this->driverUIConfig['icons']['success'] }}" color="text-success"
             class="bg-success/20 hover:shadow-xl hover:shadow-primary transition-all duration-300" :tooltip="$this->driverStats['activeDriversTooltip']" />
-        <x-stat title="Driver Nonaktif" :value="$this->driverStats['inactiveDrivers']" icon="phosphor.x-circle" color="text-warning"
+        <x-stat title="Driver Nonaktif" :value="$this->driverStats['inactiveDrivers']" icon="{{ $this->driverUIConfig['icons']['error'] }}" color="text-warning"
             class="text-warning bg-warning/20 hover:shadow-xl hover:shadow-primary transition-all duration-300" :tooltip="$this->driverStats['inactiveDriversTooltip']" />
-        <x-stat title="SIM Kadaluarsa" :value="$this->driverStats['expiredLicenses']" icon="phosphor.warning" color="text-error"
+        <x-stat title="SIM Kadaluarsa" :value="$this->driverStats['expiredLicenses']" icon="{{ $this->driverUIConfig['icons']['warning'] }}" color="text-error"
             class="text-error bg-error/20 hover:shadow-xl hover:shadow-primary transition-all duration-300" :tooltip="$this->driverStats['expiredLicensesTooltip']" />
     </div>
 
@@ -41,10 +41,10 @@
                     @endif
                 </p>
                 @if (!$search)
-                    <x-button label="Tambah Driver Pertama" link="{{ route('app.driver.create') }}" icon="phosphor.plus"
+                    <x-button label="Tambah Driver Pertama" link="{{ route('app.driver.create') }}" icon="{{ $this->driverUIConfig['icons']['add'] }}"
                         class="btn-primary" />
                 @else
-                    <x-button label="Reset Pencarian" wire:click="$set('search', '')" icon="phosphor.x"
+                    <x-button label="Reset Pencarian" wire:click="$set('search', '')" icon="{{ $this->driverUIConfig['icons']['close'] }}"
                         class="btn-ghost" />
                 @endif
             </div>
@@ -180,7 +180,7 @@
 
                             {{-- Change Status Button menggunakan Model Accessor --}}
                             <x-button :label="$driver->is_active ? 'Nonaktifkan' : 'Aktifkan'" wire:click.stop="openChangeStatusModal({{ $driver->id }})"
-                                class="btn-{{ $driver->is_active ? 'warning' : 'success' }} btn-md" :icon="$driver->is_active ? 'phosphor.pause' : 'phosphor.play'"
+                                class="btn-{{ $driver->is_active ? 'warning' : 'success' }} btn-md" :icon="$driver->is_active ? \App\Class\Helper\UserHelper::getStatusIcon('inactive') : \App\Class\Helper\UserHelper::getStatusIcon('active')"
                                 responsive :tooltip="$driver->is_active ? 'Nonaktifkan akun driver' : 'Aktifkan akun driver'" />
 
                             {{-- Delete Button --}}

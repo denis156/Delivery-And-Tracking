@@ -370,4 +370,74 @@ class UserHelper
         // Driver and Client cannot change roles
         return [];
     }
+
+    // * ========================================
+    // * STATUS ICONS - CENTRALIZED
+    // * ========================================
+
+    /**
+     * Get status icons untuk menghindari hardcode di component
+     * CENTRALIZED: Icon untuk berbagai status aplikasi
+     */
+    public static function getStatusIcons(): array
+    {
+        return [
+            'active' => 'phosphor.check-circle',
+            'inactive' => 'phosphor.pause',
+            'loading' => 'phosphor.spinner',
+            'pending' => 'phosphor.clock',
+            'completed' => 'phosphor.check-circle-fill',
+            'failed' => 'phosphor.x-circle',
+            'warning' => 'phosphor.warning-circle',
+            'info' => 'phosphor.info',
+            'online' => 'phosphor.wifi-high',
+            'offline' => 'phosphor.wifi-slash',
+        ];
+    }
+
+    /**
+     * Get specific status icon
+     */
+    public static function getStatusIcon(string $key): string
+    {
+        return self::getStatusIcons()[$key] ?? 'phosphor.question';
+    }
+
+    // * ========================================
+    // * FILTER LABELS - CENTRALIZED 
+    // * ========================================
+
+    /**
+     * Get common filter labels untuk dropdown dan filter
+     * CENTRALIZED: Label umum untuk filter di seluruh aplikasi
+     */
+    public static function getFilterLabels(): array
+    {
+        return [
+            'all' => 'Semua',
+            'all_status' => 'Semua Status',
+            'all_roles' => 'Semua Role',
+            'all_types' => 'Semua Jenis',
+            'active' => 'Aktif',
+            'inactive' => 'Nonaktif',
+            'expired' => 'Kadaluarsa',
+            'valid' => 'Berlaku',
+            'expiring_soon' => 'Akan Kadaluarsa',
+            'newest_first' => 'Terbaru ke Lama',
+            'oldest_first' => 'Lama ke Terbaru',
+            'a_to_z' => 'A ke Z',
+            'z_to_a' => 'Z ke A',
+            'newest_to_oldest' => 'Terbaru ke Lama / Z ke A',
+            'oldest_to_newest' => 'Lama ke Terbaru / A ke Z',
+            'search_placeholder' => 'Cari nama, email, atau data lainnya...',
+        ];
+    }
+
+    /**
+     * Get specific filter label
+     */
+    public static function getFilterLabel(string $key): string
+    {
+        return self::getFilterLabels()[$key] ?? ucfirst(str_replace('_', ' ', $key));
+    }
 }

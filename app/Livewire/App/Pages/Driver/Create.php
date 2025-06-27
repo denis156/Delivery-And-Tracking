@@ -167,9 +167,10 @@ class Create extends Component
     {
         return [
             'icons' => [
+                'add' => FormatHelper::getCommonIcon('add'),
                 'user' => UserHelper::getRoleIcon(UserHelper::ROLE_DRIVER),
-                'name' => 'phosphor.user',
-                'email' => 'phosphor.envelope',
+                'name' => FormatHelper::getCommonIcon('user'),
+                'email' => FormatHelper::getCommonIcon('email'),
                 'password' => 'phosphor.lock',
                 'avatar' => 'phosphor.camera',
                 'license_type' => DriverHelper::getDriverFieldIcon('license_type'),
@@ -216,7 +217,7 @@ class Create extends Component
         return [
             'label' => UserHelper::getStatusLabel($this->is_active),
             'color' => UserHelper::getStatusColor($this->is_active),
-            'icon' => $this->is_active ? 'check-circle' : 'pause-circle',
+            'icon' => $this->is_active ? UserHelper::getStatusIcon('active') : UserHelper::getStatusIcon('inactive'),
         ];
     }
 
@@ -275,21 +276,21 @@ class Create extends Component
                 'status' => 'valid',
                 'message' => 'Siap untuk disimpan!',
                 'color' => 'success',
-                'icon' => 'phosphor.check-circle'
+                'icon' => FormatHelper::getCommonIcon('success')
             ];
         } elseif ($this->hasData) {
             return [
                 'status' => 'incomplete',
                 'message' => 'Lengkapi semua field wajib',
                 'color' => 'warning',
-                'icon' => 'phosphor.warning'
+                'icon' => FormatHelper::getCommonIcon('warning')
             ];
         } else {
             return [
                 'status' => 'empty',
                 'message' => 'Mulai mengisi form untuk preview',
                 'color' => 'info',
-                'icon' => 'phosphor.info'
+                'icon' => FormatHelper::getCommonIcon('info')
             ];
         }
     }

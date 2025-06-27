@@ -1,7 +1,7 @@
 {{-- View User Page - Mary UI + DaisyUI Standards (Simplified) --}}
 <div>
     {{-- HEADER --}}
-    <x-header title="Detail {{ $user->name }}" icon="phosphor.eye-duotone" icon-classes="text-info h-10" separator
+    <x-header title="Detail {{ $user->name }}" icon="{{ $this->userUIConfig['icons']['view'] }}" icon-classes="text-info h-10" separator
         progress-indicator>
         <x-slot:subtitle>
             <div>Lihat detail pengguna internal <span class="text-info/60">{{ $user->name }}</span> di sini</div>
@@ -22,7 +22,7 @@
         <div class="lg:col-span-1">
             <x-card title="Profil {{ $user->name }}" separator sticky class="shadow-md">
                 <x-slot:menu>
-                    <x-icon name="phosphor.user-focus" class="h-5 text-info" />
+                    <x-icon name="{{ $this->userUIConfig['icons']['user'] }}" class="h-5 text-info" />
                 </x-slot:menu>
 
                 <div class="space-y-6">
@@ -58,7 +58,7 @@
                                     {{ $user->role_label }}
                                 </div>
                                 <div class="badge badge-{{ $user->status_color }} badge-lg">
-                                    <x-icon name="phosphor.{{ $user->is_active ? 'check-circle' : 'pause-circle' }}"
+                                    <x-icon name="{{ $user->is_active ? \App\Class\Helper\UserHelper::getStatusIcon('active') : \App\Class\Helper\UserHelper::getStatusIcon('inactive') }}"
                                         class="h-4" />
                                     {{ $user->status_label }}
                                 </div>
@@ -69,17 +69,17 @@
                     {{-- Quick Actions --}}
                     <div class="space-y-2 pt-4 border-t border-base-300">
                         <x-button label="Data Pengguna" wire:click="backToList"
-                            class="btn-primary btn-outline btn-block" icon="phosphor.users-four" />
+                            class="btn-primary btn-outline btn-block" icon="{{ $this->userUIConfig['icons']['users'] }}" />
 
                         <x-button label="Edit {{ $user->name }}" wire:click="editUser"
-                            class="btn-warning btn-outline btn-block" icon="phosphor.pencil" />
+                            class="btn-warning btn-outline btn-block" icon="{{ $this->userUIConfig['icons']['edit'] }}" />
 
                         <x-button label="Hapus {{ $user->name }}" wire:click="deleteUser"
-                            class="btn-error btn-outline btn-block" icon="phosphor.trash" />
+                            class="btn-error btn-outline btn-block" icon="{{ $this->userUIConfig['icons']['delete'] }}" />
 
                         <x-button :label="$user->is_active ? 'Nonaktifkan' : 'Aktifkan'" wire:click="changeUserStatus"
                             class="btn-{{ $user->is_active ? 'warning' : 'success' }} btn-outline btn-block"
-                            :icon="$user->is_active ? 'phosphor.pause' : 'phosphor.play'" />
+                            :icon="$user->is_active ? \App\Class\Helper\UserHelper::getStatusIcon('inactive') : \App\Class\Helper\UserHelper::getStatusIcon('active')" />
 
                     </div>
                 </div>
@@ -91,7 +91,7 @@
             {{-- Account Information --}}
             <x-card title="Informasi {{ $user->name }}" separator class="shadow-md">
                 <x-slot:menu>
-                    <x-icon name="phosphor.eye" class="h-5 text-info" />
+                    <x-icon name="{{ $this->userUIConfig['icons']['view'] }}" class="h-5 text-info" />
                 </x-slot:menu>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -103,7 +103,7 @@
                             {{-- Name --}}
                             <div
                                 class="flex items-center gap-3 p-3 bg-base-200 rounded-lg hover:shadow-xl hover:shadow-primary transition-all duration-300">
-                                <x-icon name="phosphor.user" class="h-5 text-primary flex-shrink-0" />
+                                <x-icon name="{{ $this->userUIConfig['icons']['user'] }}" class="h-5 text-primary flex-shrink-0" />
                                 <div class="min-w-0 flex-1">
                                     <p class="text-sm font-medium text-base-content/70">Nama Lengkap</p>
                                     <p class="font-semibold truncate">{{ $user->name }}</p>
@@ -113,7 +113,7 @@
                             {{-- Email --}}
                             <div
                                 class="flex items-center gap-3 p-3 bg-base-200 rounded-lg hover:shadow-xl hover:shadow-primary transition-all duration-300">
-                                <x-icon name="phosphor.envelope" class="h-5 text-info flex-shrink-0" />
+                                <x-icon name="{{ $this->userUIConfig['icons']['email'] }}" class="h-5 text-info flex-shrink-0" />
                                 <div class="min-w-0 flex-1">
                                     <p class="text-sm font-medium text-base-content/70">Email</p>
                                     <p class="font-semibold break-all">{{ $user->email }}</p>
@@ -141,7 +141,7 @@
                             {{-- Active Status --}}
                             <div
                                 class="flex items-center gap-3 p-3 bg-base-200 rounded-lg hover:shadow-xl hover:shadow-primary transition-all duration-300">
-                                <x-icon name="phosphor.{{ $user->is_active ? 'check-circle' : 'pause-circle' }}"
+                                <x-icon name="{{ $user->is_active ? \App\Class\Helper\UserHelper::getStatusIcon('active') : \App\Class\Helper\UserHelper::getStatusIcon('inactive') }}"
                                     class="h-5 text-{{ $user->status_color }} flex-shrink-0" />
                                 <div class="min-w-0 flex-1">
                                     <p class="text-sm font-medium text-base-content/70">Status Akun</p>
@@ -171,7 +171,7 @@
                             {{-- Join Date --}}
                             <div
                                 class="flex items-center gap-3 p-3 bg-base-200 rounded-lg hover:shadow-xl hover:shadow-primary transition-all duration-300">
-                                <x-icon name="phosphor.calendar-plus" class="h-5 text-secondary flex-shrink-0" />
+                                <x-icon name="{{ $this->userUIConfig['icons']['calendar'] }}" class="h-5 text-secondary flex-shrink-0" />
                                 <div class="min-w-0 flex-1">
                                     <p class="text-sm font-medium text-base-content/70">Bergabung</p>
                                     <p class="font-semibold">{{ $user->created_at->format('d M Y') }}</p>
@@ -184,7 +184,7 @@
                             {{-- Last Update --}}
                             <div
                                 class="flex items-center gap-3 p-3 bg-base-200 rounded-lg hover:shadow-xl hover:shadow-primary transition-all duration-300">
-                                <x-icon name="phosphor.clock-clockwise" class="h-5 text-accent flex-shrink-0" />
+                                <x-icon name="{{ $this->userUIConfig['icons']['clock'] }}" class="h-5 text-accent flex-shrink-0" />
                                 <div class="min-w-0 flex-1">
                                     <p class="text-sm font-medium text-base-content/70">Terakhir Diperbarui</p>
                                     <p class="font-semibold">{{ $user->updated_at->format('d M Y') }}</p>
@@ -202,18 +202,18 @@
             {{-- Activity Summary --}}
             <x-card title="Ringkasan Aktivitas" separator class="shadow-md">
                 <x-slot:menu>
-                    <x-icon name="phosphor.person-simple-run" class="h-5 text-info" />
+                    <x-icon name="{{ $this->userUIConfig['icons']['activity'] }}" class="h-5 text-info" />
                 </x-slot:menu>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
                     {{-- Account Age --}}
                     <x-stat title="Usia Akun" :value="$this->userActivity['joinedDays']" description="{{ $this->userActivity['accountAge'] }}"
-                        icon="phosphor.calendar-check" color="text-primary"
+                        icon="{{ $this->userUIConfig['icons']['calendar'] }}" color="text-primary"
                         class="bg-base-200 hover:shadow-xl hover:shadow-primary transition-all duration-300" />
 
                     {{-- Last Activity --}}
                     <x-stat title="Aktivitas Terakhir" :value="$this->userActivity['lastUpdateDays']"
-                        description="{{ $this->userActivity['lastUpdate'] }}" icon="phosphor.clock-clockwise"
+                        description="{{ $this->userActivity['lastUpdate'] }}" icon="{{ $this->userUIConfig['icons']['clock'] }}"
                         color="text-secondary"
                         class="bg-base-200 hover:shadow-xl hover:shadow-primary transition-all duration-300" />
 

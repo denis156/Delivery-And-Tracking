@@ -2,7 +2,7 @@
 <div>
     {{-- HEADER --}}
     <x-header title="Tambah Sopir" subtitle="Tambahkan data sopir baru beserta informasi SIM di sini"
-        icon="phosphor.plus-circle-duotone" icon-classes="text-success h-10" separator progress-indicator>
+        icon="{{ $this->driverUIConfig['icons']['add'] }}" icon-classes="text-success h-10" separator progress-indicator>
         <x-slot:middle class="!justify-end">
             <div class="breadcrumbs text-sm hidden lg:block">
                 <ul>
@@ -19,7 +19,7 @@
         <div class="lg:col-span-1">
             <x-card title="Preview Sopir" separator sticky class="shadow-md">
                 <x-slot:menu>
-                    <x-icon name="phosphor.truck" class="h-5 text-success" />
+                    <x-icon name="{{ $this->driverUIConfig['icons']['user'] }}" class="h-5 text-success" />
                 </x-slot:menu>
 
                 <div class="space-y-6">
@@ -59,7 +59,7 @@
                                     Sopir
                                 </div>
                                 <div class="badge badge-{{ $is_active ? 'success' : 'warning' }} badge-lg">
-                                    <x-icon name="phosphor.{{ $is_active ? 'check-circle' : 'pause-circle' }}"
+                                    <x-icon name="{{ $is_active ? \App\Class\Helper\UserHelper::getStatusIcon('active') : \App\Class\Helper\UserHelper::getStatusIcon('inactive') }}"
                                         class="h-4" />
                                     {{ $is_active ? 'Aktif' : 'Nonaktif' }}
                                 </div>
@@ -102,7 +102,7 @@
                         <x-button :label="$is_active ? 'Set: Nonaktifkan' : 'Set: Aktifkan'"
                             wire:click="$dispatch('openChangeStatusPreview', $this->previewData)"
                             class="btn-{{ $is_active ? 'warning' : 'success' }} btn-outline btn-block"
-                            :icon="$is_active ? 'phosphor.pause' : 'phosphor.play'" :disabled="empty($name) || empty($email)" />
+                            :icon="$is_active ? \App\Class\Helper\UserHelper::getStatusIcon('inactive') : \App\Class\Helper\UserHelper::getStatusIcon('active')" :disabled="empty($name) || empty($email)" />
                     </div>
                 </div>
             </x-card>
@@ -155,11 +155,11 @@
 
                             {{-- Name --}}
                             <x-input label="Nama Lengkap" wire:model.live.debounce.500ms="name" placeholder="Masukkan nama lengkap sopir"
-                                icon="phosphor.user" clearable required />
+                                icon="{{ $this->driverUIConfig['icons']['name'] }}" clearable required />
 
                             {{-- Email --}}
                             <x-input label="Alamat Email" wire:model.live.debounce.500ms="email" placeholder="driver@example.com"
-                                type="email" icon="phosphor.envelope" clearable required />
+                                type="email" icon="{{ $this->driverUIConfig['icons']['email'] }}" clearable required />
 
                             {{-- Security --}}
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -184,7 +184,7 @@
                                 {{-- License Number --}}
                                 <x-input label="Nomor SIM" wire:model.live.debounce.500ms="license_number"
                                     placeholder="Contoh: 1234567890123456"
-                                    icon="phosphor.identification-card" clearable required />
+                                    icon="{{ $this->driverUIConfig['icons']['license_number'] }}" clearable required />
 
                                 {{-- License Type --}}
                                 <x-select label="Jenis SIM" wire:model.live="license_type"
@@ -193,18 +193,18 @@
                                         ->values()
                                         ->toArray()"
                                     option-value="id" option-label="name"
-                                    icon="phosphor.identification-badge" required />
+                                    icon="{{ $this->driverUIConfig['icons']['license_type'] }}" required />
                             </div>
 
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {{-- License Expiry --}}
                                 <x-datetime label="Tanggal Kadaluarsa SIM" wire:model.live="license_expiry"
-                                    icon="phosphor.calendar-x" type="date" required />
+                                    icon="{{ $this->driverUIConfig['icons']['license_expiry'] }}" type="date" required />
 
                                 {{-- Phone --}}
                                 <x-input label="Nomor Telepon" wire:model.live.debounce.500ms="phone"
                                     placeholder="Contoh: 08123456789"
-                                    icon="phosphor.phone" clearable required />
+                                    icon="{{ $this->driverUIConfig['icons']['phone'] }}" clearable required />
                             </div>
 
                             {{-- Address --}}
@@ -223,19 +223,19 @@
                                 {{-- Vehicle Type --}}
                                 <x-input label="Jenis Kendaraan" wire:model.live.debounce.500ms="vehicle_type"
                                     placeholder="Contoh: Truk, Mobil Box, Motor"
-                                    icon="phosphor.truck-trailer" clearable />
+                                    icon="{{ $this->driverUIConfig['icons']['vehicle_type'] }}" clearable />
 
                                 {{-- Vehicle Plate --}}
                                 <x-input label="Plat Nomor" wire:model.live.debounce.500ms="vehicle_plate"
                                     placeholder="Contoh: B 1234 ABC"
-                                    icon="phosphor.textbox" clearable />
+                                    icon="{{ $this->driverUIConfig['icons']['vehicle_plate'] }}" clearable />
                             </div>
                         </div>
                     </div>
 
                     {{-- Form Actions --}}
                     <x-slot:actions separator>
-                        <x-button label="Simpan Sopir" type="submit" class="btn-primary" icon="phosphor.check"
+                        <x-button label="Simpan Sopir" type="submit" class="btn-primary" icon="{{ $this->formStatus['icon'] }}"
                             :disabled="!$this->isFormValid" spinner="save" />
                     </x-slot:actions>
                 </x-form>

@@ -52,7 +52,7 @@
                                         {{ $user->role_label }}
                                     </div>
                                     <div class="badge badge-{{ $user->status_color }} badge-lg">
-                                        <x-icon name="phosphor.{{ $user->is_active ? 'check-circle' : 'pause-circle' }}" class="w-4 h-4 mr-1" />
+                                        <x-icon name="{{ $user->is_active ? \App\Class\Helper\UserHelper::getStatusIcon('active') : \App\Class\Helper\UserHelper::getStatusIcon('inactive') }}" class="w-4 h-4 mr-1" />
                                         {{ $user->status_label }}
                                     </div>
                                 </div>
@@ -71,7 +71,7 @@
                                     :label="$user->is_active ? 'Nonaktifkan' : 'Aktifkan'"
                                     wire:click="toggleUserStatus"
                                     class="btn-{{ $user->is_active ? 'warning' : 'success' }} btn-block"
-                                    :icon="$user->is_active ? 'phosphor.pause' : 'phosphor.play'"
+                                    :icon="$user->is_active ? \App\Class\Helper\UserHelper::getStatusIcon('inactive') : \App\Class\Helper\UserHelper::getStatusIcon('active')"
                                 />
 
                                 <x-button
@@ -113,7 +113,7 @@
                                 </div>
 
                                 <div class="flex items-center gap-3 p-3 bg-base-200 rounded-lg">
-                                    <x-icon name="phosphor.{{ $user->is_active ? 'check-circle' : 'pause-circle' }}" class="w-5 h-5 text-{{ $user->status_color }}" />
+                                    <x-icon name="{{ $user->is_active ? \App\Class\Helper\UserHelper::getStatusIcon('active') : \App\Class\Helper\UserHelper::getStatusIcon('inactive') }}" class="w-5 h-5 text-{{ $user->status_color }}" />
                                     <div>
                                         <p class="text-sm font-medium text-base-content/70">Status</p>
                                         <p class="font-semibold">{{ $user->status_label }}</p>

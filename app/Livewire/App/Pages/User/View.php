@@ -4,10 +4,13 @@ namespace App\Livewire\App\Pages\User;
 
 use App\Models\User;
 use App\Class\Helper\UserHelper;
+use App\Class\Helper\DriverHelper;
+use App\Class\Helper\FormatHelper;
 use Mary\Traits\Toast;
 use Livewire\Component;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Computed;
 
 #[Title('Detail Pengguna')]
 #[Layout('livewire.layouts.app')]
@@ -125,6 +128,39 @@ class View extends Component
                'description' => ''
            ];
        }
+   }
+
+   // * ========================================
+   // * COMPUTED PROPERTIES
+   // * ========================================
+
+   /**
+    * DYNAMIC: User UI configuration from helper
+    */
+   #[Computed]
+   public function userUIConfig(): array
+   {
+       return [
+           'icons' => [
+               'view' => FormatHelper::getCommonIcon('view'),
+               'user' => FormatHelper::getCommonIcon('user'),
+               'users' => FormatHelper::getCommonIcon('users'),
+               'edit' => FormatHelper::getCommonIcon('edit'),
+               'delete' => FormatHelper::getCommonIcon('delete'),
+               'email' => FormatHelper::getCommonIcon('email'),
+               'calendar' => FormatHelper::getCommonIcon('calendar'),
+               'clock' => FormatHelper::getCommonIcon('clock'),
+               'activity' => FormatHelper::getCommonIcon('activity'),
+           ],
+           'colors' => [
+               'active' => UserHelper::getStatusColor(UserHelper::STATUS_ACTIVE),
+               'inactive' => UserHelper::getStatusColor(UserHelper::STATUS_INACTIVE),
+           ],
+           'labels' => [
+               'active' => UserHelper::getStatusLabel(UserHelper::STATUS_ACTIVE),
+               'inactive' => UserHelper::getStatusLabel(UserHelper::STATUS_INACTIVE),
+           ]
+       ];
    }
 
    public function render()

@@ -1,7 +1,7 @@
 {{-- Edit Driver Page - Mary UI + DaisyUI Standards --}}
 <div>
     {{-- HEADER --}}
-    <x-header title="Edit {{ $user->name }}" icon="phosphor.pencil-duotone" icon-classes="text-warning h-10" separator
+    <x-header title="Edit {{ $user->name }}" icon="{{ $this->driverUIConfig['icons']['edit'] }}" icon-classes="text-warning h-10" separator
         progress-indicator>
         <x-slot:subtitle>
             <div>Perbarui data sopir <span class="text-warning/60">{{ $user->name }}</span> dan informasi SIM di sini</div>
@@ -23,7 +23,7 @@
         <div class="lg:col-span-1">
             <x-card title="Profil {{ $user->name }}" separator sticky class="shadow-md">
                 <x-slot:menu>
-                    <x-icon name="phosphor.truck" class="h-5 text-warning" />
+                    <x-icon name="{{ $this->driverUIConfig['icons']['user'] }}" class="h-5 text-warning" />
                 </x-slot:menu>
 
                 <div class="space-y-6">
@@ -66,7 +66,7 @@
                                     Sopir
                                 </div>
                                 <div class="badge badge-{{ $is_active ? 'success' : 'warning' }} badge-lg">
-                                    <x-icon name="phosphor.{{ $is_active ? 'check-circle' : 'pause-circle' }}"
+                                    <x-icon name="{{ $is_active ? \App\Class\Helper\UserHelper::getStatusIcon('active') : \App\Class\Helper\UserHelper::getStatusIcon('inactive') }}"
                                         class="w-4 h-4 mr-1" />
                                     {{ $is_active ? 'Aktif' : 'Nonaktif' }}
                                 </div>
@@ -94,17 +94,17 @@
                     {{-- Quick Actions --}}
                     <div class="space-y-2 pt-4 border-t border-base-300">
                         <x-button label="Data Sopir" wire:click="backToList"
-                            class="btn-primary btn-outline btn-block" icon="phosphor.truck" />
+                            class="btn-primary btn-outline btn-block" icon="{{ $this->driverUIConfig['icons']['back'] }}" />
 
                         <x-button label="Detail {{ $user->name }}" wire:click="cancel"
-                            class="btn-info btn-outline btn-block" icon="phosphor.eye" />
+                            class="btn-info btn-outline btn-block" icon="{{ $this->driverUIConfig['icons']['view'] }}" />
 
                         <x-button :label="$user->is_active ? 'Nonaktifkan' : 'Aktifkan'" wire:click="changeUserStatus"
                             class="btn-{{ $user->is_active ? 'warning' : 'success' }} btn-outline btn-block"
-                            :icon="$user->is_active ? 'phosphor.pause' : 'phosphor.play'" />
+                            :icon="$user->is_active ? $this->driverUIConfig['icons']['pause'] : $this->driverUIConfig['icons']['play']" />
 
                         <x-button label="Hapus {{ $user->name }}" wire:click="deleteUser"
-                            class="btn-error btn-outline btn-block" icon="phosphor.trash" />
+                            class="btn-error btn-outline btn-block" icon="{{ $this->driverUIConfig['icons']['delete'] }}" />
                     </div>
                 </div>
             </x-card>

@@ -145,7 +145,7 @@
 
                             {{-- Change Status Button menggunakan Model Accessor --}}
                             <x-button :label="$user->is_active ? 'Nonaktifkan' : 'Aktifkan'" wire:click.stop="openChangeStatusModal({{ $user->id }})"
-                                class="btn-{{ $user->is_active ? 'warning' : 'success' }} btn-md" :icon="$user->is_active ? 'phosphor.pause' : 'phosphor.play'"
+                                class="btn-{{ $user->is_active ? 'warning' : 'success' }} btn-md" :icon="$user->is_active ? \App\Class\Helper\UserHelper::getStatusIcon('inactive') : \App\Class\Helper\UserHelper::getStatusIcon('active')"
                                 responsive :tooltip="$user->is_active ? 'Nonaktifkan akun pengguna' : 'Aktifkan akun pengguna'" />
 
                             {{-- Delete Button --}}

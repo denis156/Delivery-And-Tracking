@@ -1,7 +1,7 @@
 {{-- Edit User Page - Mary UI + DaisyUI Standards (Simplified) --}}
 <div>
     {{-- HEADER --}}
-    <x-header title="Edit {{ $user->name }}" icon="phosphor.pencil-duotone" icon-classes="text-warning h-10" separator
+    <x-header title="Edit {{ $user->name }}" icon="{{ $this->userUIConfig['icons']['edit'] }}" icon-classes="text-warning h-10" separator
         progress-indicator>
         <x-slot:subtitle>
             <div>Perbarui data {{ $user->name }} internal <span class="text-warning/60">{{ $user->name }}</span> di
@@ -24,7 +24,7 @@
         <div class="lg:col-span-1">
             <x-card title="Profil {{ $user->name }}" separator sticky class="shadow-md">
                 <x-slot:menu>
-                    <x-icon name="phosphor.user-focus" class="h-5 text-warning" />
+                    <x-icon name="{{ $this->userUIConfig['icons']['user'] }}" class="h-5 text-warning" />
                 </x-slot:menu>
 
                 <div class="space-y-6">
@@ -70,7 +70,7 @@
                                     {{ $role ? \App\Class\Helper\UserHelper::getRoleLabel($role) : $user->role_label }}
                                 </div>
                                 <div class="badge badge-{{ $is_active ? 'success' : 'warning' }} badge-lg">
-                                    <x-icon name="phosphor.{{ $is_active ? 'check-circle' : 'pause-circle' }}"
+                                    <x-icon name="{{ $is_active ? \App\Class\Helper\UserHelper::getStatusIcon('active') : \App\Class\Helper\UserHelper::getStatusIcon('inactive') }}"
                                         class="w-4 h-4 mr-1" />
                                     {{ $is_active ? 'Aktif' : 'Nonaktif' }}
                                 </div>
@@ -82,14 +82,14 @@
                     @if ($this->hasChanges)
                         <div class="bg-warning/10 border border-warning/30 rounded-lg p-3">
                             <div class="flex items-center gap-2">
-                                <x-icon name="phosphor.warning" class="w-4 h-4 text-warning" />
+                                <x-icon name="{{ $this->userUIConfig['icons']['warning'] }}" class="w-4 h-4 text-warning" />
                                 <span class="text-sm text-warning font-medium">Ada perubahan yang belum disimpan</span>
                             </div>
                         </div>
                     @else
                         <div class="bg-success/10 border border-success/30 rounded-lg p-3">
                             <div class="flex items-center gap-2">
-                                <x-icon name="phosphor.check-circle" class="w-4 h-4 text-success" />
+                                <x-icon name="{{ $this->userUIConfig['icons']['success'] }}" class="w-4 h-4 text-success" />
                                 <span class="text-sm text-success font-medium">Semua tersimpan</span>
                             </div>
                         </div>
@@ -98,17 +98,17 @@
                     {{-- Quick Actions --}}
                     <div class="space-y-2 pt-4 border-t border-base-300">
                         <x-button label="Data Pengguna" wire:click="backToList"
-                            class="btn-primary btn-outline btn-block" icon="phosphor.users-four" />
+                            class="btn-primary btn-outline btn-block" icon="{{ $this->userUIConfig['icons']['users'] }}" />
 
                         <x-button label="Detail {{ $user->name }}" wire:click="cancel"
-                            class="btn-info btn-outline btn-block" icon="phosphor.eye" />
+                            class="btn-info btn-outline btn-block" icon="{{ $this->userUIConfig['icons']['view'] }}" />
 
                         <x-button :label="$user->is_active ? 'Nonaktifkan' : 'Aktifkan'" wire:click="changeUserStatus"
                             class="btn-{{ $user->is_active ? 'warning' : 'success' }} btn-outline btn-block"
-                            :icon="$user->is_active ? 'phosphor.pause' : 'phosphor.play'" />
+                            :icon="$user->is_active ? \App\Class\Helper\UserHelper::getStatusIcon('inactive') : \App\Class\Helper\UserHelper::getStatusIcon('active')" />
 
                         <x-button label="Hapus {{ $user->name }}" wire:click="deleteUser"
-                            class="btn-error btn-outline btn-block" icon="phosphor.trash" />
+                            class="btn-error btn-outline btn-block" icon="{{ $this->userUIConfig['icons']['delete'] }}" />
                     </div>
                 </div>
             </x-card>
@@ -118,7 +118,7 @@
         <div class="lg:col-span-2">
             <x-card title="Edit Informasi {{ $user->name }}" separator class="shadow-md">
                 <x-slot:menu>
-                    <x-icon name="phosphor.pencil" class="h-5 text-warning" />
+                    <x-icon name="{{ $this->userUIConfig['icons']['edit'] }}" class="h-5 text-warning" />
                 </x-slot:menu>
 
                 <x-form wire:submit="update">
@@ -155,7 +155,7 @@
 
                                     {{-- Arrow & New Avatar --}}
                                     @if ($avatar)
-                                        <x-icon name="phosphor.arrow-right" class="w-6 h-6 text-base-content/30" />
+                                        <x-icon name="{{ $this->userUIConfig['icons']['arrow_right'] }}" class="w-6 h-6 text-base-content/30" />
                                         <div class="text-center">
                                             <div class="avatar">
                                                 <div
@@ -175,11 +175,11 @@
 
                             {{-- Name --}}
                             <x-input label="Nama Lengkap" wire:model.live="name" placeholder="Masukkan nama lengkap"
-                                icon="phosphor.user" clearable required />
+                                icon="{{ $this->userUIConfig['icons']['user'] }}" clearable required />
 
                             {{-- Email --}}
                             <x-input label="Alamat Email" wire:model.blur="email" placeholder="user@example.com"
-                                type="email" icon="phosphor.envelope" clearable required />
+                                type="email" icon="{{ $this->userUIConfig['icons']['email'] }}" clearable required />
 
                             {{-- Role --}}
                             <x-select label="Peran {{ $user->name }}" wire:model.live="role" :options="collect($this->roles)
@@ -212,7 +212,7 @@
 
                     {{-- Form Actions --}}
                     <x-slot:actions separator>
-                        <x-button label="Simpan Perubahan" type="submit" class="btn-warning" icon="phosphor.check"
+                        <x-button label="Simpan Perubahan" type="submit" class="btn-warning" icon="{{ $this->userUIConfig['icons']['success'] }}"
                             :disabled="!$this->hasChanges" spinner="update" />
                     </x-slot:actions>
                 </x-form>

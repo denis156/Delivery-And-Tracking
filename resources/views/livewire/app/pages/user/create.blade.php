@@ -2,7 +2,7 @@
 <div>
     {{-- HEADER --}}
     <x-header title="Tambah Pengguna" subtitle="Tambahkan data pengguna internal baru di sini"
-        icon="phosphor.plus-circle-duotone" icon-classes="text-success h-10" separator progress-indicator>
+        icon="{{ $this->userUIConfig['icons']['add'] }}" icon-classes="text-success h-10" separator progress-indicator>
         <x-slot:middle class="!justify-end">
             <div class="breadcrumbs text-sm hidden lg:block">
                 <ul>
@@ -19,7 +19,7 @@
         <div class="lg:col-span-1">
             <x-card title="Profil Pengguna" separator sticky class="shadow-md">
                 <x-slot:menu>
-                    <x-icon name="phosphor.user-focus" class="h-5 text-success" />
+                    <x-icon name="{{ $this->userUIConfig['icons']['user'] }}" class="h-5 text-success" />
                 </x-slot:menu>
 
                 <div class="space-y-6">
@@ -62,7 +62,7 @@
                                     {{ $role ? \App\Class\Helper\UserHelper::getRoleLabel($role) : 'Pilih Role' }}
                                 </div>
                                 <div class="badge badge-{{ $is_active ? 'success' : 'warning' }} badge-lg">
-                                    <x-icon name="phosphor.{{ $is_active ? 'check-circle' : 'pause-circle' }}"
+                                    <x-icon name="{{ $is_active ? \App\Class\Helper\UserHelper::getStatusIcon('active') : \App\Class\Helper\UserHelper::getStatusIcon('inactive') }}"
                                         class="h-5" />
                                     {{ $is_active ? 'Aktif' : 'Nonaktif' }}
                                 </div>
@@ -74,21 +74,21 @@
                     @if ($this->isFormValid)
                         <div class="bg-success/10 border border-success/30 rounded-lg p-3">
                             <div class="flex items-center gap-2">
-                                <x-icon name="phosphor.check-circle" class="w-4 h-4 text-success" />
+                                <x-icon name="{{ $this->userUIConfig['icons']['success'] }}" class="w-4 h-4 text-success" />
                                 <span class="text-sm text-success font-medium">Siap untuk disimpan!</span>
                             </div>
                         </div>
                     @elseif($this->hasData)
                         <div class="bg-warning/10 border border-warning/30 rounded-lg p-3">
                             <div class="flex items-center gap-2">
-                                <x-icon name="phosphor.warning" class="w-4 h-4 text-warning" />
+                                <x-icon name="{{ $this->userUIConfig['icons']['warning'] }}" class="w-4 h-4 text-warning" />
                                 <span class="text-sm text-warning font-medium">Lengkapi semua field wajib</span>
                             </div>
                         </div>
                     @else
                         <div class="bg-info/10 border border-info/30 rounded-lg p-3">
                             <div class="flex items-center gap-2">
-                                <x-icon name="phosphor.info" class="w-4 h-4 text-info" />
+                                <x-icon name="{{ $this->userUIConfig['icons']['info'] }}" class="w-4 h-4 text-info" />
                                 <span class="text-sm text-info font-medium">Mulai mengisi form untuk preview</span>
                             </div>
                         </div>
@@ -97,14 +97,14 @@
                     {{-- Quick Actions --}}
                     <div class="space-y-2 pt-4 border-t border-base-300">
                         <x-button label="Data Pengguna" wire:click="cancel" class="btn-primary btn-block"
-                            icon="phosphor.users-four" />
+                            icon="{{ $this->userUIConfig['icons']['users'] }}" />
 
                         <x-button label="Reset Form" wire:click="resetForm" class="btn-secondary btn-block"
-                            icon="phosphor.arrow-counter-clockwise" :disabled="!$this->hasData" />
+                            icon="{{ $this->userUIConfig['icons']['reset'] }}" :disabled="!$this->hasData" />
 
                         <x-button :label="$is_active ? 'Set: Nonaktifkan' : 'Set: Aktifkan'" wire:click="toggleUserStatus"
                             class="btn-{{ $is_active ? 'warning' : 'success' }} btn-outline btn-block"
-                            :icon="$is_active ? 'phosphor.pause' : 'phosphor.play'" :disabled="empty($name) || empty($email)" />
+                            :icon="$is_active ? \App\Class\Helper\UserHelper::getStatusIcon('inactive') : \App\Class\Helper\UserHelper::getStatusIcon('active')" :disabled="empty($name) || empty($email)" />
                     </div>
                 </div>
             </x-card>
@@ -114,7 +114,7 @@
         <div class="lg:col-span-2">
             <x-card title="Informasi Pengguna Baru" separator class="shadow-md">
                 <x-slot:menu>
-                    <x-icon name="phosphor.plus-circle" class="h-5 text-success" />
+                    <x-icon name="{{ $this->userUIConfig['icons']['add'] }}" class="h-5 text-success" />
                 </x-slot:menu>
 
                 <x-form wire:submit="save">
@@ -157,11 +157,11 @@
 
                             {{-- Name --}}
                             <x-input label="Nama Lengkap" wire:model.live="name" placeholder="Masukkan nama lengkap"
-                                icon="phosphor.user" clearable required />
+                                icon="{{ $this->userUIConfig['icons']['user'] }}" clearable required />
 
                             {{-- Email --}}
                             <x-input label="Alamat Email" wire:model.blur="email" placeholder="user@example.com"
-                                type="email" icon="phosphor.envelope" clearable required />
+                                type="email" icon="{{ $this->userUIConfig['icons']['email'] }}" clearable required />
 
                             {{-- Role --}}
                             <x-select label="Peran Pengguna" wire:model.live="role" :options="collect($this->roles)

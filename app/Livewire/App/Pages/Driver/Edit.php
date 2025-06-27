@@ -256,8 +256,8 @@ class Edit extends Component
         return [
             'icons' => [
                 'user' => UserHelper::getRoleIcon(UserHelper::ROLE_DRIVER),
-                'name' => 'phosphor.user',
-                'email' => 'phosphor.envelope',
+                'name' => FormatHelper::getCommonIcon('user'),
+                'email' => FormatHelper::getCommonIcon('email'),
                 'password' => 'phosphor.lock',
                 'avatar' => 'phosphor.camera',
                 'license_type' => DriverHelper::getDriverFieldIcon('license_type'),
@@ -267,6 +267,14 @@ class Edit extends Component
                 'address' => DriverHelper::getDriverFieldIcon('address'),
                 'vehicle_type' => DriverHelper::getDriverFieldIcon('vehicle_type'),
                 'vehicle_plate' => DriverHelper::getDriverFieldIcon('vehicle_plate'),
+                'name' => FormatHelper::getCommonIcon('user'),
+                'email' => FormatHelper::getCommonIcon('email'),
+                'edit' => FormatHelper::getCommonIcon('edit'),
+                'view' => FormatHelper::getCommonIcon('view'),
+                'back' => FormatHelper::getCommonIcon('back'),
+                'delete' => FormatHelper::getCommonIcon('delete'),
+                'pause' => UserHelper::getStatusIcon('inactive'),
+                'play' => UserHelper::getStatusIcon('active'),
             ],
             'colors' => [
                 'driver_role' => UserHelper::getRoleColor(UserHelper::ROLE_DRIVER),
@@ -304,7 +312,7 @@ class Edit extends Component
         return [
             'label' => UserHelper::getStatusLabel($this->user->is_active),
             'color' => UserHelper::getStatusColor($this->user->is_active),
-            'icon' => $this->user->is_active ? 'check-circle' : 'pause-circle',
+            'icon' => $this->user->is_active ? UserHelper::getStatusIcon('active') : UserHelper::getStatusIcon('inactive'),
         ];
     }
 
@@ -360,14 +368,14 @@ class Edit extends Component
                 'status' => 'changed',
                 'message' => 'Ada perubahan yang belum disimpan',
                 'color' => 'warning',
-                'icon' => 'phosphor.warning'
+                'icon' => FormatHelper::getCommonIcon('warning')
             ];
         } else {
             return [
                 'status' => 'saved',
                 'message' => 'Semua tersimpan',
                 'color' => 'success',
-                'icon' => 'phosphor.check-circle'
+                'icon' => FormatHelper::getCommonIcon('success')
             ];
         }
     }
@@ -420,7 +428,7 @@ class Edit extends Component
                 'status' => 'invalid',
                 'label' => 'Format Tidak Valid',
                 'color' => 'error',
-                'icon' => 'phosphor.warning-octagon',
+                'icon' => FormatHelper::getCommonIcon('error'),
                 'message' => 'Format tanggal tidak valid'
             ];
         }

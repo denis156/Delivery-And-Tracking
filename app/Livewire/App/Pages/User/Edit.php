@@ -4,12 +4,15 @@ namespace App\Livewire\App\Pages\User;
 
 use App\Models\User;
 use App\Class\Helper\UserHelper;
+use App\Class\Helper\DriverHelper;
+use App\Class\Helper\FormatHelper;
 use Mary\Traits\Toast;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Validate;
+use Livewire\Attributes\Computed;
 
 #[Title('Edit Pengguna')]
 #[Layout('livewire.layouts.app')]
@@ -179,6 +182,35 @@ class Edit extends Component
     // * ========================================
     // * COMPUTED PROPERTIES
     // * ========================================
+
+    /**
+     * DYNAMIC: User UI configuration from helper
+     */
+    #[Computed]
+    public function userUIConfig(): array
+    {
+        return [
+            'icons' => [
+                'edit' => FormatHelper::getCommonIcon('edit'),
+                'user' => FormatHelper::getCommonIcon('user'),
+                'users' => FormatHelper::getCommonIcon('users'),
+                'view' => FormatHelper::getCommonIcon('view'),
+                'delete' => FormatHelper::getCommonIcon('delete'),
+                'email' => FormatHelper::getCommonIcon('email'),
+                'success' => FormatHelper::getCommonIcon('success'),
+                'warning' => FormatHelper::getCommonIcon('warning'),
+                'arrow_right' => FormatHelper::getCommonIcon('arrow_right'),
+            ],
+            'colors' => [
+                'active' => UserHelper::getStatusColor(UserHelper::STATUS_ACTIVE),
+                'inactive' => UserHelper::getStatusColor(UserHelper::STATUS_INACTIVE),
+            ],
+            'labels' => [
+                'active' => UserHelper::getStatusLabel(UserHelper::STATUS_ACTIVE),
+                'inactive' => UserHelper::getStatusLabel(UserHelper::STATUS_INACTIVE),
+            ]
+        ];
+    }
 
     protected function messages(): array
     {

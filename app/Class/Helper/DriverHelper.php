@@ -20,6 +20,16 @@ class DriverHelper
     const LICENSE_B2_UMUM = 'B2 UMUM';
 
     // * ========================================
+    // * CONFIGURATION CONSTANTS
+    // * ========================================
+
+    const LICENSE_NUMBER_MIN_LENGTH = 10;
+    const LICENSE_WARNING_DAYS = 90;
+    const DEFAULT_EMPTY_VALUE = '-';
+    const DEFAULT_ICON = 'phosphor.question';
+    const DEFAULT_COLOR = 'neutral';
+
+    // * ========================================
     // * LICENSE MAPPINGS
     // * ========================================
 
@@ -47,6 +57,26 @@ class DriverHelper
         self::LICENSE_A_UMUM => 'info',
         self::LICENSE_B1_UMUM => 'primary',
         self::LICENSE_B2_UMUM => 'accent',
+    ];
+
+    /**
+     * Mapping label untuk license status
+     */
+    private static array $licenseStatusLabels = [
+        'expired' => 'SIM Kadaluarsa',
+        'expiring_soon' => 'SIM Akan Kadaluarsa',
+        'valid' => 'SIM Berlaku',
+        'no_license' => 'Belum Ada SIM',
+        'invalid' => 'SIM Tidak Valid',
+    ];
+
+    /**
+     * Mapping label untuk vehicle status
+     */
+    private static array $vehicleStatusLabels = [
+        'complete' => 'Kendaraan Lengkap',
+        'partial' => 'Kendaraan Sebagian',
+        'none' => 'Belum Ada Kendaraan',
     ];
 
     // * ========================================
@@ -121,7 +151,7 @@ class DriverHelper
      */
     public static function getLicenseColor(string $licenseType): string
     {
-        return self::$licenseColors[$licenseType] ?? 'neutral';
+        return self::$licenseColors[$licenseType] ?? self::DEFAULT_COLOR;
     }
 
     /**
@@ -182,7 +212,7 @@ class DriverHelper
      */
     public static function getDriverFieldIcon(string $field): string
     {
-        return self::$driverFieldIcons[$field] ?? 'phosphor.question';
+        return self::$driverFieldIcons[$field] ?? self::DEFAULT_ICON;
     }
 
     /**
@@ -190,7 +220,7 @@ class DriverHelper
      */
     public static function getDriverFieldColor(string $field): string
     {
-        return self::$driverFieldColors[$field] ?? 'neutral';
+        return self::$driverFieldColors[$field] ?? self::DEFAULT_COLOR;
     }
 
     /**
@@ -198,7 +228,15 @@ class DriverHelper
      */
     public static function getLicenseStatusIcon(string $status): string
     {
-        return self::$licenseStatusIcons[$status] ?? 'phosphor.question';
+        return self::$licenseStatusIcons[$status] ?? self::DEFAULT_ICON;
+    }
+
+    /**
+     * Get label untuk license status
+     */
+    public static function getLicenseStatusLabel(string $status): string
+    {
+        return self::$licenseStatusLabels[$status] ?? ucfirst($status);
     }
 
     /**
@@ -206,7 +244,33 @@ class DriverHelper
      */
     public static function getVehicleStatusIcon(string $status): string
     {
-        return self::$vehicleStatusIcons[$status] ?? 'phosphor.question';
+        return self::$vehicleStatusIcons[$status] ?? self::DEFAULT_ICON;
+    }
+
+    /**
+     * Get label untuk vehicle status
+     */
+    public static function getVehicleStatusLabel(string $status): string
+    {
+        return self::$vehicleStatusLabels[$status] ?? ucfirst($status);
+    }
+
+    /**
+     * Get vehicle status dengan icon dan label
+     */
+    public static function getVehicleStatus(string $status): array
+    {
+        return [
+            'status' => $status,
+            'label' => self::getVehicleStatusLabel($status),
+            'icon' => self::getVehicleStatusIcon($status),
+            'color' => match($status) {
+                'complete' => 'success',
+                'partial' => 'warning', 
+                'none' => 'error',
+                default => self::DEFAULT_COLOR
+            }
+        ];
     }
 
     /**
@@ -239,6 +303,38 @@ class DriverHelper
         return self::$driverFieldColors;
     }
 
+    /**
+     * Get all license status labels untuk reference
+     */
+    public static function getAllLicenseStatusLabels(): array
+    {
+        return self::$licenseStatusLabels;
+    }
+
+    /**
+     * Get all vehicle status labels untuk reference
+     */
+    public static function getAllVehicleStatusLabels(): array
+    {
+        return self::$vehicleStatusLabels;
+    }
+
+    /**
+     * Get all license status icons untuk reference
+     */
+    public static function getAllLicenseStatusIcons(): array
+    {
+        return self::$licenseStatusIcons;
+    }
+
+    /**
+     * Get all vehicle status icons untuk reference
+     */
+    public static function getAllVehicleStatusIcons(): array
+    {
+        return self::$vehicleStatusIcons;
+    }
+
     // * ========================================
     // * UTILITY METHODS
     // * ========================================
@@ -251,7 +347,7 @@ class DriverHelper
         // Format: 1234 5678 90 (untuk SIM)
         $clean = preg_replace('/[^0-9]/', '', $licenseNumber);
 
-        if (strlen($clean) >= 10) {
+        if (strlen($clean) >= self::LICENSE_NUMBER_MIN_LENGTH) {
             return substr($clean, 0, 4) . ' ' .
                    substr($clean, 4, 4) . ' ' .
                    substr($clean, 8);
@@ -266,7 +362,7 @@ class DriverHelper
     public static function formatVehiclePlate(?string $plate): string
     {
         if (empty($plate)) {
-            return '-';
+            return self::DEFAULT_EMPTY_VALUE;
         }
 
         return strtoupper($plate);
@@ -307,28 +403,28 @@ class DriverHelper
         if (self::isLicenseExpired($expiryDate)) {
             return [
                 'status' => 'expired',
-                'label' => 'SIM Kadaluarsa',
+                'label' => self::getLicenseStatusLabel('expired'),
                 'color' => 'error',
-                'icon' => self::$licenseStatusIcons['expired'], // NEW: Icon
+                'icon' => self::getLicenseStatusIcon('expired'),
             ];
         }
 
-        // Cek expiring soon (90 hari)
-        if (self::isLicenseExpiringSoon($expiryDate, 90)) {
+        // Cek expiring soon (dengan konfigurasi warning days)
+        if (self::isLicenseExpiringSoon($expiryDate, self::LICENSE_WARNING_DAYS)) {
             return [
                 'status' => 'expiring_soon',
-                'label' => 'SIM Akan Kadaluarsa',
+                'label' => self::getLicenseStatusLabel('expiring_soon'),
                 'color' => 'warning',
-                'icon' => self::$licenseStatusIcons['expiring_soon'], // NEW: Icon
+                'icon' => self::getLicenseStatusIcon('expiring_soon'),
             ];
         }
 
         // SIM masih valid dan aman
         return [
             'status' => 'valid',
-            'label' => 'SIM Berlaku',
+            'label' => self::getLicenseStatusLabel('valid'),
             'color' => 'success',
-            'icon' => self::$licenseStatusIcons['valid'], // NEW: Icon
+            'icon' => self::getLicenseStatusIcon('valid'),
         ];
     }
 

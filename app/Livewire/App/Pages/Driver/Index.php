@@ -3,9 +3,9 @@
 namespace App\Livewire\App\Pages\Driver;
 
 use App\Models\User;
-use App\Models\Driver;
 use App\Class\Helper\UserHelper;
 use App\Class\Helper\DriverHelper;
+use App\Class\Helper\FormatHelper;
 use Mary\Traits\Toast;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -188,7 +188,7 @@ class Index extends Component
     public function licenseTypes(): array
     {
         return collect([
-            'all' => 'Semua Jenis SIM'
+            'all' => UserHelper::getFilterLabel('all_types') . ' SIM'
         ])->merge(DriverHelper::getAllLicenseTypes())->toArray();
     }
 
@@ -233,8 +233,19 @@ class Index extends Component
                 'license' => DriverHelper::getDriverFieldIcon('license_type'),
                 'vehicle' => DriverHelper::getDriverFieldIcon('vehicle_type'),
                 'phone' => DriverHelper::getDriverFieldIcon('phone'),
-                'email' => 'phosphor.envelope-simple',
+                'email' => FormatHelper::getCommonIcon('email'),
                 'location' => DriverHelper::getDriverFieldIcon('address'),
+                'search' => FormatHelper::getCommonIcon('search'),
+                'filter' => FormatHelper::getCommonIcon('filter'),
+                'add' => FormatHelper::getCommonIcon('add'),
+                'view' => FormatHelper::getCommonIcon('view'),
+                'edit' => FormatHelper::getCommonIcon('edit'),
+                'delete' => FormatHelper::getCommonIcon('delete'),
+                'menu' => FormatHelper::getCommonIcon('menu'),
+                'success' => FormatHelper::getCommonIcon('success'),
+                'error' => FormatHelper::getCommonIcon('error'),
+                'warning' => FormatHelper::getCommonIcon('warning'),
+                'close' => FormatHelper::getCommonIcon('close'),
             ],
             'colors' => [
                 'driver_role' => UserHelper::getRoleColor(UserHelper::ROLE_DRIVER),
@@ -312,7 +323,7 @@ class Index extends Component
     public function licenseFilterOptions(): array
     {
         return collect([
-            ['id' => 'all', 'name' => 'Semua Jenis SIM']
+            ['id' => 'all', 'name' => UserHelper::getFilterLabel('all_types') . ' SIM']
         ])->merge(
             collect(DriverHelper::getAllLicenseTypes())->map(fn($label, $value) => [
                 'id' => $value,
@@ -331,7 +342,7 @@ class Index extends Component
 
         if ($this->search) {
             $filters[] = [
-                'icon' => 'phosphor.magnifying-glass',
+                'icon' => FormatHelper::getCommonIcon('search'),
                 'label' => 'Pencarian',
                 'value' => $this->search
             ];
@@ -339,9 +350,9 @@ class Index extends Component
 
         if ($this->statusFilter !== 'all') {
             $filters[] = [
-                'icon' => 'phosphor.check-circle',
+                'icon' => UserHelper::getStatusIcon('active'),
                 'label' => 'Status',
-                'value' => $this->statusFilter === 'active' ? 'Aktif' : 'Nonaktif'
+                'value' => $this->statusFilter === 'active' ? UserHelper::getFilterLabel('active') : UserHelper::getFilterLabel('inactive')
             ];
         }
 
@@ -351,7 +362,7 @@ class Index extends Component
                 ->first()['name'] ?? 'Unknown';
 
             $filters[] = [
-                'icon' => 'phosphor.identification-card',
+                'icon' => DriverHelper::getDriverFieldIcon('license_type'),
                 'label' => 'Jenis SIM',
                 'value' => $licenseLabel
             ];
@@ -363,7 +374,7 @@ class Index extends Component
                 ->first()['name'] ?? 'Unknown';
 
             $filters[] = [
-                'icon' => 'phosphor.warning',
+                'icon' => FormatHelper::getCommonIcon('warning'),
                 'label' => 'Status SIM',
                 'value' => $licenseStatusLabel
             ];
@@ -375,9 +386,9 @@ class Index extends Component
                 ->first()['name'] ?? 'Unknown';
 
             $filters[] = [
-                'icon' => 'phosphor.sort-ascending',
+                'icon' => FormatHelper::getCommonIcon('sort_asc'),
                 'label' => 'Urutan',
-                'value' => $sortLabel . ' (' . ($this->sortBy['direction'] === 'desc' ? 'Terbaru ke Lama' : 'Lama ke Terbaru') . ')'
+                'value' => $sortLabel . ' (' . ($this->sortBy['direction'] === 'desc' ? UserHelper::getFilterLabel('newest_first') : UserHelper::getFilterLabel('oldest_first')) . ')'
             ];
         }
 
@@ -405,9 +416,9 @@ class Index extends Component
     public function statusFilterOptions(): array
     {
         return [
-            ['id' => 'all', 'name' => 'Semua Status'],
-            ['id' => 'active', 'name' => 'Aktif'],
-            ['id' => 'inactive', 'name' => 'Nonaktif']
+            ['id' => 'all', 'name' => UserHelper::getFilterLabel('all_status')],
+            ['id' => 'active', 'name' => UserHelper::getFilterLabel('active')],
+            ['id' => 'inactive', 'name' => UserHelper::getFilterLabel('inactive')]
         ];
     }
 
@@ -418,10 +429,10 @@ class Index extends Component
     public function licenseStatusFilterOptions(): array
     {
         return [
-            ['id' => 'all', 'name' => 'Semua Status SIM'],
-            ['id' => 'valid', 'name' => 'SIM Berlaku'],
-            ['id' => 'expiring_soon', 'name' => 'Akan Kadaluarsa'],
-            ['id' => 'expired', 'name' => 'Kadaluarsa']
+            ['id' => 'all', 'name' => UserHelper::getFilterLabel('all_status') . ' SIM'],
+            ['id' => 'valid', 'name' => 'SIM ' . UserHelper::getFilterLabel('valid')],
+            ['id' => 'expiring_soon', 'name' => UserHelper::getFilterLabel('expiring_soon')],
+            ['id' => 'expired', 'name' => UserHelper::getFilterLabel('expired')]
         ];
     }
 
@@ -432,8 +443,8 @@ class Index extends Component
     public function sortDirectionOptions(): array
     {
         return [
-            ['id' => 'desc', 'name' => 'Terbaru ke Lama / Z ke A'],
-            ['id' => 'asc', 'name' => 'Lama ke Terbaru / A ke Z']
+            ['id' => 'desc', 'name' => UserHelper::getFilterLabel('newest_to_oldest')],
+            ['id' => 'asc', 'name' => UserHelper::getFilterLabel('oldest_to_newest')]
         ];
     }
 
