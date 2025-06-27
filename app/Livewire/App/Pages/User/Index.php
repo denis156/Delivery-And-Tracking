@@ -10,7 +10,7 @@ use Livewire\WithPagination;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Layout;
 
-#[Title('Daftar Pengguna')]
+#[Title('Data Pengguna')]
 #[Layout('livewire.layouts.app')]
 class Index extends Component
 {

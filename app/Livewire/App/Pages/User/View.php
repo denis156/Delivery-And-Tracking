@@ -9,7 +9,7 @@ use Livewire\Component;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Layout;
 
-#[Title('Lihat Pengguna')]
+#[Title('Detail Pengguna')]
 #[Layout('livewire.layouts.app')]
 class View extends Component
 {

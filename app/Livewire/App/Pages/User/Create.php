@@ -11,7 +11,7 @@ use Livewire\Attributes\Title;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Validate;
 
-#[Title('Tambah Pengguna Baru')]
+#[Title('Tambah Pengguna')]
 #[Layout('livewire.layouts.app')]
 class Create extends Component
 {
