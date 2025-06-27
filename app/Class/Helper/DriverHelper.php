@@ -50,6 +50,61 @@ class DriverHelper
     ];
 
     // * ========================================
+    // * UI MAPPINGS - NEW SECTION
+    // * ========================================
+
+    /**
+     * Mapping icon untuk driver fields
+     */
+    private static array $driverFieldIcons = [
+        'license_type' => 'phosphor.identification-badge',
+        'license_number' => 'phosphor.identification-card',
+        'license_expiry' => 'phosphor.calendar-x',
+        'license_status' => 'phosphor.shield-check',
+        'phone' => 'phosphor.phone',
+        'address' => 'phosphor.house',
+        'vehicle_type' => 'phosphor.truck-trailer',
+        'vehicle_plate' => 'phosphor.hash',
+        'vehicle_status' => 'phosphor.truck',
+        'driver_display' => 'phosphor.identification-card',
+    ];
+
+    /**
+     * Mapping warna untuk driver fields
+     */
+    private static array $driverFieldColors = [
+        'license_type' => 'dynamic', // Akan menggunakan license color
+        'license_number' => 'info',
+        'license_expiry' => 'error',
+        'license_status' => 'dynamic', // Akan menggunakan status color
+        'phone' => 'secondary',
+        'address' => 'accent',
+        'vehicle_type' => 'primary',
+        'vehicle_plate' => 'secondary',
+        'vehicle_status' => 'info',
+        'driver_display' => 'accent',
+    ];
+
+    /**
+     * Mapping icon untuk license status
+     */
+    private static array $licenseStatusIcons = [
+        'expired' => 'phosphor.x-circle',
+        'expiring_soon' => 'phosphor.warning',
+        'valid' => 'phosphor.check-circle',
+        'no_license' => 'phosphor.warning-octagon',
+    ];
+
+    /**
+     * Mapping icon untuk vehicle status
+     */
+    private static array $vehicleStatusIcons = [
+        'complete' => 'phosphor.check-circle',
+        'partial' => 'phosphor.warning',
+        'none' => 'phosphor.x-circle',
+    ];
+
+    // * ========================================
     // * LICENSE HELPER METHODS
     // * ========================================
 
@@ -86,7 +141,7 @@ class DriverHelper
     }
 
     /**
-     * Check if license is expired
+     * CORRECTED: Check if license is expired
      */
     public static function isLicenseExpired(\DateTime|\Carbon\Carbon|string $expiryDate): bool
     {
@@ -96,13 +151,14 @@ class DriverHelper
             $expiryDate = \Carbon\Carbon::instance($expiryDate);
         }
 
-        return $expiryDate->isPast();
+        // Simple check: apakah tanggal kadaluarsa sudah lewat hari ini?
+        return $expiryDate->endOfDay()->isPast();
     }
 
     /**
-     * Check if license expires soon (dalam 30 hari)
+     * CORRECTED: Check if license expires soon (dalam 90 hari)
      */
-    public static function isLicenseExpiringSoon(\DateTime|\Carbon\Carbon|string $expiryDate): bool
+    public static function isLicenseExpiringSoon(\DateTime|\Carbon\Carbon|string $expiryDate, int $warningDays = 90): bool
     {
         if (is_string($expiryDate)) {
             $expiryDate = \Carbon\Carbon::parse($expiryDate);
@@ -110,7 +166,77 @@ class DriverHelper
             $expiryDate = \Carbon\Carbon::instance($expiryDate);
         }
 
-        return $expiryDate->diffInDays(now()) <= 30 && $expiryDate->isFuture();
+        // Logic sederhana:
+        // 1. SIM belum expired
+        // 2. Dan tanggal kadaluarsa dalam rentang warning days dari sekarang
+        return !self::isLicenseExpired($expiryDate) &&
+               $expiryDate->diffInDays(now(), true) <= $warningDays;
+    }
+
+    // * ========================================
+    // * NEW: UI HELPER METHODS
+    // * ========================================
+
+    /**
+     * Get icon untuk driver field
+     */
+    public static function getDriverFieldIcon(string $field): string
+    {
+        return self::$driverFieldIcons[$field] ?? 'phosphor.question';
+    }
+
+    /**
+     * Get color untuk driver field
+     */
+    public static function getDriverFieldColor(string $field): string
+    {
+        return self::$driverFieldColors[$field] ?? 'neutral';
+    }
+
+    /**
+     * Get icon untuk license status
+     */
+    public static function getLicenseStatusIcon(string $status): string
+    {
+        return self::$licenseStatusIcons[$status] ?? 'phosphor.question';
+    }
+
+    /**
+     * Get icon untuk vehicle status
+     */
+    public static function getVehicleStatusIcon(string $status): string
+    {
+        return self::$vehicleStatusIcons[$status] ?? 'phosphor.question';
+    }
+
+    /**
+     * Get icon dengan logic kondisional untuk license
+     */
+    public static function getLicenseStatusIconDynamic(bool $isExpired, bool $isExpiringSoon): string
+    {
+        if ($isExpired) {
+            return self::$licenseStatusIcons['expired'];
+        } elseif ($isExpiringSoon) {
+            return self::$licenseStatusIcons['expiring_soon'];
+        } else {
+            return self::$licenseStatusIcons['valid'];
+        }
+    }
+
+    /**
+     * Get all driver field icons untuk reference
+     */
+    public static function getAllDriverFieldIcons(): array
+    {
+        return self::$driverFieldIcons;
+    }
+
+    /**
+     * Get all driver field colors untuk reference
+     */
+    public static function getAllDriverFieldColors(): array
+    {
+        return self::$driverFieldColors;
     }
 
     // * ========================================
@@ -167,30 +293,57 @@ class DriverHelper
     }
 
     /**
-     * Get license status (valid, expired, expiring soon)
+     * CORRECTED: Get license status dengan logic yang sederhana
      */
     public static function getLicenseStatus(\DateTime|\Carbon\Carbon|string $expiryDate): array
     {
+        if (is_string($expiryDate)) {
+            $expiryDate = \Carbon\Carbon::parse($expiryDate);
+        } elseif ($expiryDate instanceof \DateTime) {
+            $expiryDate = \Carbon\Carbon::instance($expiryDate);
+        }
+
+        // Cek expired dulu
         if (self::isLicenseExpired($expiryDate)) {
             return [
                 'status' => 'expired',
-                'label' => 'Kadaluarsa',
-                'color' => 'error'
+                'label' => 'SIM Kadaluarsa',
+                'color' => 'error',
+                'icon' => self::$licenseStatusIcons['expired'], // NEW: Icon
             ];
         }
 
-        if (self::isLicenseExpiringSoon($expiryDate)) {
+        // Cek expiring soon (90 hari)
+        if (self::isLicenseExpiringSoon($expiryDate, 90)) {
             return [
                 'status' => 'expiring_soon',
-                'label' => 'Akan Kadaluarsa',
-                'color' => 'warning'
+                'label' => 'SIM Akan Kadaluarsa',
+                'color' => 'warning',
+                'icon' => self::$licenseStatusIcons['expiring_soon'], // NEW: Icon
             ];
         }
 
+        // SIM masih valid dan aman
         return [
             'status' => 'valid',
-            'label' => 'Berlaku',
-            'color' => 'success'
+            'label' => 'SIM Berlaku',
+            'color' => 'success',
+            'icon' => self::$licenseStatusIcons['valid'], // NEW: Icon
         ];
+    }
+
+    /**
+     * CORRECTED: Get days to expiry dengan logic yang benar
+     */
+    public static function getDaysToExpiry(\DateTime|\Carbon\Carbon|string $expiryDate): int
+    {
+        if (is_string($expiryDate)) {
+            $expiryDate = \Carbon\Carbon::parse($expiryDate);
+        } elseif ($expiryDate instanceof \DateTime) {
+            $expiryDate = \Carbon\Carbon::instance($expiryDate);
+        }
+
+        // Gunakan diffInDays dengan absolute true untuk selalu dapat nilai positif
+        return (int) $expiryDate->diffInDays(now(), true);
     }
 }
