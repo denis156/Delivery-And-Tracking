@@ -8,6 +8,7 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
@@ -42,6 +43,18 @@ class User extends Authenticatable implements MustVerifyEmail
             'updated_at' => 'datetime',
             'deleted_at' => 'datetime',
         ];
+    }
+
+    // * ========================================
+    // * RELATIONSHIPS (Laravel 12.x Style)
+    // * ========================================
+
+    /**
+     * Get the driver profile associated with the user.
+     */
+    public function driver(): HasOne
+    {
+        return $this->hasOne(Driver::class);
     }
 
     // * ========================================

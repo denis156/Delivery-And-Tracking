@@ -68,7 +68,10 @@ class Driver extends Model
         return $query->where('license_expiry', '<', now());
     }
 
-    public function scopeExpiringSoon($query, int $days = 30)
+    /**
+     * FIXED: Scope untuk license yang akan kadaluarsa dalam 90 hari
+     */
+    public function scopeExpiringSoon($query, int $days = 90)
     {
         return $query->whereBetween('license_expiry', [now(), now()->addDays($days)]);
     }
@@ -79,22 +82,36 @@ class Driver extends Model
     }
 
     // * ========================================
-    // * BUSINESS LOGIC METHODS
+    // * BUSINESS LOGIC METHODS - CORRECTED
     // * ========================================
 
+    /**
+     * CORRECTED: Gunakan helper method yang sudah diperbaiki
+     */
     public function isLicenseExpired(): bool
     {
         return DriverHelper::isLicenseExpired($this->license_expiry);
     }
 
+    /**
+     * CORRECTED: Gunakan helper method dengan 90 hari warning
+     */
     public function isLicenseExpiringSoon(): bool
     {
-        return DriverHelper::isLicenseExpiringSoon($this->license_expiry);
+        return DriverHelper::isLicenseExpiringSoon($this->license_expiry, 90);
     }
 
     public function hasValidLicense(): bool
     {
         return !$this->isLicenseExpired();
+    }
+
+    /**
+     * CORRECTED: Method untuk mendapatkan days to expiry
+     */
+    public function getDaysToExpiry(): int
+    {
+        return DriverHelper::getDaysToExpiry($this->license_expiry);
     }
 
     // * ========================================
@@ -136,6 +153,9 @@ class Driver extends Model
         );
     }
 
+    /**
+     * CORRECTED: License status menggunakan helper yang sudah diperbaiki
+     */
     protected function licenseStatus(): Attribute
     {
         return Attribute::make(
