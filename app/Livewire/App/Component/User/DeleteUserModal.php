@@ -6,32 +6,24 @@ use App\Models\User;
 use App\Class\Helper\UserHelper;
 use Mary\Traits\Toast;
 use Livewire\Component;
+use Livewire\Attributes\Computed;
 
 class DeleteUserModal extends Component
 {
     use Toast;
 
-    // * ========================================
-    // * PROPERTIES
-    // * ========================================
-
+    // Properties
     public bool $showModal = false;
     public ?User $user = null;
     public bool $processing = false;
     public string $confirmText = '';
 
-    // * ========================================
-    // * LISTENERS
-    // * ========================================
-
+    // Listeners
     protected $listeners = [
         'openDeleteUserModal' => 'openModal'
     ];
 
-    // * ========================================
-    // * VALIDATION
-    // * ========================================
-
+    // Validation
     protected $rules = [
         'confirmText' => 'required|string'
     ];
@@ -40,27 +32,13 @@ class DeleteUserModal extends Component
         'confirmText.required' => 'Konfirmasi teks diperlukan untuk menghapus user.'
     ];
 
-    // * ========================================
-    // * METHODS
-    // * ========================================
-
-    /**
-     * Open modal dengan user data
-     */
+    // Methods
     public function openModal(int $userId): void
     {
-        $this->user = User::excludeDrivers()
-            ->where('id', $userId)
-            ->first();
+        $this->user = User::where('id', $userId)->first();
 
         if (!$this->user) {
-            $this->error('User tidak ditemukan atau tidak dapat diakses.', position: 'toast-top toast-end');
-            return;
-        }
-
-        // Safety check untuk role yang tidak diizinkan
-        if ($this->user->isDriver() || $this->user->isClient()) {
-            $this->error('Pengguna ini tidak dapat dihapus.', position: 'toast-top toast-end');
+            $this->error('User tidak ditemukan.', position: 'toast-top toast-end');
             return;
         }
 
@@ -68,9 +46,6 @@ class DeleteUserModal extends Component
         $this->confirmText = '';
     }
 
-    /**
-     * Close modal dan reset data
-     */
     public function closeModal(): void
     {
         $this->showModal = false;
@@ -80,9 +55,6 @@ class DeleteUserModal extends Component
         $this->resetValidation();
     }
 
-    /**
-     * Konfirmasi hapus user
-     */
     public function confirmDelete(): void
     {
         $this->validate();
@@ -93,7 +65,6 @@ class DeleteUserModal extends Component
             return;
         }
 
-        // Validasi konfirmasi text
         if (strtolower($this->confirmText) !== strtolower($this->user->name)) {
             $this->addError('confirmText', 'Nama user tidak sesuai. Ketik "' . $this->user->name . '" untuk konfirmasi.');
             return;
@@ -102,21 +73,20 @@ class DeleteUserModal extends Component
         $this->processing = true;
 
         try {
-            // Double check untuk role yang tidak diizinkan
-            if ($this->user->isDriver() || $this->user->isClient()) {
-                $this->error('Pengguna ini tidak dapat dihapus.', position: 'toast-top toast-end');
-                $this->closeModal();
-                return;
+            $userName = $this->user->name;
+            $userRole = $this->user->getPrimaryRole();
+
+            // Special handling untuk driver
+            if ($this->user->isDriver() && $this->user->driver) {
+                $this->user->driver->delete();
             }
 
-            $userName = $this->user->name;
             $this->user->delete();
 
-            $this->success("User {$userName} berhasil dihapus.", position: 'toast-top toast-end');
+            $roleLabel = UserHelper::getRoleLabel($userRole ?? '');
+            $this->success("{$roleLabel} {$userName} berhasil dihapus.", position: 'toast-top toast-end');
 
-            // Emit event untuk refresh parent component
             $this->dispatch('userDeleted');
-
             $this->closeModal();
         } catch (\Exception $e) {
             $this->error('Gagal menghapus user. Silakan coba lagi.', position: 'toast-top toast-end');
@@ -124,56 +94,88 @@ class DeleteUserModal extends Component
         }
     }
 
-    // * ========================================
-    // * COMPUTED PROPERTIES
-    // * ========================================
-
-    /**
-     * Check if delete button should be enabled
-     */
-    public function getCanDeleteProperty(): bool
+    // Computed Properties
+    #[Computed]
+    public function canDelete(): bool
     {
         if (!$this->user) return false;
-
         return strtolower($this->confirmText) === strtolower($this->user->name);
     }
 
-    /**
-     * Get user role color menggunakan Helper
-     */
-    public function getUserRoleColorProperty(): string
+    #[Computed]
+    public function userRoleColor(): string
     {
         if ($this->user) {
             $role = $this->user->getPrimaryRole();
             return $role ? UserHelper::getRoleColor($role) : 'neutral';
         }
-
         return 'neutral';
     }
 
-    /**
-     * Get user role label menggunakan Helper
-     */
-    public function getUserRoleLabelProperty(): string
+    #[Computed]
+    public function userRoleLabel(): string
     {
         if ($this->user) {
             $role = $this->user->getPrimaryRole();
             return $role ? UserHelper::getRoleLabel($role) : 'Tidak ada role';
         }
-
         return 'Tidak ada role';
     }
 
-    // * ========================================
-    // * RENDER
-    // * ========================================
+    #[Computed]
+    public function additionalInfo(): array
+    {
+        if (!$this->user) return [];
+
+        $info = [
+            'bergabung' => $this->user->created_at->format('d M Y H:i'),
+            'update' => $this->user->updated_at->diffForHumans(),
+            'role' => $this->userRoleLabel,
+        ];
+
+        // Add driver-specific info
+        if ($this->user->isDriver() && $this->user->driver) {
+            $driver = $this->user->driver;
+            $info['sim'] = $driver->license_number ?? '-';
+            $info['jenis_sim'] = $driver->license_type ?? '-';
+            $info['telepon'] = $driver->phone ?? '-';
+        }
+
+        return $info;
+    }
+
+    #[Computed]
+    public function deleteConsequences(): array
+    {
+        if (!$this->user) return [];
+
+        $consequences = [
+            'Pengguna akan dihapus dari sistem',
+            'Akses login akan dicabut secara permanen',
+            'Data pengguna tidak dapat dipulihkan'
+        ];
+
+        $role = $this->user->getPrimaryRole();
+
+        switch ($role) {
+            case UserHelper::ROLE_DRIVER:
+                $consequences[] = 'Data sopir dan SIM akan ikut terhapus';
+                $consequences[] = 'Riwayat pengiriman tetap tersimpan';
+                break;
+            case UserHelper::ROLE_CLIENT:
+                $consequences[] = 'Riwayat pesanan tetap tersimpan';
+                break;
+            case UserHelper::ROLE_ADMIN:
+            case UserHelper::ROLE_MANAGER:
+                $consequences[] = 'Semua aktivitas administratif akan terhenti';
+                break;
+        }
+
+        return $consequences;
+    }
 
     public function render()
     {
-        return view('livewire.app.component.user.delete-user-modal', [
-            'canDelete' => $this->canDelete,
-            'userRoleColor' => $this->userRoleColor,
-            'userRoleLabel' => $this->userRoleLabel,
-        ]);
+        return view('livewire.app.component.user.delete-user-modal');
     }
 }

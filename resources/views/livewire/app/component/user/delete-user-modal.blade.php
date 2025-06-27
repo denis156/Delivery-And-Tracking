@@ -15,7 +15,7 @@
                 <div>
                     <h3 class="font-bold">Peringatan!</h3>
                     <div class="text-sm">
-                        Tindakan ini akan menghapus pengguna secara permanen dan tidak dapat dibatalkan.
+                        Tindakan ini akan menghapus {{ strtolower($this->userRoleLabel) }} secara permanen dan tidak dapat dibatalkan.
                     </div>
                 </div>
             </div>
@@ -38,8 +38,8 @@
                             <div class="badge badge-{{ $user->status_color }} badge-sm">
                                 {{ $user->status_label }}
                             </div>
-                            <div class="badge badge-{{ $userRoleColor }} badge-sm">
-                                {{ $userRoleLabel }}
+                            <div class="badge badge-{{ $this->userRoleColor }} badge-sm">
+                                {{ $this->userRoleLabel }}
                             </div>
                         </div>
                     </div>
@@ -48,20 +48,41 @@
 
             <!-- Additional User Info -->
             <div class="bg-base-200 rounded-lg p-4 mb-4">
-                <h5 class="font-semibold mb-2 text-base-content">Informasi Pengguna:</h5>
+                <h5 class="font-semibold mb-2 text-base-content">Informasi {{ $this->userRoleLabel }}:</h5>
                 <div class="grid grid-cols-1 gap-2 text-sm text-base-content/70">
-                    <div class="flex items-center gap-2">
-                        <x-icon name="phosphor.calendar" class="w-4 h-4" />
-                        <span>Bergabung: {{ $user->created_at->format('d M Y H:i') }}</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <x-icon name="phosphor.clock" class="w-4 h-4" />
-                        <span>Update: {{ $user->updated_at->diffForHumans() }}</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <x-icon name="phosphor.identification-badge" class="w-4 h-4" />
-                        <span>Peran: {{ $userRoleLabel }}</span>
-                    </div>
+                    @foreach($this->additionalInfo as $key => $value)
+                        <div class="flex items-center gap-2">
+                            @switch($key)
+                                @case('bergabung')
+                                    <x-icon name="phosphor.calendar" class="w-4 h-4" />
+                                    <span>Bergabung: {{ $value }}</span>
+                                    @break
+                                @case('update')
+                                    <x-icon name="phosphor.clock" class="w-4 h-4" />
+                                    <span>Update: {{ $value }}</span>
+                                    @break
+                                @case('role')
+                                    <x-icon name="phosphor.identification-badge" class="w-4 h-4" />
+                                    <span>Peran: {{ $value }}</span>
+                                    @break
+                                @case('sim')
+                                    <x-icon name="phosphor.identification-card" class="w-4 h-4" />
+                                    <span>Nomor SIM: {{ $value }}</span>
+                                    @break
+                                @case('jenis_sim')
+                                    <x-icon name="phosphor.identification-badge" class="w-4 h-4" />
+                                    <span>Jenis SIM: {{ $value }}</span>
+                                    @break
+                                @case('telepon')
+                                    <x-icon name="phosphor.phone" class="w-4 h-4" />
+                                    <span>Telepon: {{ $value }}</span>
+                                    @break
+                                @default
+                                    <x-icon name="phosphor.info" class="w-4 h-4" />
+                                    <span>{{ ucfirst($key) }}: {{ $value }}</span>
+                            @endswitch
+                        </div>
+                    @endforeach
                 </div>
             </div>
 
@@ -69,14 +90,14 @@
             <div class="mb-4">
                 <x-input
                     label="Konfirmasi Penghapusan"
-                    hint="Ketik nama pengguna untuk mengkonfirmasi penghapusan"
+                    hint="Ketik nama {{ strtolower($this->userRoleLabel) }} untuk mengkonfirmasi penghapusan"
                     placeholder="Ketik: {{ $user->name }}"
                     wire:model.live="confirmText"
                     icon="phosphor.keyboard"
-                    :class="$canDelete ? 'input-success' : 'input-error'"
+                    :class="$this->canDelete ? 'input-success' : 'input-error'"
                 />
 
-                @if($canDelete)
+                @if($this->canDelete)
                     <div class="flex items-center gap-2 mt-2 text-success">
                         <x-icon name="phosphor.check-circle" class="w-4 h-4" />
                         <span class="text-sm">Konfirmasi berhasil</span>
@@ -84,7 +105,7 @@
                 @else
                     <div class="flex items-center gap-2 mt-2 text-error">
                         <x-icon name="phosphor.x-circle" class="w-4 h-4" />
-                        <span class="text-sm">Ketik nama pengguna yang tepat: "{{ $user->name }}"</span>
+                        <span class="text-sm">Ketik nama {{ strtolower($this->userRoleLabel) }} yang tepat: "{{ $user->name }}"</span>
                     </div>
                 @endif
             </div>
@@ -93,18 +114,12 @@
             <div class="bg-error/10 border border-error/20 rounded-lg p-4 mb-4">
                 <h5 class="font-semibold mb-2 text-error">Yang akan terjadi:</h5>
                 <ul class="text-sm text-base-content/80 space-y-1">
-                    <li class="flex items-center gap-2">
-                        <x-icon name="phosphor.x" class="w-3 h-3 text-error" />
-                        Pengguna akan dihapus dari sistem
-                    </li>
-                    <li class="flex items-center gap-2">
-                        <x-icon name="phosphor.x" class="w-3 h-3 text-error" />
-                        Akses login akan dicabut secara permanen
-                    </li>
-                    <li class="flex items-center gap-2">
-                        <x-icon name="phosphor.x" class="w-3 h-3 text-error" />
-                        Data pengguna tidak dapat dipulihkan
-                    </li>
+                    @foreach($this->deleteConsequences as $consequence)
+                        <li class="flex items-center gap-2">
+                            <x-icon name="phosphor.x" class="w-3 h-3 text-error" />
+                            {{ $consequence }}
+                        </li>
+                    @endforeach
                 </ul>
             </div>
         @else
@@ -127,11 +142,11 @@
 
             @if($user)
                 <x-button
-                    label="Ya, Hapus Pengguna"
+                    label="Ya, Hapus {{ $this->userRoleLabel }}"
                     wire:click="confirmDelete"
                     class="btn-error"
                     icon="phosphor.trash"
-                    :disabled="!$canDelete || $processing"
+                    :disabled="!$this->canDelete || $processing"
                     spinner
                 />
             @endif

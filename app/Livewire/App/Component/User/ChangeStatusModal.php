@@ -6,53 +6,32 @@ use App\Models\User;
 use App\Class\Helper\UserHelper;
 use Mary\Traits\Toast;
 use Livewire\Component;
+use Livewire\Attributes\Computed;
 
 class ChangeStatusModal extends Component
 {
     use Toast;
 
-    // * ========================================
-    // * PROPERTIES
-    // * ========================================
-
+    // Properties
     public bool $showModal = false;
     public ?User $user = null;
     public bool $processing = false;
-
-    // For create page preview
     public bool $isPreviewMode = false;
     public array $previewData = [];
 
-    // * ========================================
-    // * LISTENERS
-    // * ========================================
-
+    // Listeners
     protected $listeners = [
         'openChangeStatusModal' => 'openModal',
         'openChangeStatusPreview' => 'openPreviewModal'
     ];
 
-    // * ========================================
-    // * METHODS
-    // * ========================================
-
-    /**
-     * Open modal dengan user data (untuk edit/view)
-     */
+    // Methods
     public function openModal(int $userId): void
     {
-        $this->user = User::excludeDrivers()
-            ->where('id', $userId)
-            ->first();
+        $this->user = User::where('id', $userId)->first();
 
         if (!$this->user) {
-            $this->error('User tidak ditemukan atau tidak dapat diakses.', position: 'toast-top toast-end');
-            return;
-        }
-
-        // Safety check untuk role yang tidak diizinkan
-        if ($this->user->isDriver() || $this->user->isClient()) {
-            $this->error('Status pengguna ini tidak dapat diubah.', position: 'toast-top toast-end');
+            $this->error('User tidak ditemukan.', position: 'toast-top toast-end');
             return;
         }
 
@@ -60,16 +39,12 @@ class ChangeStatusModal extends Component
         $this->showModal = true;
     }
 
-    /**
-     * Open modal untuk preview di create page
-     */
     public function openPreviewModal(array $userData): void
     {
-        // Validate role yang diizinkan untuk preview
-        $allowedRoles = UserHelper::getManagementRoles() + UserHelper::getStaffRoles();
+        $allRoles = UserHelper::getAllRoles();
 
-        if (!isset($userData['role']) || !array_key_exists($userData['role'], $allowedRoles)) {
-            $this->error('Role yang dipilih tidak dapat dikelola statusnya.', position: 'toast-top toast-end');
+        if (!isset($userData['role']) || !array_key_exists($userData['role'], $allRoles)) {
+            $this->error('Role yang dipilih tidak valid.', position: 'toast-top toast-end');
             return;
         }
 
@@ -78,9 +53,6 @@ class ChangeStatusModal extends Component
         $this->showModal = true;
     }
 
-    /**
-     * Close modal dan reset data
-     */
     public function closeModal(): void
     {
         $this->showModal = false;
@@ -90,13 +62,9 @@ class ChangeStatusModal extends Component
         $this->processing = false;
     }
 
-    /**
-     * Konfirmasi toggle status user
-     */
     public function confirmChangeStatus(): void
     {
         if ($this->isPreviewMode) {
-            // Untuk preview mode, emit event ke parent untuk toggle status
             $newStatus = !$this->previewData['is_active'];
             $this->dispatch('togglePreviewStatus', $newStatus);
             $this->closeModal();
@@ -112,22 +80,12 @@ class ChangeStatusModal extends Component
         $this->processing = true;
 
         try {
-            // Double check untuk role yang tidak diizinkan
-            if ($this->user->isDriver() || $this->user->isClient()) {
-                $this->error('Status pengguna ini tidak dapat diubah.', position: 'toast-top toast-end');
-                $this->closeModal();
-                return;
-            }
-
-            // Use model method untuk toggle status
             $this->user->toggleStatus();
 
             $status = $this->user->is_active ? 'diaktifkan' : 'dinonaktifkan';
             $this->success("User {$this->user->name} berhasil {$status}.", position: 'toast-top toast-end');
 
-            // Emit event untuk refresh parent component
             $this->dispatch('userStatusUpdated');
-
             $this->closeModal();
         } catch (\Exception $e) {
             $this->error('Gagal mengubah status user. Silakan coba lagi.', position: 'toast-top toast-end');
@@ -135,14 +93,9 @@ class ChangeStatusModal extends Component
         }
     }
 
-    // * ========================================
-    // * COMPUTED PROPERTIES
-    // * ========================================
-
-    /**
-     * Get current user data (real user or preview)
-     */
-    public function getCurrentUserProperty(): ?object
+    // Computed Properties
+    #[Computed]
+    public function currentUser(): ?object
     {
         if ($this->isPreviewMode) {
             return (object) $this->previewData;
@@ -150,43 +103,32 @@ class ChangeStatusModal extends Component
         return $this->user;
     }
 
-    /**
-     * Get action text based on current status
-     */
-    public function getActionTextProperty(): string
+    #[Computed]
+    public function actionText(): string
     {
         $currentUser = $this->currentUser;
         if (!$currentUser) return '';
-
         return $currentUser->is_active ? 'nonaktifkan' : 'aktifkan';
     }
 
-    /**
-     * Get button class based on current status
-     */
-    public function getButtonClassProperty(): string
+    #[Computed]
+    public function buttonClass(): string
     {
         $currentUser = $this->currentUser;
         if (!$currentUser) return 'btn-primary';
-
         return $currentUser->is_active ? 'btn-warning' : 'btn-success';
     }
 
-    /**
-     * Get icon based on current status
-     */
-    public function getIconProperty(): string
+    #[Computed]
+    public function icon(): string
     {
         $currentUser = $this->currentUser;
         if (!$currentUser) return 'phosphor.question';
-
         return $currentUser->is_active ? 'phosphor.pause' : 'phosphor.play';
     }
 
-    /**
-     * Get modal title
-     */
-    public function getModalTitleProperty(): string
+    #[Computed]
+    public function modalTitle(): string
     {
         if ($this->isPreviewMode) {
             return 'Preview: ' . ucfirst($this->actionText) . ' Pengguna';
@@ -194,21 +136,17 @@ class ChangeStatusModal extends Component
         return 'Konfirmasi ' . ucfirst($this->actionText) . ' Pengguna';
     }
 
-    /**
-     * Get modal subtitle
-     */
-    public function getModalSubtitleProperty(): string
+    #[Computed]
+    public function modalSubtitle(): string
     {
         if ($this->isPreviewMode) {
-            return 'Preview perubahan status pengguna yang akan dibuat';
+            return "Preview perubahan status {$this->userRoleLabel} yang akan dibuat";
         }
-        return 'Pastikan Anda yakin dengan tindakan ini';
+        return "Pastikan Anda yakin dengan tindakan ini untuk {$this->userRoleLabel}";
     }
 
-    /**
-     * Get user role color menggunakan Helper
-     */
-    public function getUserRoleColorProperty(): string
+    #[Computed]
+    public function userRoleColor(): string
     {
         if ($this->isPreviewMode) {
             return UserHelper::getRoleColor($this->previewData['role'] ?? UserHelper::ROLE_CLIENT);
@@ -222,10 +160,8 @@ class ChangeStatusModal extends Component
         return 'neutral';
     }
 
-    /**
-     * Get user role label menggunakan Helper
-     */
-    public function getUserRoleLabelProperty(): string
+    #[Computed]
+    public function userRoleLabel(): string
     {
         if ($this->isPreviewMode) {
             return UserHelper::getRoleLabel($this->previewData['role'] ?? UserHelper::ROLE_CLIENT);
@@ -239,18 +175,34 @@ class ChangeStatusModal extends Component
         return 'Tidak ada role';
     }
 
-    // * ========================================
-    // * RENDER
-    // * ========================================
+    #[Computed]
+    public function roleDescription(): string
+    {
+        $currentUser = $this->currentUser;
+        if (!$currentUser) return '';
+
+        $roleKey = $this->isPreviewMode ?
+            ($this->previewData['role'] ?? '') :
+            ($this->user->getPrimaryRole() ?? '');
+
+        return match($roleKey) {
+            UserHelper::ROLE_DRIVER => $currentUser->is_active ?
+                'Sopir tidak akan dapat login dan menerima pengiriman.' :
+                'Sopir dapat login dan menerima pengiriman.',
+            UserHelper::ROLE_CLIENT => $currentUser->is_active ?
+                'Klien tidak akan dapat login dan melakukan pemesanan.' :
+                'Klien dapat login dan melakukan pemesanan.',
+            UserHelper::ROLE_ADMIN, UserHelper::ROLE_MANAGER => $currentUser->is_active ?
+                'User tidak akan dapat login dan mengakses sistem.' :
+                'User dapat login dan mengakses sistem.',
+            default => $currentUser->is_active ?
+                'User tidak akan dapat login ke sistem.' :
+                'User dapat login ke sistem.'
+        };
+    }
 
     public function render()
     {
-        return view('livewire.app.component.user.change-status-modal', [
-            'currentUser' => $this->currentUser,
-            'modalTitle' => $this->modalTitle,
-            'modalSubtitle' => $this->modalSubtitle,
-            'userRoleColor' => $this->userRoleColor,
-            'userRoleLabel' => $this->userRoleLabel,
-        ]);
+        return view('livewire.app.component.user.change-status-modal');
     }
 }
