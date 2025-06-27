@@ -13,163 +13,122 @@ use Livewire\Attributes\Layout;
 #[Layout('livewire.layouts.app')]
 class View extends Component
 {
-    use Toast;
+   use Toast;
 
-    // * ========================================
-    // * PROPERTIES (Livewire 3 Standards)
-    // * ========================================
+   public User $user;
 
-    public User $user;
+   public function mount(User $user): void
+   {
+       if ($user->isDriver() || $user->isClient()) {
+           $this->error('Pengguna ini tidak dapat dilihat dari halaman ini.', position: 'toast-top toast-end');
+           $this->redirect(route('app.user.index'), navigate: true);
+           return;
+       }
 
-    // * ========================================
-    // * LIFECYCLE HOOKS (Livewire 3 Standards)
-    // * ========================================
+       $this->user = $user;
+   }
 
-    public function mount(User $user): void
-    {
-        // Safety check untuk driver dan client
-        if ($user->isDriver() || $user->isClient()) {
-            $this->error('Pengguna ini tidak dapat dilihat dari halaman ini.', position: 'toast-top toast-end');
-            $this->redirect(route('app.user.index'), navigate: true);
-            return;
-        }
+   public function editUser(): void
+   {
+       $this->redirect(route('app.user.edit', $this->user), navigate: true);
+   }
 
-        $this->user = $user;
-    }
+   public function backToList(): void
+   {
+       $this->redirect(route('app.user.index'), navigate: true);
+   }
 
-    // * ========================================
-    // * ACTIONS
-    // * ========================================
+   public function changeUserStatus(): void
+   {
+       $this->dispatch('openChangeStatusModal', $this->user->id);
+   }
 
-    /**
-     * Navigate to edit page
-     */
-    public function editUser(): void
-    {
-        $this->redirect(route('app.user.edit', $this->user), navigate: true);
-    }
+   public function deleteUser(): void
+   {
+       $this->dispatch('openDeleteUserModal', $this->user->id);
+   }
 
-    /**
-     * Go back to user list
-     */
-    public function backToList(): void
-    {
-        $this->redirect(route('app.user.index'), navigate: true);
-    }
+   protected $listeners = [
+       'userStatusUpdated' => '$refresh',
+       'userDeleted' => 'handleUserDeleted'
+   ];
 
-    /**
-     * Open change status modal
-     */
-    public function changeUserStatus(): void
-    {
-        $this->dispatch('openChangeStatusModal', $this->user->id);
-    }
+   public function handleUserDeleted(): void
+   {
+       $this->success('User berhasil dihapus.', position: 'toast-top toast-end');
+       $this->redirect(route('app.user.index'), navigate: true);
+   }
 
-    /**
-     * Open delete modal
-     */
-    public function deleteUser(): void
-    {
-        $this->dispatch('openDeleteUserModal', $this->user->id);
-    }
+   public function getUserActivityProperty(): array
+   {
+       $createdAt = $this->user->created_at;
+       $updatedAt = $this->user->updated_at;
 
-    // * ========================================
-    // * LISTENERS (Livewire 3 Standards)
-    // * ========================================
+       $joinedData = $this->getTimeDisplay($createdAt);
+       $updateData = $this->getTimeDisplay($updatedAt);
 
-    protected $listeners = [
-        'userStatusUpdated' => '$refresh',
-        'userDeleted' => 'handleUserDeleted'
-    ];
+       return [
+           'joinedDays' => $joinedData['value'],
+           'lastUpdateDays' => $updateData['value'] . ' lalu',
+           'isEmailVerified' => !is_null($this->user->email_verified_at),
+           'accountAge' => $joinedData['description'],
+           'lastUpdate' => $updateData['description'],
+       ];
+   }
 
-    /**
-     * Handle user deleted - redirect to list
-     */
-    public function handleUserDeleted(): void
-    {
-        $this->success('User berhasil dihapus.', position: 'toast-top toast-end');
-        $this->redirect(route('app.user.index'), navigate: true);
-    }
+   private function getTimeDisplay($date): array
+   {
+       $now = now();
 
-    // * ========================================
-    // * COMPUTED PROPERTIES (Livewire 3 Standards)
-    // * ========================================
+       // Cast ke integer untuk menghindari decimal dari Carbon 3.x
+       $totalMinutes = (int) $date->diffInMinutes($now, true);
+       $totalHours = (int) $date->diffInHours($now, true);
+       $totalDays = (int) $date->diffInDays($now, true);
+       $totalMonths = (int) $date->diffInMonths($now, true);
+       $totalYears = (int) $date->diffInYears($now, true);
 
-    /**
-     * Get user activity summary
-     */
-    public function getUserActivityProperty(): array
-    {
-        return [
-            'joinedDays' => $this->user->created_at->diffInDays(now()),
-            'lastUpdateDays' => $this->user->updated_at->diffInDays(now()),
-            'isEmailVerified' => !is_null($this->user->email_verified_at),
-            'accountAge' => $this->user->created_at->diffForHumans(),
-            'lastUpdate' => $this->user->updated_at->diffForHumans(),
-        ];
-    }
+       // Logika berurutan dari yang terbesar
+       if ($totalYears >= 1) {
+           $remainingMonths = $totalMonths - ($totalYears * 12);
+           $remainingDays = $totalDays - ($totalYears * 365) - ($remainingMonths * 30);
+           return [
+               'value' => $totalYears . ' tahun',
+               'description' => $remainingMonths > 0 ? "$remainingMonths bulan $remainingDays hari" : "$remainingDays hari"
+           ];
+       } elseif ($totalMonths >= 1) {
+           $remainingDays = $totalDays - ($totalMonths * 30);
+           return [
+               'value' => $totalMonths . ' bulan',
+               'description' => $remainingDays > 0 ? "$remainingDays hari" : ''
+           ];
+       } elseif ($totalDays >= 1) {
+           $remainingHours = $totalHours - ($totalDays * 24);
+           return [
+               'value' => $totalDays . ' hari',
+               'description' => "$remainingHours jam"
+           ];
+       } elseif ($totalHours >= 1) {
+           $remainingMinutes = $totalMinutes - ($totalHours * 60);
+           return [
+               'value' => $totalHours . ' jam',
+               'description' => "$remainingMinutes menit"
+           ];
+       } elseif ($totalMinutes >= 1) {
+           return [
+               'value' => $totalMinutes . ' menit',
+               'description' => ''
+           ];
+       } else {
+           $totalSeconds = (int) $date->diffInSeconds($now, true);
+           return [
+               'value' => $totalSeconds . ' detik',
+               'description' => ''
+           ];
+       }
+   }
 
-    /**
-     * Get user permissions/capabilities
-     */
-    public function getUserCapabilitiesProperty(): array
-    {
-        $role = $this->user->getPrimaryRole();
-
-        $capabilities = [
-            'canLogin' => $this->user->is_active,
-            'hasEmailVerified' => !is_null($this->user->email_verified_at),
-            'isManageable' => $this->user->isManageable(),
-        ];
-
-        // Role-based capabilities menggunakan Helper
-        if ($role) {
-            $capabilities['canManageUsers'] = UserHelper::canManageUsers($role);
-            $capabilities['canViewReports'] = UserHelper::isManagementRole($role);
-            $capabilities['canManageSystem'] = $role === UserHelper::ROLE_ADMIN;
-            $capabilities['canManageDeliveries'] = UserHelper::canManageDeliveries($role);
-        } else {
-            $capabilities['canManageUsers'] = false;
-            $capabilities['canViewReports'] = false;
-            $capabilities['canManageSystem'] = false;
-            $capabilities['canManageDeliveries'] = false;
-        }
-
-        return $capabilities;
-    }
-
-    /**
-     * Get user statistics
-     */
-    public function getUserStatsProperty(): array
-    {
-        return [
-            'totalLogins' => 0, // Placeholder - bisa diimplementasi jika ada log system
-            'lastLogin' => null, // Placeholder - bisa diimplementasi jika ada log system
-            'sessionsCount' => 0, // Placeholder - bisa diimplementasi jika perlu
-        ];
-    }
-
-    /**
-     * Get role description menggunakan Helper
-     */
-    public function getRoleDescriptionProperty(): string
-    {
-        $role = $this->user->getPrimaryRole();
-        return $role ? UserHelper::getRoleDescription($role) : 'Belum memiliki role';
-    }
-
-    // * ========================================
-    // * RENDER
-    // * ========================================
-
-    public function render()
-    {
-        return view('livewire.app.pages.user.view', [
-            'userActivity' => $this->userActivity,
-            'userCapabilities' => $this->userCapabilities,
-            'userStats' => $this->userStats,
-            'roleDescription' => $this->roleDescription,
-        ]);
-    }
+   public function render()
+   {
+       return view('livewire.app.pages.user.view');
+   }
 }

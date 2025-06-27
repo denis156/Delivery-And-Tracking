@@ -1,14 +1,18 @@
-{{-- Edit User Page - Mary UI + DaisyUI Standards --}}
+{{-- Edit User Page - Mary UI + DaisyUI Standards (Simplified) --}}
 <div>
     {{-- HEADER --}}
-    <x-header title="Edit Pengguna - {{ $user->name }}" separator progress-indicator>
+    <x-header title="Edit {{ $user->name }}" icon="phosphor.pencil-duotone" icon-classes="text-warning h-10" separator
+        progress-indicator>
+        <x-slot:subtitle>
+            <div>Perbarui data {{ $user->name }} internal <span class="text-warning/60">{{ $user->name }}</span> di
+                sini</div>
+        </x-slot:subtitle>
         <x-slot:middle class="!justify-end">
             <div class="breadcrumbs text-sm hidden lg:block">
                 <ul>
-                    <li><a href="{{ route('app.dashboard') }}" wire:navigate>Beranda</a></li>
                     <li><a href="{{ route('app.user.index') }}" wire:navigate>Pengguna</a></li>
-                    <li><a href="{{ route('app.user.view', $user) }}" wire:navigate>{{ $user->name }}</a></li>
-                    <li>Edit</li>
+                    <li><a href="{{ route('app.user.view', $user) }}" wire:navigate>Detail</a></li>
+                    <li>Edit - {{ $user->name }}</li>
                 </ul>
             </div>
         </x-slot:middle>
@@ -16,24 +20,23 @@
 
     {{-- MAIN CONTENT --}}
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-        {{-- ACTIONS & PREVIEW SECTION --}}
+        {{-- USER PROFILE CARD --}}
         <div class="lg:col-span-1">
-            <x-card title="Actions & Preview" separator sticky class="shadow-md">
+            <x-card title="Profil {{ $user->name }}" separator sticky class="shadow-md">
                 <x-slot:menu>
-                    <x-icon name="phosphor.gear" class="w-5 h-5 text-warning" />
+                    <x-icon name="phosphor.user-focus" class="h-5 text-warning" />
                 </x-slot:menu>
 
                 <div class="space-y-6">
-                    {{-- Avatar & Basic Info Preview (seperti di View) --}}
+                    {{-- Avatar & Basic Info --}}
                     <div class="text-center space-y-4">
-                        {{-- Avatar Preview --}}
+                        {{-- Avatar Display --}}
                         <div class="flex justify-center">
                             <div class="avatar">
                                 <div
-                                    class="w-32 h-32 rounded-full ring ring-{{ $role ? \App\Class\Helper\UserHelper::getRoleColor($role) : $user->role_color }} ring-offset-base-100 ring-offset-4">
+                                    class="w-32 h-32 rounded-full ring ring-{{ $user->status_color }} ring-offset-base-100 ring-offset-4 hover:shadow-xl hover:shadow-primary transition-all duration-300">
                                     @if ($avatar)
-                                        <img src="{{ $avatar->temporaryUrl() }}" alt="Preview"
+                                        <img src="{{ $avatar->temporaryUrl() }}" alt="Avatar"
                                             class="w-full h-full object-cover" />
                                     @elseif($user->avatar)
                                         <img src="{{ $user->avatar }}" alt="Current"
@@ -48,7 +51,7 @@
                             </div>
                         </div>
 
-                        {{-- Name & Email Preview --}}
+                        {{-- Name & Email Display --}}
                         <div>
                             <h3 class="text-xl font-bold text-base-content">
                                 {{ $name ?: $user->name }}
@@ -61,7 +64,9 @@
                             <div class="flex flex-wrap justify-center gap-2 mt-3">
                                 <div
                                     class="badge badge-{{ $role ? \App\Class\Helper\UserHelper::getRoleColor($role) : $user->role_color }} badge-lg">
-                                    <x-icon name="phosphor.identification-badge" class="w-4 h-4 mr-1" />
+                                    <x-icon
+                                        name="{{ $role ? \App\Class\Helper\UserHelper::getRoleIcon($role) : $user->role_icon }}"
+                                        class="h-4" />
                                     {{ $role ? \App\Class\Helper\UserHelper::getRoleLabel($role) : $user->role_label }}
                                 </div>
                                 <div class="badge badge-{{ $is_active ? 'success' : 'warning' }} badge-lg">
@@ -73,8 +78,8 @@
                         </div>
                     </div>
 
-                    {{-- Save Status Alert --}}
-                    @if ($hasChanges)
+                    {{-- Form Status Alert --}}
+                    @if ($this->hasChanges)
                         <div class="bg-warning/10 border border-warning/30 rounded-lg p-3">
                             <div class="flex items-center gap-2">
                                 <x-icon name="phosphor.warning" class="w-4 h-4 text-warning" />
@@ -90,20 +95,20 @@
                         </div>
                     @endif
 
-                    {{-- Quick Actions (seperti di View) --}}
+                    {{-- Quick Actions --}}
                     <div class="space-y-2 pt-4 border-t border-base-300">
-                        <x-button label="Kembali ke Daftar" wire:click="backToList" class="btn-primary btn-block"
-                            icon="phosphor.list" />
+                        <x-button label="Data Pengguna" wire:click="backToList"
+                            class="btn-primary btn-outline btn-block" icon="phosphor.users-four" />
 
-                        <x-button label="Kembali ke Detail" wire:click="cancel" class="btn-info btn-block"
-                            icon="phosphor.arrow-left" />
+                        <x-button label="Detail {{ $user->name }}" wire:click="cancel"
+                            class="btn-info btn-outline btn-block" icon="phosphor.eye" />
 
                         <x-button :label="$user->is_active ? 'Nonaktifkan' : 'Aktifkan'" wire:click="changeUserStatus"
                             class="btn-{{ $user->is_active ? 'warning' : 'success' }} btn-outline btn-block"
                             :icon="$user->is_active ? 'phosphor.pause' : 'phosphor.play'" />
 
-                        <x-button label="Hapus Pengguna" wire:click="deleteUser" class="btn-error btn-outline btn-block"
-                            icon="phosphor.trash" />
+                        <x-button label="Hapus {{ $user->name }}" wire:click="deleteUser"
+                            class="btn-error btn-outline btn-block" icon="phosphor.trash" />
                     </div>
                 </div>
             </x-card>
@@ -111,26 +116,25 @@
 
         {{-- FORM SECTION --}}
         <div class="lg:col-span-2">
-            <x-card title="Edit Informasi Pengguna" separator class="shadow-md">
+            <x-card title="Edit Informasi {{ $user->name }}" separator class="shadow-md">
                 <x-slot:menu>
-                    <x-icon name="phosphor.pencil" class="w-5 h-5 text-warning" />
+                    <x-icon name="phosphor.pencil" class="h-5 text-warning" />
                 </x-slot:menu>
 
                 <x-form wire:submit="update">
                     <div class="space-y-6">
-                        {{-- Personal Information --}}
+                        {{-- User Information --}}
                         <div class="space-y-4">
-                            <h3 class="text-lg font-semibold text-base-content border-b border-base-300 pb-2">
-                                <x-icon name="phosphor.identification-card" class="w-5 h-5 inline mr-2" />
-                                Informasi Pribadi
+                            <h3 class="text-lg font-semibold text-base-content border-b border-warning pb-2">
+                                Informasi {{ $user->name }}
                             </h3>
 
                             {{-- Avatar Upload with Preview --}}
                             <div class="space-y-4">
                                 <label class="text-sm font-medium text-base-content">Foto Profil</label>
 
-                                {{-- Current and New Avatar Preview --}}
-                                <div class="flex items-center gap-6">
+                                {{-- Avatar Display --}}
+                                <div class="flex justify-center items-center gap-6">
                                     {{-- Current Avatar --}}
                                     <div class="text-center">
                                         <div class="avatar">
@@ -149,11 +153,9 @@
                                         <p class="text-xs text-base-content/50 mt-1">Saat ini</p>
                                     </div>
 
-                                    {{-- Arrow --}}
+                                    {{-- Arrow & New Avatar --}}
                                     @if ($avatar)
                                         <x-icon name="phosphor.arrow-right" class="w-6 h-6 text-base-content/30" />
-
-                                        {{-- New Avatar Preview --}}
                                         <div class="text-center">
                                             <div class="avatar">
                                                 <div
@@ -178,103 +180,47 @@
                             {{-- Email --}}
                             <x-input label="Alamat Email" wire:model.blur="email" placeholder="user@example.com"
                                 type="email" icon="phosphor.envelope" clearable required />
-                        </div>
-
-                        {{-- Role & Status --}}
-                        <div class="space-y-4">
-                            <h3 class="text-lg font-semibold text-base-content border-b border-base-300 pb-2">
-                                <x-icon name="phosphor.user-circle" class="w-5 h-5 inline mr-2" />
-                                Peran & Status
-                            </h3>
 
                             {{-- Role --}}
-                            <x-select label="Peran Pengguna" wire:model.live="role" :options="collect($this->roles)
+                            <x-select label="Peran {{ $user->name }}" wire:model.live="role" :options="collect($this->roles)
                                 ->map(fn($label, $value) => ['id' => $value, 'name' => $label])
                                 ->values()
                                 ->toArray()"
-                                option-value="id" option-label="name" icon="phosphor.identification-badge"
+                                option-value="id" option-label="name"
+                                icon="{{ $role ? \App\Class\Helper\UserHelper::getRoleIcon($role) : 'phosphor.question' }}"
                                 required />
-
-                            {{-- Changes Alert --}}
-                            @if ($hasChanges)
-                                <div class="alert alert-warning">
-                                    <x-icon name="phosphor.warning" class="w-5 h-5" />
-                                    <div>
-                                        <h4 class="font-semibold">Ada Perubahan yang Belum Disimpan</h4>
-                                        <p class="text-sm">Pastikan untuk menyimpan perubahan sebelum meninggalkan
-                                            halaman.</p>
-                                    </div>
-                                </div>
-                            @endif
                         </div>
 
-                        {{-- Security (Optional Password Change) --}}
+                        {{-- Security --}}
                         <div class="space-y-4">
-                            <h3 class="text-lg font-semibold text-base-content border-b border-base-300 pb-2">
-                                <x-icon name="phosphor.lock" class="w-5 h-5 inline mr-2" />
-                                Ubah Kata Sandi (Opsional)
+                            <h3 class="text-lg font-semibold text-base-content border-b border-warning pb-2">
+                                Keamanan
                             </h3>
-
-                            <div class="alert alert-info">
-                                <x-icon name="phosphor.info" class="w-5 h-5" />
-                                <div>
-                                    <h4 class="font-semibold">Ubah Kata Sandi</h4>
-                                    <p class="text-sm">Kosongkan field kata sandi jika tidak ingin mengubah password
-                                        pengguna.</p>
-                                </div>
-                            </div>
 
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {{-- Password --}}
                                 <x-password label="Kata Sandi Baru" wire:model.blur="password"
-                                    placeholder="Kosongkan jika tidak diubah" hint="Minimal 8 karakter jika diisi" />
+                                    placeholder="Kosongkan jika tidak diubah"
+                                    hint="Kombinasi huruf besar, kecil, angka, dan simbol" />
 
                                 {{-- Password Confirmation --}}
                                 <x-password label="Konfirmasi Kata Sandi" wire:model.blur="password_confirmation"
                                     placeholder="Ulangi kata sandi baru" />
                             </div>
-
-                            {{-- Password Strength Indicator --}}
-                            @if ($password)
-                                <div class="bg-base-200 rounded-lg p-4">
-                                    <div class="flex items-center gap-3 mb-3">
-                                        <span class="text-sm font-medium">Kekuatan Password Baru:</span>
-                                        <div class="badge badge-{{ $passwordStrength['color'] }} badge-sm">
-                                            {{ $passwordStrength['text'] }}
-                                        </div>
-                                    </div>
-                                    <div class="w-full bg-base-300 rounded-full h-3">
-                                        <div class="bg-{{ $passwordStrength['color'] }} h-3 rounded-full transition-all duration-300"
-                                            style="width: {{ $passwordStrength['strength'] }}%">
-                                        </div>
-                                    </div>
-                                    @if (!empty($passwordStrength['feedback']))
-                                        <div class="mt-3">
-                                            <p class="text-xs text-base-content/70 mb-1">Masih dibutuhkan:</p>
-                                            <div class="flex flex-wrap gap-1">
-                                                @foreach ($passwordStrength['feedback'] as $feedback)
-                                                    <div class="badge badge-warning badge-xs">{{ $feedback }}
-                                                    </div>
-                                                @endforeach
-                                            </div>
-                                        </div>
-                                    @endif
-                                </div>
-                            @endif
                         </div>
                     </div>
 
                     {{-- Form Actions --}}
                     <x-slot:actions separator>
                         <x-button label="Simpan Perubahan" type="submit" class="btn-warning" icon="phosphor.check"
-                            :disabled="!$hasChanges" spinner="update" />
+                            :disabled="!$this->hasChanges" spinner="update" />
                     </x-slot:actions>
                 </x-form>
             </x-card>
         </div>
     </div>
 
-    {{-- MODAL COMPONENTS yang dibutuhkan untuk actions --}}
+    {{-- MODAL COMPONENTS --}}
     {{-- Change Status Modal --}}
     <livewire:app.component.user.change-status-modal />
 

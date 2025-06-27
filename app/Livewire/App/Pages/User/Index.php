@@ -82,7 +82,7 @@ class Index extends Component
      */
     public function handleUserDeleted(): void
     {
-        if ($this->users()->count() === 0 && $this->users()->currentPage() > 1) {
+        if ($this->users->count() === 0 && $this->users->currentPage() > 1) {
             $this->resetPage();
         }
         $this->success('User berhasil dihapus.', position: 'toast-top toast-end');
@@ -122,13 +122,13 @@ class Index extends Component
     }
 
     // * ========================================
-    // * DATA METHODS (Using Model Scopes and Accessors)
+    // * COMPUTED PROPERTIES (Livewire 3 Standards)
     // * ========================================
 
     /**
      * Get users with filters and search (exclude drivers and clients)
      */
-    public function users()
+    public function getUsersProperty()
     {
         $query = User::excludeDrivers()
             ->whereDoesntHave('roles', function ($query) {
@@ -137,7 +137,7 @@ class Index extends Component
             ->when($this->search, function ($q) {
                 $q->where(function ($query) {
                     $query->where('name', 'like', "%{$this->search}%")
-                          ->orWhere('email', 'like', "%{$this->search}%");
+                        ->orWhere('email', 'like', "%{$this->search}%");
                 });
             })
             ->when($this->statusFilter !== 'all', function ($q) {
@@ -157,10 +157,6 @@ class Index extends Component
         return $query->paginate($this->perPage);
     }
 
-    // * ========================================
-    // * COMPUTED PROPERTIES (Livewire 3 Standards)
-    // * ========================================
-
     /**
      * Get available roles for filter (only management and staff roles)
      */
@@ -176,15 +172,17 @@ class Index extends Component
      */
     public function getUserStatsProperty(): array
     {
+        // Base query builder - hanya buat sekali
         $baseQuery = User::excludeDrivers()
             ->whereDoesntHave('roles', function ($query) {
                 $query->where('name', UserHelper::ROLE_CLIENT);
             });
 
-        return [
-            'totalUsers' => $baseQuery->count(),
-            'activeUsers' => $baseQuery->active()->count(),
-            'inactiveUsers' => $baseQuery->inactive()->count(),
+        // Gunakan clone untuk setiap perhitungan agar query fresh
+        $stats = [
+            'totalUsers' => (clone $baseQuery)->count(),
+            'activeUsers' => (clone $baseQuery)->active()->count(),
+            'inactiveUsers' => (clone $baseQuery)->inactive()->count(),
             'deletedUsers' => User::onlyTrashed()
                 ->excludeDrivers()
                 ->whereDoesntHave('roles', function ($query) {
@@ -192,6 +190,8 @@ class Index extends Component
                 })
                 ->count(),
         ];
+
+        return $stats;
     }
 
     /**
@@ -249,10 +249,10 @@ class Index extends Component
     public function getHasActiveFiltersProperty(): bool
     {
         return $this->search !== '' ||
-               $this->statusFilter !== 'all' ||
-               $this->roleFilter !== 'all' ||
-               $this->sortBy['column'] !== 'created_at' ||
-               $this->sortBy['direction'] !== 'desc';
+            $this->statusFilter !== 'all' ||
+            $this->roleFilter !== 'all' ||
+            $this->sortBy['column'] !== 'created_at' ||
+            $this->sortBy['direction'] !== 'desc';
     }
 
     // * ========================================
@@ -261,17 +261,6 @@ class Index extends Component
 
     public function render()
     {
-        $users = $this->users();
-
-        return view('livewire.app.pages.user.index', [
-            'users' => $users,
-            'roles' => $this->roles,
-            'userStats' => $this->userStats,
-            'sortOptions' => $this->sortOptions,
-            'statusFilterOptions' => $this->statusFilterOptions,
-            'sortDirectionOptions' => $this->sortDirectionOptions,
-            'perPageOptions' => $this->perPageOptions,
-            'hasActiveFilters' => $this->hasActiveFilters,
-        ]);
+        return view('livewire.app.pages.user.index');
     }
 }
