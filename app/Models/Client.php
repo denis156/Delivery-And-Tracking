@@ -202,12 +202,6 @@ class Client extends Model
         );
     }
 
-    protected function clientBarcode(): Attribute
-    {
-        return Attribute::make(
-            get: fn() => ClientHelper::generateClientBarcode($this->company_code),
-        );
-    }
 
     // * ========================================
     // * BUSINESS LOGIC METHODS
