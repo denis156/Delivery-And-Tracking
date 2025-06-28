@@ -1,15 +1,15 @@
 {{-- User Index Page - Mary UI + DaisyUI Standards --}}
 <div>
     {{-- HEADER --}}
-    <x-header title="Manajemen Pengguna" subtitle="Kelola data pengguna internal sistem di sini"
+    <x-header title="{{ \App\Class\Helper\UserHelper::PAGE_TITLE_INDEX }}" subtitle="{{ \App\Class\Helper\UserHelper::PAGE_SUBTITLE_INDEX }}"
         icon="phosphor.users-four-duotone" icon-classes="text-primary h-10" separator progress-indicator>
         <x-slot:middle class="!justify-end">
-            <x-input placeholder="Cari nama atau email..." wire:model.live.debounce="search" clearable
+            <x-input placeholder="{{ \App\Class\Helper\FormatHelper::PLACEHOLDER_SEARCH_USER }}" wire:model.live.debounce="search" clearable
                 icon="phosphor.magnifying-glass" />
         </x-slot:middle>
         <x-slot:actions>
-            <x-button label="Filter" @click="$wire.drawer = true" responsive icon="phosphor.funnel" class="btn-primary" />
-            <x-button label="Tambah Pengguna" link="{{ route('app.user.create') }}" responsive
+            <x-button label="{{ \App\Class\Helper\FormatHelper::LABEL_FILTER }}" @click="$wire.drawer = true" responsive icon="phosphor.funnel" class="btn-primary" />
+            <x-button label="{{ \App\Class\Helper\FormatHelper::LABEL_ADD }} Pengguna" link="{{ route('app.user.create') }}" responsive
                 icon="phosphor.plus-circle" class="btn-success" />
         </x-slot:actions>
     </x-header>
@@ -44,7 +44,13 @@
         <x-card class="p-12">
             <div class="text-center">
                 <x-icon name="phosphor.users" class="w-16 h-16 mx-auto text-base-content/30 mb-4" />
-                <h3 class="text-lg font-semibold text-base-content/60 mb-2">Tidak ada pengguna ditemukan</h3>
+                <h3 class="text-lg font-semibold text-base-content/60 mb-2">
+                    @if ($search)
+                        Tidak ada pengguna yang cocok dengan pencarian
+                    @else
+                        Tidak ada pengguna ditemukan
+                    @endif
+                </h3>
                 <p class="text-base-content/40 mb-6">
                     @if ($search)
                         Tidak ada pengguna yang cocok dengan pencarian "<strong>{{ $search }}</strong>"
@@ -53,10 +59,10 @@
                     @endif
                 </p>
                 @if (!$search)
-                    <x-button label="Tambah Pengguna Pertama" link="{{ route('app.user.create') }}" icon="phosphor.plus"
+                    <x-button label="{{ \App\Class\Helper\FormatHelper::LABEL_ADD }} Pengguna Pertama" link="{{ route('app.user.create') }}" icon="phosphor.plus"
                         class="btn-primary" />
                 @else
-                    <x-button label="Reset Pencarian" wire:click="$set('search', '')" icon="phosphor.x"
+                    <x-button label="{{ \App\Class\Helper\FormatHelper::LABEL_RESET }} Pencarian" wire:click="$set('search', '')" icon="phosphor.x"
                         class="btn-ghost" />
                 @endif
             </div>

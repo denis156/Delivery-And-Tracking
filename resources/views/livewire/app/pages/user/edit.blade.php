@@ -10,7 +10,7 @@
         <x-slot:middle class="!justify-end">
             <div class="breadcrumbs text-sm hidden lg:block">
                 <ul>
-                    <li><a href="{{ route('app.user.index') }}" wire:navigate>Pengguna</a></li>
+                    <li><a href="{{ route('app.user.index') }}" wire:navigate>{{ \App\Class\Helper\UserHelper::PAGE_TITLE_INDEX }}</a></li>
                     <li><a href="{{ route('app.user.view', $user) }}" wire:navigate>Detail</a></li>
                     <li>Edit - {{ $user->name }}</li>
                 </ul>
@@ -98,7 +98,7 @@
                     {{-- Quick Actions --}}
                     <div class="space-y-2 pt-4 border-t border-base-300">
                         <x-button label="Data Pengguna" wire:click="backToList"
-                            class="btn-primary btn-outline btn-block" icon="{{ $this->userUIConfig['icons']['users'] }}" />
+                            class="btn-primary btn-outline btn-block" icon="{{ $this->userUIConfig['icons']['back'] }}" />
 
                         <x-button label="Detail {{ $user->name }}" wire:click="cancel"
                             class="btn-info btn-outline btn-block" icon="{{ $this->userUIConfig['icons']['view'] }}" />
@@ -212,7 +212,7 @@
 
                     {{-- Form Actions --}}
                     <x-slot:actions separator>
-                        <x-button label="Simpan Perubahan" type="submit" class="btn-warning" icon="{{ $this->userUIConfig['icons']['success'] }}"
+                        <x-button label="{{ \App\Class\Helper\FormatHelper::LABEL_SAVE }} Perubahan" type="submit" class="btn-warning" icon="{{ $this->userUIConfig['icons']['success'] }}"
                             :disabled="!$this->hasChanges" spinner="update" />
                     </x-slot:actions>
                 </x-form>

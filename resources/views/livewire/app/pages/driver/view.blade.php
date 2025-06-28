@@ -9,7 +9,7 @@
         <x-slot:middle class="!justify-end">
             <div class="breadcrumbs text-sm hidden lg:block">
                 <ul>
-                    <li><a href="{{ route('app.driver.index') }}" wire:navigate>Data Sopir</a></li>
+                    <li><a href="{{ route('app.driver.index') }}" wire:navigate>{{ \App\Class\Helper\DriverHelper::PAGE_TITLE_INDEX }}</a></li>
                     <li>Detail - {{ $user->name }}</li>
                 </ul>
             </div>

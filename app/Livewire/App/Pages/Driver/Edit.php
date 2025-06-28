@@ -15,7 +15,7 @@ use Livewire\Attributes\Layout;
 use Livewire\Attributes\Computed;
 use Illuminate\Validation\Rule;
 
-#[Title('Edit Sopir')]
+#[Title(DriverHelper::PAGE_TITLE_EDIT)]
 #[Layout('livewire.layouts.app')]
 class Edit extends Component
 {
@@ -189,13 +189,13 @@ class Edit extends Component
             $this->user->load('driver');
             $this->storeOriginalData();
 
-            $this->success('Data sopir berhasil diperbarui!');
+            $this->success(DriverHelper::TOAST_DRIVER_UPDATED, position: FormatHelper::TOAST_POSITION);
             $this->dispatch('userUpdated');
 
             $this->redirect(route('app.driver.view', $this->user), navigate: true);
 
         } catch (\Exception $e) {
-            $this->error('Terjadi kesalahan saat menyimpan data: ' . $e->getMessage());
+            $this->error(DriverHelper::ERROR_SAVE_FAILED . ': ' . $e->getMessage(), position: FormatHelper::TOAST_POSITION);
         }
     }
 

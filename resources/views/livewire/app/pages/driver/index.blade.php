@@ -1,15 +1,15 @@
 {{-- Driver Index Page - Mary UI + DaisyUI Standards --}}
 <div>
     {{-- HEADER --}}
-    <x-header title="Manajemen Sopir" subtitle="Kelola data sopir dan informasi SIM di sini" icon="phosphor.truck-duotone"
+    <x-header title="{{ \App\Class\Helper\DriverHelper::PAGE_TITLE_INDEX }}" subtitle="{{ \App\Class\Helper\DriverHelper::PAGE_SUBTITLE_INDEX }}" icon="phosphor.truck-duotone"
         icon-classes="text-primary h-10" separator progress-indicator>
         <x-slot:middle class="!justify-end">
-            <x-input placeholder="Cari nama, email, SIM, atau plat..." wire:model.live.debounce="search" clearable
+            <x-input placeholder="{{ \App\Class\Helper\FormatHelper::PLACEHOLDER_SEARCH_DRIVER }}" wire:model.live.debounce="search" clearable
                 icon="{{ $this->driverUIConfig['icons']['search'] }}" />
         </x-slot:middle>
         <x-slot:actions>
-            <x-button label="Filter" @click="$wire.drawer = true" responsive icon="{{ $this->driverUIConfig['icons']['filter'] }}" class="btn-primary" />
-            <x-button label="Tambah Sopir" link="{{ route('app.driver.create') }}" responsive
+            <x-button label="{{ \App\Class\Helper\FormatHelper::LABEL_FILTER }}" @click="$wire.drawer = true" responsive icon="{{ $this->driverUIConfig['icons']['filter'] }}" class="btn-primary" />
+            <x-button label="{{ \App\Class\Helper\FormatHelper::LABEL_ADD }} Sopir" link="{{ route('app.driver.create') }}" responsive
                 icon="{{ $this->driverUIConfig['icons']['add'] }}" class="btn-success" />
         </x-slot:actions>
     </x-header>
@@ -41,10 +41,10 @@
                     @endif
                 </p>
                 @if (!$search)
-                    <x-button label="Tambah Driver Pertama" link="{{ route('app.driver.create') }}" icon="{{ $this->driverUIConfig['icons']['add'] }}"
+                    <x-button label="{{ \App\Class\Helper\FormatHelper::LABEL_ADD }} Driver Pertama" link="{{ route('app.driver.create') }}" icon="{{ $this->driverUIConfig['icons']['add'] }}"
                         class="btn-primary" />
                 @else
-                    <x-button label="Reset Pencarian" wire:click="$set('search', '')" icon="{{ $this->driverUIConfig['icons']['close'] }}"
+                    <x-button label="{{ \App\Class\Helper\FormatHelper::LABEL_RESET }} Pencarian" wire:click="$set('search', '')" icon="{{ $this->driverUIConfig['icons']['close'] }}"
                         class="btn-ghost" />
                 @endif
             </div>
@@ -200,11 +200,13 @@
                         class="flex flex-col md:flex-row md:justify-between md:items-center space-y-4 md:space-y-0 mb-6">
                         {{-- Results Info --}}
                         <div class="text-sm text-base-content/70 text-center md:text-left">
-                            {{ $this->paginationInfo['current'] }}
+                            Menampilkan <span class="font-semibold">{{ $this->drivers->firstItem() ?? 0 }}</span> -
+                            <span class="font-semibold">{{ $this->drivers->lastItem() ?? 0 }}</span>
+                            dari <span class="font-semibold">{{ $this->drivers->total() }}</span> driver
                             @if ($search)
                                 <br class="md:hidden">
                                 <span class="block md:inline mt-1 md:mt-0">
-                                    {{ $this->paginationInfo['search'] }}
+                                    untuk pencarian "<span class="font-semibold text-primary">{{ $search }}</span>"
                                 </span>
                             @endif
                         </div>
@@ -274,11 +276,11 @@
                         <div
                             class="flex flex-col md:flex-row md:justify-between md:items-center space-y-4 md:space-y-0">
                             <div class="text-sm text-base-content/70 text-center md:text-left">
-                                {{ $this->paginationInfo['simple'] }}
+                                Menampilkan <span class="font-semibold">{{ $this->drivers->count() }}</span> driver
                                 @if ($search)
                                     <br class="md:hidden">
                                     <span class="block md:inline mt-1 md:mt-0">
-                                        {{ $this->paginationInfo['search'] }}
+                                        untuk pencarian "<span class="font-semibold text-primary">{{ $search }}</span>"
                                     </span>
                                 @endif
                             </div>
@@ -299,7 +301,7 @@
     <x-drawer wire:model="drawer" title="Filter Driver" right separator with-close-button class="lg:w-1/3">
         <div class="space-y-4">
             {{-- Search --}}
-            <x-input placeholder="Cari nama, email, SIM, atau plat..." wire:model.live.debounce="search"
+            <x-input placeholder="{{ \App\Class\Helper\FormatHelper::PLACEHOLDER_SEARCH_DRIVER }}" wire:model.live.debounce="search"
                 icon="phosphor.magnifying-glass" @keydown.enter="$wire.drawer = false" clearable />
 
             {{-- Status Filter --}}
@@ -338,8 +340,8 @@
         </div>
 
         <x-slot:actions>
-            <x-button label="Reset Filter" icon="phosphor.x-circle" wire:click="clear" spinner class="btn-ghost" />
-            <x-button label="Tutup" icon="phosphor.check-circle" class="btn-primary"
+            <x-button label="{{ \App\Class\Helper\FormatHelper::LABEL_RESET }} Filter" icon="phosphor.x-circle" wire:click="clear" spinner class="btn-ghost" />
+            <x-button label="{{ \App\Class\Helper\FormatHelper::LABEL_CLOSE }}" icon="phosphor.check-circle" class="btn-primary"
                 @click="$wire.drawer = false" />
         </x-slot:actions>
     </x-drawer>

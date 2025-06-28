@@ -15,7 +15,7 @@ use Livewire\Attributes\Layout;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Validate;
 
-#[Title('Tambah Sopir Baru')]
+#[Title(DriverHelper::PAGE_TITLE_CREATE)]
 #[Layout('livewire.layouts.app')]
 class Create extends Component
 {
@@ -31,13 +31,13 @@ class Create extends Component
     #[Validate('required|string|email|max:255|unique:users,email')]
     public string $email = '';
 
-    #[Validate('required|string|min:8|regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/')]
+    #[Validate('required|string|min:' . FormatHelper::MIN_PASSWORD_LENGTH . '|regex:' . FormatHelper::PASSWORD_REGEX)]
     public string $password = '';
 
-    #[Validate('required|string|min:8|same:password')]
+    #[Validate('required|string|min:' . FormatHelper::MIN_PASSWORD_LENGTH . '|same:password')]
     public string $password_confirmation = '';
 
-    #[Validate('nullable|image|max:2048')]
+    #[Validate('nullable|image|max:' . FormatHelper::MAX_AVATAR_SIZE)]
     public $avatar;
 
     public bool $is_active = true;
@@ -100,13 +100,13 @@ class Create extends Component
                 'vehicle_plate' => $this->vehicle_plate,
             ]);
 
-            $this->success('Sopir berhasil dibuat!');
+            $this->success(DriverHelper::TOAST_DRIVER_CREATED, position: FormatHelper::TOAST_POSITION);
             $this->dispatch('userCreated');
 
             $this->redirect(route('app.driver.view', $user), navigate: true);
 
         } catch (\Exception $e) {
-            $this->error('Terjadi kesalahan saat membuat sopir: ' . $e->getMessage());
+            $this->error(DriverHelper::ERROR_CREATE_FAILED . ': ' . $e->getMessage(), position: FormatHelper::TOAST_POSITION);
         }
     }
 
@@ -118,7 +118,7 @@ class Create extends Component
             'address', 'vehicle_type', 'vehicle_plate'
         ]);
         $this->is_active = true;
-        $this->success('Form berhasil direset.');
+        $this->success(DriverHelper::TOAST_FORM_RESET, position: FormatHelper::TOAST_POSITION);
     }
 
     public function cancel(): void
@@ -129,7 +129,10 @@ class Create extends Component
     public function toggleUserStatus(): void
     {
         $this->is_active = !$this->is_active;
-        $this->success('Status sopir diubah ke ' . ($this->is_active ? 'aktif' : 'nonaktif'));
+        $this->success(
+            $this->is_active ? DriverHelper::TOAST_STATUS_CHANGED_ACTIVE : DriverHelper::TOAST_STATUS_CHANGED_INACTIVE,
+            position: FormatHelper::TOAST_POSITION
+        );
     }
 
     // * ========================================
@@ -143,7 +146,10 @@ class Create extends Component
     public function handleTogglePreviewStatus(bool $newStatus): void
     {
         $this->is_active = $newStatus;
-        $this->success('Status preview diubah ke ' . ($this->is_active ? 'aktif' : 'nonaktif'));
+        $this->success(
+            $this->is_active ? DriverHelper::TOAST_STATUS_CHANGED_ACTIVE : DriverHelper::TOAST_STATUS_CHANGED_INACTIVE,
+            position: FormatHelper::TOAST_POSITION
+        );
     }
 
     // * ========================================

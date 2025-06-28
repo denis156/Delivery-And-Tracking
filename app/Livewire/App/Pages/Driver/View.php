@@ -12,7 +12,7 @@ use Livewire\Attributes\Title;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Computed;
 
-#[Title('Detail Sopir')]
+#[Title(DriverHelper::PAGE_TITLE_VIEW)]
 #[Layout('livewire.layouts.app')]
 class View extends Component
 {
@@ -23,7 +23,7 @@ class View extends Component
    public function mount(User $user): void
    {
        if (!$user->isDriver()) {
-           $this->error('User ini bukan driver.', position: 'toast-top toast-end');
+           $this->error(DriverHelper::ERROR_NOT_DRIVER_FULL, position: FormatHelper::TOAST_POSITION);
            $this->redirect(route('app.driver.index'), navigate: true);
            return;
        }

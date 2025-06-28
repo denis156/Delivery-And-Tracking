@@ -14,7 +14,7 @@ use Livewire\Attributes\Layout;
 use Livewire\Attributes\Validate;
 use Livewire\Attributes\Computed;
 
-#[Title('Edit Pengguna')]
+#[Title(UserHelper::PAGE_TITLE_EDIT)]
 #[Layout('livewire.layouts.app')]
 class Edit extends Component
 {
@@ -35,13 +35,13 @@ class Edit extends Component
     #[Validate('required|string')]
     public string $role = '';
 
-    #[Validate('nullable|image|max:2048')]
+    #[Validate('nullable|image|max:' . FormatHelper::MAX_AVATAR_SIZE)]
     public $avatar;
 
-    #[Validate('nullable|string|min:8|regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/')]
+    #[Validate('nullable|string|min:' . FormatHelper::MIN_PASSWORD_LENGTH . '|regex:' . FormatHelper::PASSWORD_REGEX)]
     public string $password = '';
 
-    #[Validate('nullable|string|min:8')]
+    #[Validate('nullable|string|min:' . FormatHelper::MIN_PASSWORD_LENGTH)]
     public string $password_confirmation = '';
 
     public bool $is_active = true;
@@ -138,7 +138,7 @@ class Edit extends Component
             $this->user->setRole($this->role);
         }
 
-        $this->success('Pengguna berhasil diperbarui!');
+        $this->success(UserHelper::TOAST_USER_UPDATED, position: FormatHelper::TOAST_POSITION);
         $this->dispatch('userUpdated');
 
         $this->redirect(route('app.user.view', $this->user), navigate: true);
@@ -200,6 +200,7 @@ class Edit extends Component
                 'success' => FormatHelper::getCommonIcon('success'),
                 'warning' => FormatHelper::getCommonIcon('warning'),
                 'arrow_right' => FormatHelper::getCommonIcon('arrow_right'),
+                'back' => FormatHelper::getCommonIcon('back'),
             ],
             'colors' => [
                 'active' => UserHelper::getStatusColor(UserHelper::STATUS_ACTIVE),

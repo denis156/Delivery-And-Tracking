@@ -12,7 +12,7 @@ use Livewire\Attributes\Title;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Computed;
 
-#[Title('Detail Pengguna')]
+#[Title(UserHelper::PAGE_TITLE_VIEW)]
 #[Layout('livewire.layouts.app')]
 class View extends Component
 {
@@ -23,7 +23,7 @@ class View extends Component
    public function mount(User $user): void
    {
        if ($user->isDriver() || $user->isClient()) {
-           $this->error('Pengguna ini tidak dapat dilihat dari halaman ini.', position: 'toast-top toast-end');
+           $this->error(UserHelper::ERROR_NOT_VIEWABLE, position: FormatHelper::TOAST_POSITION);
            $this->redirect(route('app.user.index'), navigate: true);
            return;
        }
@@ -151,6 +151,7 @@ class View extends Component
                'calendar' => FormatHelper::getCommonIcon('calendar'),
                'clock' => FormatHelper::getCommonIcon('clock'),
                'activity' => FormatHelper::getCommonIcon('activity'),
+               'back' => FormatHelper::getCommonIcon('back'),
            ],
            'colors' => [
                'active' => UserHelper::getStatusColor(UserHelper::STATUS_ACTIVE),

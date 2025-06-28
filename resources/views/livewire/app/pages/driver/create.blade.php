@@ -1,13 +1,13 @@
 {{-- Create Driver Page - Mary UI + DaisyUI Standards --}}
 <div>
     {{-- HEADER --}}
-    <x-header title="Tambah Sopir" subtitle="Tambahkan data sopir baru beserta informasi SIM di sini"
+    <x-header title="{{ \App\Class\Helper\DriverHelper::PAGE_TITLE_CREATE }}" subtitle="{{ \App\Class\Helper\DriverHelper::PAGE_SUBTITLE_CREATE }}"
         icon="{{ $this->driverUIConfig['icons']['add'] }}" icon-classes="text-success h-10" separator progress-indicator>
         <x-slot:middle class="!justify-end">
             <div class="breadcrumbs text-sm hidden lg:block">
                 <ul>
-                    <li><a href="{{ route('app.driver.index') }}" wire:navigate>Data Sopir</a></li>
-                    <li>Tambah Sopir</li>
+                    <li><a href="{{ route('app.driver.index') }}" wire:navigate>{{ \App\Class\Helper\DriverHelper::PAGE_TITLE_INDEX }}</a></li>
+                    <li>{{ \App\Class\Helper\DriverHelper::PAGE_TITLE_CREATE }}</li>
                 </ul>
             </div>
         </x-slot:middle>
@@ -96,7 +96,7 @@
                         <x-button label="Data Sopir" wire:click="cancel" class="btn-primary btn-block"
                             icon="phosphor.truck" />
 
-                        <x-button label="Reset Form" wire:click="resetForm" class="btn-secondary btn-block"
+                        <x-button label="{{ \App\Class\Helper\FormatHelper::LABEL_RESET }} Form" wire:click="resetForm" class="btn-secondary btn-block"
                             icon="phosphor.arrow-counter-clockwise" :disabled="!$this->hasData" />
 
                         <x-button :label="$is_active ? 'Set: Nonaktifkan' : 'Set: Aktifkan'"
@@ -154,11 +154,11 @@
                             </div>
 
                             {{-- Name --}}
-                            <x-input label="Nama Lengkap" wire:model.live.debounce.500ms="name" placeholder="Masukkan nama lengkap sopir"
+                            <x-input label="Nama Lengkap" wire:model.live.debounce.500ms="name" placeholder="{{ \App\Class\Helper\FormatHelper::PLACEHOLDER_NAME_DRIVER }}"
                                 icon="{{ $this->driverUIConfig['icons']['name'] }}" clearable required />
 
                             {{-- Email --}}
-                            <x-input label="Alamat Email" wire:model.live.debounce.500ms="email" placeholder="driver@example.com"
+                            <x-input label="Alamat Email" wire:model.live.debounce.500ms="email" placeholder="{{ \App\Class\Helper\FormatHelper::PLACEHOLDER_EMAIL }}"
                                 type="email" icon="{{ $this->driverUIConfig['icons']['email'] }}" clearable required />
 
                             {{-- Security --}}
@@ -235,7 +235,7 @@
 
                     {{-- Form Actions --}}
                     <x-slot:actions separator>
-                        <x-button label="Simpan Sopir" type="submit" class="btn-primary" icon="{{ $this->formStatus['icon'] }}"
+                        <x-button label="{{ \App\Class\Helper\FormatHelper::LABEL_SAVE }} Sopir" type="submit" class="btn-primary" icon="{{ $this->formStatus['icon'] }}"
                             :disabled="!$this->isFormValid" spinner="save" />
                     </x-slot:actions>
                 </x-form>

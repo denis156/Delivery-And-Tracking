@@ -1,13 +1,13 @@
 {{-- Create User Page - Mary UI + DaisyUI Standards (Simplified) --}}
 <div>
     {{-- HEADER --}}
-    <x-header title="Tambah Pengguna" subtitle="Tambahkan data pengguna internal baru di sini"
+    <x-header title="{{ \App\Class\Helper\UserHelper::PAGE_TITLE_CREATE }}" subtitle="{{ \App\Class\Helper\UserHelper::PAGE_SUBTITLE_CREATE }}"
         icon="{{ $this->userUIConfig['icons']['add'] }}" icon-classes="text-success h-10" separator progress-indicator>
         <x-slot:middle class="!justify-end">
             <div class="breadcrumbs text-sm hidden lg:block">
                 <ul>
-                    <li><a href="{{ route('app.user.index') }}" wire:navigate>Data Pengguna</a></li>
-                    <li>Tambah Pengguna</li>
+                    <li><a href="{{ route('app.user.index') }}" wire:navigate>{{ \App\Class\Helper\UserHelper::PAGE_TITLE_INDEX }}</a></li>
+                    <li>{{ \App\Class\Helper\UserHelper::PAGE_TITLE_CREATE }}</li>
                 </ul>
             </div>
         </x-slot:middle>
@@ -97,7 +97,7 @@
                     {{-- Quick Actions --}}
                     <div class="space-y-2 pt-4 border-t border-base-300">
                         <x-button label="Data Pengguna" wire:click="cancel" class="btn-primary btn-block"
-                            icon="{{ $this->userUIConfig['icons']['users'] }}" />
+                            icon="{{ $this->userUIConfig['icons']['back'] }}" />
 
                         <x-button label="Reset Form" wire:click="resetForm" class="btn-secondary btn-block"
                             icon="{{ $this->userUIConfig['icons']['reset'] }}" :disabled="!$this->hasData" />
@@ -156,11 +156,11 @@
                             </div>
 
                             {{-- Name --}}
-                            <x-input label="Nama Lengkap" wire:model.live="name" placeholder="Masukkan nama lengkap"
+                            <x-input label="Nama Lengkap" wire:model.live="name" placeholder="{{ \App\Class\Helper\FormatHelper::PLACEHOLDER_NAME_USER }}"
                                 icon="{{ $this->userUIConfig['icons']['user'] }}" clearable required />
 
                             {{-- Email --}}
-                            <x-input label="Alamat Email" wire:model.blur="email" placeholder="user@example.com"
+                            <x-input label="Alamat Email" wire:model.blur="email" placeholder="{{ \App\Class\Helper\FormatHelper::PLACEHOLDER_EMAIL }}"
                                 type="email" icon="{{ $this->userUIConfig['icons']['email'] }}" clearable required />
 
                             {{-- Role --}}
@@ -196,7 +196,7 @@
 
                     {{-- Form Actions --}}
                     <x-slot:actions separator>
-                        <x-button label="Simpan Pengguna" type="submit" class="btn-primary" icon="phosphor.check"
+                        <x-button label="{{ \App\Class\Helper\FormatHelper::LABEL_SAVE }} Pengguna" type="submit" class="btn-primary" icon="phosphor.check"
                             :disabled="!$this->isFormValid" spinner="save" />
                     </x-slot:actions>
                 </x-form>

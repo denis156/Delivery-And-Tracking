@@ -9,7 +9,7 @@
         <x-slot:middle class="!justify-end">
             <div class="breadcrumbs text-sm hidden lg:block">
                 <ul>
-                    <li><a href="{{ route('app.driver.index') }}" wire:navigate>Data Sopir</a></li>
+                    <li><a href="{{ route('app.driver.index') }}" wire:navigate>{{ \App\Class\Helper\DriverHelper::PAGE_TITLE_INDEX }}</a></li>
                     <li><a href="{{ route('app.driver.view', $user) }}" wire:navigate>Detail</a></li>
                     <li>Edit - {{ $user->name }}</li>
                 </ul>
@@ -170,11 +170,11 @@
                             </div>
 
                             {{-- Name --}}
-                            <x-input label="Nama Lengkap" wire:model.live.debounce.500ms="name" placeholder="Masukkan nama lengkap"
+                            <x-input label="Nama Lengkap" wire:model.live.debounce.500ms="name" placeholder="{{ \App\Class\Helper\FormatHelper::PLACEHOLDER_NAME_DRIVER }}"
                                 icon="phosphor.user" clearable required />
 
                             {{-- Email --}}
-                            <x-input label="Alamat Email" wire:model.live.debounce.500ms="email" placeholder="driver@example.com"
+                            <x-input label="Alamat Email" wire:model.live.debounce.500ms="email" placeholder="{{ \App\Class\Helper\FormatHelper::PLACEHOLDER_EMAIL }}"
                                 type="email" icon="phosphor.envelope" clearable required />
 
                             {{-- Phone --}}
@@ -255,7 +255,7 @@
 
                     {{-- Form Actions --}}
                     <x-slot:actions separator>
-                        <x-button label="Simpan Perubahan" type="submit" class="btn-warning" icon="phosphor.check"
+                        <x-button label="{{ \App\Class\Helper\FormatHelper::LABEL_SAVE }} Perubahan" type="submit" class="btn-warning" icon="phosphor.check"
                             :disabled="!$this->hasChanges" spinner="update" />
                     </x-slot:actions>
                 </x-form>

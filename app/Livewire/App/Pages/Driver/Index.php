@@ -13,7 +13,7 @@ use Livewire\Attributes\Title;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Computed;
 
-#[Title('Data Sopir')]
+#[Title(DriverHelper::PAGE_TITLE_INDEX)]
 #[Layout('livewire.layouts.app')]
 class Index extends Component
 {
@@ -29,7 +29,7 @@ class Index extends Component
     public string $licenseFilter = 'all';
     public string $licenseStatusFilter = 'all';
     public array $sortBy = ['column' => 'created_at', 'direction' => 'desc'];
-    public int $perPage = 12;
+    public int $perPage = FormatHelper::DEFAULT_PER_PAGE;
 
     // * ========================================
     // * LISTENERS (Livewire 3 Standards)
@@ -81,9 +81,9 @@ class Index extends Component
     {
         $this->reset(['search', 'statusFilter', 'licenseFilter', 'licenseStatusFilter']);
         $this->sortBy = ['column' => 'created_at', 'direction' => 'desc'];
-        $this->perPage = 12;
+        $this->perPage = FormatHelper::DEFAULT_PER_PAGE;
         $this->resetPage();
-        $this->success('Filter berhasil dibersihkan.', position: 'toast-top toast-end');
+        $this->success(DriverHelper::TOAST_FILTER_CLEARED, position: FormatHelper::TOAST_POSITION);
     }
 
     /**
@@ -94,7 +94,7 @@ class Index extends Component
         if ($this->drivers->count() === 0 && $this->drivers->currentPage() > 1) {
             $this->resetPage();
         }
-        $this->success('Driver berhasil dihapus.', position: 'toast-top toast-end');
+        $this->success(DriverHelper::TOAST_DRIVER_DELETED, position: FormatHelper::TOAST_POSITION);
     }
 
     /**
@@ -103,7 +103,7 @@ class Index extends Component
     public function handleDriverCreated(): void
     {
         $this->resetPage();
-        $this->success('Driver berhasil ditambahkan.', position: 'toast-top toast-end');
+        $this->success(DriverHelper::TOAST_DRIVER_ADDED, position: FormatHelper::TOAST_POSITION);
     }
 
     /**
@@ -268,9 +268,9 @@ class Index extends Component
         $drivers = $this->drivers;
 
         return [
-            'current' => "Menampilkan <span class=\"font-semibold\">" . ($drivers->firstItem() ?? 0) . "</span> - <span class=\"font-semibold\">" . ($drivers->lastItem() ?? 0) . "</span> dari <span class=\"font-semibold\">" . $drivers->total() . "</span> driver",
-            'simple' => "Menampilkan <span class=\"font-semibold\">" . $drivers->count() . "</span> driver",
-            'search' => "untuk pencarian \"<span class=\"font-semibold text-primary\">{$this->search}</span>\"",
+            'current' => "Menampilkan " . ($drivers->firstItem() ?? 0) . " - " . ($drivers->lastItem() ?? 0) . " dari " . $drivers->total() . " driver",
+            'simple' => "Menampilkan " . $drivers->count() . " driver",
+            'search' => "untuk pencarian \"{$this->search}\"",
             'mobile' => "Halaman " . $drivers->currentPage() . " dari " . $drivers->lastPage(),
         ];
     }

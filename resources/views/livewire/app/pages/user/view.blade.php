@@ -9,7 +9,7 @@
         <x-slot:middle class="!justify-end">
             <div class="breadcrumbs text-sm hidden lg:block">
                 <ul>
-                    <li><a href="{{ route('app.user.index') }}" wire:navigate>Data Pengguna</a></li>
+                    <li><a href="{{ route('app.user.index') }}" wire:navigate">{{ \App\Class\Helper\UserHelper::PAGE_TITLE_INDEX }}</a></li>
                     <li>Detail - {{ $user->name }}</li>
                 </ul>
             </div>
@@ -69,7 +69,7 @@
                     {{-- Quick Actions --}}
                     <div class="space-y-2 pt-4 border-t border-base-300">
                         <x-button label="Data Pengguna" wire:click="backToList"
-                            class="btn-primary btn-outline btn-block" icon="{{ $this->userUIConfig['icons']['users'] }}" />
+                            class="btn-primary btn-outline btn-block" icon="{{ $this->userUIConfig['icons']['back'] }}" />
 
                         <x-button label="Edit {{ $user->name }}" wire:click="editUser"
                             class="btn-warning btn-outline btn-block" icon="{{ $this->userUIConfig['icons']['edit'] }}" />

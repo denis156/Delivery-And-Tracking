@@ -14,7 +14,7 @@ use Livewire\Attributes\Layout;
 use Livewire\Attributes\Validate;
 use Livewire\Attributes\Computed;
 
-#[Title('Tambah Pengguna')]
+#[Title(UserHelper::PAGE_TITLE_CREATE)]
 #[Layout('livewire.layouts.app')]
 class Create extends Component
 {
@@ -33,13 +33,13 @@ class Create extends Component
     #[Validate('required|string')]
     public string $role = '';
 
-    #[Validate('required|string|min:8|regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/')]
+    #[Validate('required|string|min:' . FormatHelper::MIN_PASSWORD_LENGTH . '|regex:' . FormatHelper::PASSWORD_REGEX)]
     public string $password = '';
 
-    #[Validate('required|string|min:8|same:password')]
+    #[Validate('required|string|min:' . FormatHelper::MIN_PASSWORD_LENGTH . '|same:password')]
     public string $password_confirmation = '';
 
-    #[Validate('nullable|image|max:2048')]
+    #[Validate('nullable|image|max:' . FormatHelper::MAX_AVATAR_SIZE)]
     public $avatar;
 
     public bool $is_active = true;
@@ -62,7 +62,7 @@ class Create extends Component
 
         $user->assignRole($this->role);
 
-        $this->success('Pengguna berhasil dibuat!');
+        $this->success(UserHelper::TOAST_USER_CREATED, position: FormatHelper::TOAST_POSITION);
         $this->dispatch('userCreated');
 
         $this->redirect(route('app.user.view', $user), navigate: true);
@@ -72,7 +72,7 @@ class Create extends Component
     {
         $this->reset(['name', 'email', 'role', 'password', 'password_confirmation', 'avatar']);
         $this->is_active = true;
-        $this->success('Form berhasil direset.');
+        $this->success(UserHelper::FORM_RESET, position: FormatHelper::TOAST_POSITION);
     }
 
     public function cancel(): void
@@ -83,7 +83,10 @@ class Create extends Component
     public function toggleUserStatus(): void
     {
         $this->is_active = !$this->is_active;
-        $this->success('Status user diubah ke ' . ($this->is_active ? 'aktif' : 'nonaktif'));
+        $this->success(
+            $this->is_active ? UserHelper::TOAST_STATUS_CHANGED_ACTIVE : UserHelper::TOAST_STATUS_CHANGED_INACTIVE,
+            position: FormatHelper::TOAST_POSITION
+        );
     }
 
     // * ========================================
@@ -126,6 +129,7 @@ class Create extends Component
                 'warning' => FormatHelper::getCommonIcon('warning'),
                 'info' => FormatHelper::getCommonIcon('info'),
                 'reset' => FormatHelper::getCommonIcon('reset'),
+                'back' => FormatHelper::getCommonIcon('back'),
             ],
             'colors' => [
                 'active' => UserHelper::getStatusColor(UserHelper::STATUS_ACTIVE),

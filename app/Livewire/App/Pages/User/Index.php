@@ -28,7 +28,7 @@ class Index extends Component
     public string $statusFilter = 'all';
     public string $roleFilter = 'all';
     public array $sortBy = ['column' => 'created_at', 'direction' => 'desc'];
-    public int $perPage = 12;
+    public int $perPage = FormatHelper::DEFAULT_PER_PAGE;
 
     // * ========================================
     // * LISTENERS (Livewire 3 Standards)
@@ -75,9 +75,9 @@ class Index extends Component
     {
         $this->reset(['search', 'statusFilter', 'roleFilter']);
         $this->sortBy = ['column' => 'created_at', 'direction' => 'desc'];
-        $this->perPage = 12;
+        $this->perPage = FormatHelper::DEFAULT_PER_PAGE;
         $this->resetPage();
-        $this->success('Filter berhasil dibersihkan.', position: 'toast-top toast-end');
+        $this->success(UserHelper::TOAST_FILTER_CLEARED, position: FormatHelper::TOAST_POSITION);
     }
 
     /**
@@ -88,7 +88,7 @@ class Index extends Component
         if ($this->users->count() === 0 && $this->users->currentPage() > 1) {
             $this->resetPage();
         }
-        $this->success('User berhasil dihapus.', position: 'toast-top toast-end');
+        $this->success(UserHelper::TOAST_USER_DELETED, position: FormatHelper::TOAST_POSITION);
     }
 
     /**
@@ -97,7 +97,7 @@ class Index extends Component
     public function handleUserCreated(): void
     {
         $this->resetPage();
-        $this->success('User berhasil ditambahkan.', position: 'toast-top toast-end');
+        $this->success(UserHelper::TOAST_USER_ADDED, position: FormatHelper::TOAST_POSITION);
     }
 
     /**
@@ -166,7 +166,7 @@ class Index extends Component
     public function getRolesProperty(): array
     {
         return collect([
-            'all' => 'Semua Role'
+            'all' => UserHelper::getFilterLabel('all_roles')
         ])->merge(UserHelper::getManagementRoles() + UserHelper::getStaffRoles())->toArray();
     }
 
@@ -235,10 +235,10 @@ class Index extends Component
     public function getSortOptionsProperty(): array
     {
         return [
-            ['id' => 'created_at', 'name' => 'Tanggal Bergabung'],
-            ['id' => 'updated_at', 'name' => 'Terakhir Diperbarui'],
-            ['id' => 'name', 'name' => 'Nama'],
-            ['id' => 'email', 'name' => 'Email']
+            ['id' => 'created_at', 'name' => FormatHelper::SORT_DATE_JOINED],
+            ['id' => 'updated_at', 'name' => FormatHelper::SORT_LAST_UPDATED],
+            ['id' => 'name', 'name' => FormatHelper::SORT_NAME],
+            ['id' => 'email', 'name' => FormatHelper::SORT_EMAIL]
         ];
     }
 
@@ -248,9 +248,9 @@ class Index extends Component
     public function getStatusFilterOptionsProperty(): array
     {
         return [
-            ['id' => 'all', 'name' => 'Semua Status'],
-            ['id' => 'active', 'name' => 'Aktif'],
-            ['id' => 'inactive', 'name' => 'Nonaktif']
+            ['id' => 'all', 'name' => UserHelper::getFilterLabel('all_status')],
+            ['id' => 'active', 'name' => UserHelper::getFilterLabel('active')],
+            ['id' => 'inactive', 'name' => UserHelper::getFilterLabel('inactive')]
         ];
     }
 
@@ -260,8 +260,8 @@ class Index extends Component
     public function getSortDirectionOptionsProperty(): array
     {
         return [
-            ['id' => 'desc', 'name' => 'Terbaru ke Lama / Z ke A'],
-            ['id' => 'asc', 'name' => 'Lama ke Terbaru / A ke Z']
+            ['id' => 'desc', 'name' => UserHelper::getFilterLabel('newest_to_oldest')],
+            ['id' => 'asc', 'name' => UserHelper::getFilterLabel('oldest_to_newest')]
         ];
     }
 
@@ -270,12 +270,7 @@ class Index extends Component
      */
     public function getPerPageOptionsProperty(): array
     {
-        return [
-            ['value' => 6, 'label' => '6'],
-            ['value' => 12, 'label' => '12'],
-            ['value' => 24, 'label' => '24'],
-            ['value' => 50, 'label' => '50']
-        ];
+        return FormatHelper::getPerPageOptions();
     }
 
     /**
