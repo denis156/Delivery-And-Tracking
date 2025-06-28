@@ -94,7 +94,7 @@
                     {{-- Quick Actions --}}
                     <div class="space-y-2 pt-4 border-t border-base-300">
                         <x-button label="Data Sopir" wire:click="cancel" class="btn-primary btn-block"
-                            icon="phosphor.truck" />
+                            icon="{{ $this->driverUIConfig['icons']['back'] }}" />
 
                         <x-button label="{{ \App\Class\Helper\FormatHelper::LABEL_RESET }} Form" wire:click="resetForm" class="btn-secondary btn-block"
                             icon="phosphor.arrow-counter-clockwise" :disabled="!$this->hasData" />

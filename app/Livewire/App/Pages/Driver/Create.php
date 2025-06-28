@@ -174,6 +174,7 @@ class Create extends Component
         return [
             'icons' => [
                 'add' => FormatHelper::getCommonIcon('add'),
+                'back' => FormatHelper::getCommonIcon('back'),
                 'user' => UserHelper::getRoleIcon(UserHelper::ROLE_DRIVER),
                 'name' => FormatHelper::getCommonIcon('user'),
                 'email' => FormatHelper::getCommonIcon('email'),
