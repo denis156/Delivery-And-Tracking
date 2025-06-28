@@ -57,9 +57,15 @@ class FormatHelper
     const PLACEHOLDER_SEARCH_GENERAL = 'Cari nama, email, atau data lainnya...';
     const PLACEHOLDER_SEARCH_DRIVER = 'Cari nama, email, SIM, atau plat...';
     const PLACEHOLDER_SEARCH_USER = 'Cari nama atau email...';
+    const PLACEHOLDER_SEARCH_CLIENT = 'Cari nama perusahaan, kode, atau kontak...';
     const PLACEHOLDER_EMAIL = 'email@example.com';
     const PLACEHOLDER_NAME_DRIVER = 'Nama Sopir';
     const PLACEHOLDER_NAME_USER = 'Nama Pengguna';
+    const PLACEHOLDER_COMPANY_NAME = 'Nama Perusahaan';
+    const PLACEHOLDER_COMPANY_ADDRESS = 'Alamat lengkap perusahaan';
+    const PLACEHOLDER_CONTACT_PERSON = 'Nama contact person';
+    const PLACEHOLDER_PHONE = '08123456789';
+    const PLACEHOLDER_TAX_ID = '01.234.567.8-901.234';
 
     // * ========================================
     // * SORT LABEL CONSTANTS

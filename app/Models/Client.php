@@ -75,6 +75,23 @@ class Client extends Model
                     ->whereNotNull('company_longitude');
     }
 
+    public function scopeActiveClients($query)
+    {
+        return $query->whereHas('user', function ($q) {
+            $q->where('is_active', true);
+        });
+    }
+
+    public function scopeNearby($query, float $lat, float $lng, int $radiusKm = 50)
+    {
+        return $query->selectRaw("
+                *,
+                (6371 * acos(cos(radians(?)) * cos(radians(company_latitude)) * cos(radians(company_longitude) - radians(?)) + sin(radians(?)) * sin(radians(company_latitude)))) AS distance
+            ", [$lat, $lng, $lat])
+            ->having('distance', '<', $radiusKm)
+            ->orderBy('distance');
+    }
+
     // * ========================================
     // * MODEL EVENTS
     // * ========================================
@@ -144,5 +161,105 @@ class Client extends Model
                 return FormatHelper::generateMapsUrl($this->company_latitude, $this->company_longitude);
             }
         );
+    }
+
+    // * ========================================
+    // * CLIENT STATUS ACCESSORS (via User relationship)
+    // * ========================================
+
+    protected function isActiveClient(): Attribute
+    {
+        return Attribute::make(
+            get: fn() => $this->user?->is_active ?? false,
+        );
+    }
+
+    protected function clientStatusColor(): Attribute
+    {
+        return Attribute::make(
+            get: fn() => $this->user?->is_active ? 'success' : 'warning',
+        );
+    }
+
+    protected function clientStatusLabel(): Attribute
+    {
+        return Attribute::make(
+            get: fn() => $this->user?->is_active ? 'Aktif' : 'Nonaktif',
+        );
+    }
+
+    protected function clientStatusIcon(): Attribute
+    {
+        return Attribute::make(
+            get: fn() => $this->user?->is_active ? 'phosphor.check-circle' : 'phosphor.x-circle',
+        );
+    }
+
+    protected function shortAddress(): Attribute
+    {
+        return Attribute::make(
+            get: fn() => ClientHelper::formatCompanyAddress($this->company_address ?? '', 50),
+        );
+    }
+
+    protected function clientBarcode(): Attribute
+    {
+        return Attribute::make(
+            get: fn() => ClientHelper::generateClientBarcode($this->company_code),
+        );
+    }
+
+    // * ========================================
+    // * BUSINESS LOGIC METHODS
+    // * ========================================
+
+    public function isActive(): bool
+    {
+        return $this->user?->is_active ?? false;
+    }
+
+    public function canReceiveDeliveries(): bool
+    {
+        return $this->user?->is_active ?? false;
+    }
+
+    public function hasValidCoordinates(): bool
+    {
+        return ClientHelper::isValidIndonesianCoordinates($this->company_latitude, $this->company_longitude);
+    }
+
+    public function distanceFrom(float $lat, float $lng): ?float
+    {
+        if (!$this->company_latitude || !$this->company_longitude) {
+            return null;
+        }
+
+        // Using Haversine formula for distance calculation
+        $earthRadius = 6371; // km
+
+        $dLat = deg2rad($lat - $this->company_latitude);
+        $dLng = deg2rad($lng - $this->company_longitude);
+
+        $a = sin($dLat / 2) * sin($dLat / 2) +
+             cos(deg2rad($this->company_latitude)) * cos(deg2rad($lat)) *
+             sin($dLng / 2) * sin($dLng / 2);
+
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+
+        return $earthRadius * $c;
+    }
+
+    /**
+     * Check if company code is unique
+     */
+    public static function isUniqueCompanyCode(string $code, ?int $excludeId = null): bool
+    {
+        $query = static::where('company_code', $code);
+
+        if ($excludeId) {
+            $query->where('id', '!=', $excludeId);
+        }
+
+        return $query->count() === 0;
     }
 }
