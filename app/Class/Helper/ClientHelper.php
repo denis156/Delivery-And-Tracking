@@ -231,11 +231,4 @@ class ClientHelper
         return ($lat >= $latMin && $lat <= $latMax && $lng >= $lngMin && $lng <= $lngMax);
     }
 
-    /**
-     * Generate client barcode (delegated to FormatHelper)
-     */
-    public static function generateClientBarcode(string $companyCode): string
-    {
-        return FormatHelper::generateUniqueCode('CLI-' . $companyCode, 0, 'Y');
-    }
 }
