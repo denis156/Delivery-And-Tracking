@@ -30,6 +30,59 @@ class DriverHelper
     const DEFAULT_COLOR = 'neutral';
 
     // * ========================================
+    // * TOAST MESSAGE CONSTANTS
+    // * ========================================
+
+    const TOAST_DRIVER_CREATED = 'Sopir berhasil dibuat!';
+    const TOAST_DRIVER_UPDATED = 'Data sopir berhasil diperbarui!';
+    const TOAST_DRIVER_DELETED = 'Driver berhasil dihapus.';
+    const TOAST_DRIVER_ADDED = 'Driver berhasil ditambahkan.';
+    const TOAST_FORM_RESET = 'Form berhasil direset.';
+    const TOAST_STATUS_CHANGED_ACTIVE = 'Status sopir diubah ke aktif';
+    const TOAST_STATUS_CHANGED_INACTIVE = 'Status sopir diubah ke nonaktif';
+    const TOAST_FILTER_CLEARED = 'Filter berhasil dibersihkan.';
+
+    // * ========================================
+    // * PAGE TITLE & SUBTITLE CONSTANTS
+    // * ========================================
+
+    const PAGE_TITLE_INDEX = 'Data Sopir';
+    const PAGE_SUBTITLE_INDEX = 'Kelola data sopir dan informasi SIM di sini';
+    const PAGE_TITLE_CREATE = 'Tambah Sopir Baru';
+    const PAGE_SUBTITLE_CREATE = 'Tambahkan data sopir baru beserta informasi SIM di sini';
+    const PAGE_TITLE_EDIT = 'Edit Sopir';
+    const PAGE_SUBTITLE_EDIT = 'Perbarui informasi sopir dan SIM';
+    const PAGE_TITLE_VIEW = 'Detail Sopir';
+    const PAGE_SUBTITLE_VIEW = 'Lihat informasi lengkap sopir';
+
+    // * ========================================
+    // * EMPTY STATE CONSTANTS
+    // * ========================================
+
+    const EMPTY_NO_DRIVERS = 'Tidak ada driver ditemukan';
+    const EMPTY_NO_DRIVERS_DESC = 'Belum ada driver yang terdaftar dalam sistem';
+    const EMPTY_SEARCH_NO_RESULTS = 'Tidak ada driver yang cocok dengan pencarian';
+
+    // * ========================================
+    // * ERROR MESSAGE CONSTANTS
+    // * ========================================
+
+    const ERROR_NOT_DRIVER = 'User ini bukan sopir.';
+    const ERROR_NOT_DRIVER_FULL = 'User ini bukan driver.';
+    const ERROR_SAVE_FAILED = 'Terjadi kesalahan saat menyimpan data';
+    const ERROR_DELETE_FAILED = 'Terjadi kesalahan saat menghapus data';
+    const ERROR_CREATE_FAILED = 'Terjadi kesalahan saat membuat sopir';
+
+    // * ========================================
+    // * STATISTICS LABEL CONSTANTS
+    // * ========================================
+
+    const STAT_TOTAL_DRIVERS = 'Total Driver';
+    const STAT_ACTIVE_DRIVERS = 'Driver Aktif';
+    const STAT_INACTIVE_DRIVERS = 'Driver Nonaktif';
+    const STAT_EXPIRED_LICENSES = 'SIM Kadaluarsa';
+
+    // * ========================================
     // * LICENSE MAPPINGS
     // * ========================================
 

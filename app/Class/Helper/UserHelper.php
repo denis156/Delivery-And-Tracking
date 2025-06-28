@@ -27,6 +27,50 @@ class UserHelper
     const STATUS_INACTIVE = false;
 
     // * ========================================
+    // * TOAST MESSAGE CONSTANTS
+    // * ========================================
+
+    const TOAST_FILTER_CLEARED = 'Filter berhasil dibersihkan.';
+    const TOAST_USER_CREATED = 'Pengguna berhasil dibuat!';
+    const TOAST_USER_UPDATED = 'Pengguna berhasil diperbarui!';
+    const TOAST_USER_DELETED = 'User berhasil dihapus.';
+    const TOAST_USER_ADDED = 'User berhasil ditambahkan.';
+    const TOAST_STATUS_CHANGED_ACTIVE = 'Status user diubah ke aktif';
+    const TOAST_STATUS_CHANGED_INACTIVE = 'Status user diubah ke nonaktif';
+
+    // * ========================================
+    // * FORM MESSAGE CONSTANTS
+    // * ========================================
+
+    const FORM_READY = 'Siap untuk disimpan!';
+    const FORM_INCOMPLETE = 'Lengkapi semua field wajib';
+    const FORM_PREVIEW = 'Mulai mengisi form untuk preview';
+    const FORM_CHANGED = 'Ada perubahan yang belum disimpan';
+    const FORM_SAVED = 'Semua tersimpan';
+    const FORM_RESET = 'Form berhasil direset.';
+
+    // * ========================================
+    // * PAGE TITLE & SUBTITLE CONSTANTS
+    // * ========================================
+
+    const PAGE_TITLE_INDEX = 'Data Pengguna';
+    const PAGE_SUBTITLE_INDEX = 'Kelola data pengguna sistem di sini';
+    const PAGE_TITLE_CREATE = 'Tambah Pengguna';
+    const PAGE_SUBTITLE_CREATE = 'Tambahkan pengguna baru ke sistem';
+    const PAGE_TITLE_EDIT = 'Edit Pengguna';
+    const PAGE_SUBTITLE_EDIT = 'Perbarui informasi pengguna';
+    const PAGE_TITLE_VIEW = 'Detail Pengguna';
+    const PAGE_SUBTITLE_VIEW = 'Lihat informasi lengkap pengguna';
+
+    // * ========================================
+    // * ERROR MESSAGE CONSTANTS
+    // * ========================================
+
+    const ERROR_NOT_USER = 'Pengguna ini tidak dapat diedit dari halaman ini.';
+    const ERROR_NOT_VIEWABLE = 'Pengguna ini tidak dapat dilihat dari halaman ini.';
+    const ERROR_SAVE_FAILED = 'Terjadi kesalahan saat menyimpan data';
+
+    // * ========================================
     // * ROLE MAPPINGS
     // * ========================================
 
@@ -336,8 +380,8 @@ class UserHelper
         return match ($role) {
             self::ROLE_ADMIN => 'Memiliki akses penuh ke seluruh sistem',
             self::ROLE_MANAGER => 'Mengelola operasional dan monitoring',
-            self::ROLE_PETUGAS_LAPANGAN => 'Membuat dan memverifikasi delivery order',
-            self::ROLE_PETUGAS_RUANGAN => 'Verifikasi dan approval delivery order',
+            self::ROLE_PETUGAS_LAPANGAN => 'Membuat dan memverifikasi surat jalan',
+            self::ROLE_PETUGAS_RUANGAN => 'Verifikasi dan approval surat jalan',
             self::ROLE_PETUGAS_GUDANG => 'Mengelola loading dan completion',
             self::ROLE_DRIVER => 'Melaksanakan pengiriman barang',
             self::ROLE_CLIENT => 'Menerima dan konfirmasi barang',
@@ -404,7 +448,7 @@ class UserHelper
     }
 
     // * ========================================
-    // * FILTER LABELS - CENTRALIZED 
+    // * FILTER LABELS - CENTRALIZED
     // * ========================================
 
     /**

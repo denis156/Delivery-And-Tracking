@@ -8,6 +8,68 @@ namespace App\Class\Helper;
 class FormatHelper
 {
     // * ========================================
+    // * COMMON CONSTANTS
+    // * ========================================
+
+    const MAX_AVATAR_SIZE = 2048; // in KB
+    const MIN_PASSWORD_LENGTH = 8;
+    const DEFAULT_PER_PAGE = 12;
+    const TOAST_POSITION = 'toast-top toast-end';
+    const PASSWORD_REGEX = '/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/';
+
+    // * ========================================
+    // * TIME UNIT CONSTANTS
+    // * ========================================
+
+    const TIME_UNIT_YEAR = 'tahun';
+    const TIME_UNIT_MONTH = 'bulan';
+    const TIME_UNIT_DAY = 'hari';
+    const TIME_UNIT_HOUR = 'jam';
+    const TIME_UNIT_MINUTE = 'menit';
+    const TIME_UNIT_SECOND = 'detik';
+
+    // * ========================================
+    // * COMMON LABEL CONSTANTS
+    // * ========================================
+
+    const LABEL_SEARCH = 'Cari';
+    const LABEL_FILTER = 'Filter';
+    const LABEL_ADD = 'Tambah';
+    const LABEL_EDIT = 'Edit';
+    const LABEL_DELETE = 'Hapus';
+    const LABEL_VIEW = 'Lihat';
+    const LABEL_SAVE = 'Simpan';
+    const LABEL_UPDATE = 'Perbarui';
+    const LABEL_CANCEL = 'Batal';
+    const LABEL_RESET = 'Reset';
+    const LABEL_BACK = 'Kembali';
+    const LABEL_CLOSE = 'Tutup';
+    const LABEL_ACTIVATE = 'Aktifkan';
+    const LABEL_DEACTIVATE = 'Nonaktifkan';
+    const LABEL_NEXT = 'Next';
+    const LABEL_PREV = 'Prev';
+    const LABEL_PER_PAGE = 'Per halaman:';
+
+    // * ========================================
+    // * PLACEHOLDER CONSTANTS
+    // * ========================================
+
+    const PLACEHOLDER_SEARCH_GENERAL = 'Cari nama, email, atau data lainnya...';
+    const PLACEHOLDER_SEARCH_DRIVER = 'Cari nama, email, SIM, atau plat...';
+    const PLACEHOLDER_SEARCH_USER = 'Cari nama atau email...';
+    const PLACEHOLDER_EMAIL = 'email@example.com';
+    const PLACEHOLDER_NAME_DRIVER = 'Nama Sopir';
+    const PLACEHOLDER_NAME_USER = 'Nama Pengguna';
+
+    // * ========================================
+    // * SORT LABEL CONSTANTS
+    // * ========================================
+
+    const SORT_DATE_JOINED = 'Tanggal Bergabung';
+    const SORT_LAST_UPDATED = 'Terakhir Diperbarui';
+    const SORT_NAME = 'Nama';
+    const SORT_EMAIL = 'Email';
+    // * ========================================
     // * CURRENCY FORMATTING
     // * ========================================
 
@@ -382,5 +444,48 @@ class FormatHelper
     public static function getCommonIcon(string $key): string
     {
         return self::getCommonIcons()[$key] ?? 'phosphor.question';
+    }
+
+    // * ========================================
+    // * TIME UNIT HELPER METHODS
+    // * ========================================
+
+    /**
+     * Get time unit label
+     */
+    public static function getTimeUnit(string $unit): string
+    {
+        $units = [
+            'year' => self::TIME_UNIT_YEAR,
+            'years' => self::TIME_UNIT_YEAR,
+            'month' => self::TIME_UNIT_MONTH,
+            'months' => self::TIME_UNIT_MONTH,
+            'day' => self::TIME_UNIT_DAY,
+            'days' => self::TIME_UNIT_DAY,
+            'hour' => self::TIME_UNIT_HOUR,
+            'hours' => self::TIME_UNIT_HOUR,
+            'minute' => self::TIME_UNIT_MINUTE,
+            'minutes' => self::TIME_UNIT_MINUTE,
+            'second' => self::TIME_UNIT_SECOND,
+            'seconds' => self::TIME_UNIT_SECOND,
+        ];
+        return $units[$unit] ?? $unit;
+    }
+
+    // * ========================================
+    // * PAGINATION OPTIONS
+    // * ========================================
+
+    /**
+     * Get pagination per page options
+     */
+    public static function getPerPageOptions(): array
+    {
+        return [
+            ['value' => 6, 'label' => '6'],
+            ['value' => 12, 'label' => '12'],
+            ['value' => 24, 'label' => '24'],
+            ['value' => 50, 'label' => '50']
+        ];
     }
 }
