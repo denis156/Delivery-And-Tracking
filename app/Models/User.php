@@ -57,6 +57,14 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasOne(Driver::class);
     }
 
+    /**
+     * Get the client profile associated with the user.
+     */
+    public function client(): HasOne
+    {
+        return $this->hasOne(Client::class);
+    }
+
     // * ========================================
     // * QUERY SCOPES
     // * ========================================
@@ -82,6 +90,13 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $query->whereHas('roles', function ($query) {
             $query->where('name', UserHelper::ROLE_DRIVER);
+        });
+    }
+
+    public function scopeOnlyClients($query)
+    {
+        return $query->whereHas('roles', function ($query) {
+            $query->where('name', UserHelper::ROLE_CLIENT);
         });
     }
 
