@@ -90,7 +90,7 @@ class ClientHelper
      */
     private static array $clientFieldIcons = [
         'company_name' => 'phosphor.buildings',
-        'company_code' => 'phosphor.identifier',
+        'company_code' => 'phosphor.identification-card',
         'company_address' => 'phosphor.map-pin',
         'phone' => 'phosphor.phone',
         'fax' => 'phosphor.fax',
