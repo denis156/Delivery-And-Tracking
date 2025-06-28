@@ -93,7 +93,7 @@ class ClientHelper
         'company_code' => 'phosphor.identification-card',
         'company_address' => 'phosphor.map-pin',
         'phone' => 'phosphor.phone',
-        'fax' => 'phosphor.fax',
+        'fax' => 'phosphor.printer',
         'tax_id' => 'phosphor.identification-card',
         'contact_person' => 'phosphor.user-circle',
         'contact_phone' => 'phosphor.device-mobile',
