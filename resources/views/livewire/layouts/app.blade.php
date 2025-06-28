@@ -56,7 +56,7 @@
                 <x-menu-sub title="Master Data" icon="phosphor.database-light">
                     <x-menu-item title="Data Pengguna" icon="phosphor.users-four-light" link="{{ route('app.user.index') }}" />
                     <x-menu-item title="Data Sopir" icon="phosphor.truck-light" link="{{ route('app.driver.index') }}" />
-                    <x-menu-item title="Data Klien" icon="phosphor.buildings-light" link="###" exact />
+                    <x-menu-item title="Data Klien" icon="phosphor.buildings-light" link="{{ route('app.client.index') }}" />
                     <x-menu-item title="Data Barang" icon="phosphor.package-light" link="###" exact />
                 </x-menu-sub>
                 {{-- Operasional --}}

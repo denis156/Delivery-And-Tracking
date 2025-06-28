@@ -86,13 +86,22 @@ Route::prefix('app')
             Route::get('/{user}/edit', App\Livewire\App\Pages\User\Edit::class)->name('edit');
         });
 
-        // User Management Routes
+        // Driver Management Routes
         Route::prefix('driver')->name('driver.')->group(function () {
             Route::get('/', App\Livewire\App\Pages\Driver\Index::class)->name('index');
             Route::get('/create', App\Livewire\App\Pages\Driver\Create::class)->name('create');
             Route::get('/{user}/view', App\Livewire\App\Pages\Driver\View::class)->name('view');
             Route::get('/{user}/edit', App\Livewire\App\Pages\Driver\Edit::class)->name('edit');
         });
+
+        // Client Management Routes
+        Route::prefix('client')->name('client.')->group(function () {
+            Route::get('/', App\Livewire\App\Pages\Client\Index::class)->name('index');
+            Route::get('/create', App\Livewire\App\Pages\Client\Create::class)->name('create');
+            Route::get('/{user}/view', App\Livewire\App\Pages\Client\View::class)->name('view');
+            Route::get('/{user}/edit', App\Livewire\App\Pages\Client\Edit::class)->name('edit');
+        });
+
 
         // Permission Management Routes
         Route::prefix('permission')->name('permission.')->group(function () {
