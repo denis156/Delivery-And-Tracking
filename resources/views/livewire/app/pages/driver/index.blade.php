@@ -51,7 +51,7 @@
         </x-card>
     @else
         {{-- DRIVER CARDS --}}
-        <x-card class="p-6 shadow-md">
+        <x-card class="p-6 shadow-md" title="Daftar Sopir" subtitle="Daftar lengkap Sopir yang telah dibuat">
             {{-- Grid Layout menggunakan DaisyUI responsive grid --}}
             <div class="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4">
                 @foreach ($this->drivers as $driver)

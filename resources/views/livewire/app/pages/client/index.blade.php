@@ -49,7 +49,7 @@
         </x-card>
     @else
         {{-- CLIENT CARDS --}}
-        <x-card class="p-6 shadow-md">
+        <x-card class="p-6 shadow-md" title="Daftar Klien" subtitle="Daftar lengkap Klien yang telah dibuat">
         {{-- ACTIVE FILTERS INFO --}}
         @if ($this->hasActiveFilters)
             <x-card class="p-4 mb-4 bg-base-200">
